@@ -2,8 +2,8 @@ import 'package:ultra_flutter/src/binding/ultra_extension_result.dart';
 import 'package:ultra_flutter/src/binding/register_extension_internal.dart';
 
 /// Callback type for Marionette extension handlers.
-typedef UltraExtensionCallback = Future<UltraExtensionResult>
-    Function(Map<String, String> params);
+typedef UltraExtensionCallback = Future<UltraExtensionResult> Function(
+    Map<String, String> params);
 
 /// Details about a registered custom extension.
 class ExtensionDetails {

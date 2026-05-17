@@ -17,7 +17,10 @@ import 'package:ultra_flutter_sentry_compat/ultra_flutter_sentry_compat.dart';
 ///     with UltraFlutterBinding, UltraSentryCompatMixin {}
 /// ```
 class TestAppBinding extends AutomatedTestWidgetsFlutterBinding
-    with SentryWidgetsBindingMixin, UltraFlutterBinding, UltraSentryCompatMixin {
+    with
+        SentryWidgetsBindingMixin,
+        UltraFlutterBinding,
+        UltraSentryCompatMixin {
   static TestAppBinding ensureInitialized() {
     // Catch-and-construct pattern — matches the canonical Flutter recipe
     // used by `WidgetsFlutterBinding.ensureInitialized` itself.
@@ -53,8 +56,7 @@ void main() {
       expect(UltraFlutterBinding.instance, same(WidgetsBinding.instance));
     });
 
-    test('Sentry frame-timing APIs are reachable on the composed binding',
-        () {
+    test('Sentry frame-timing APIs are reachable on the composed binding', () {
       final binding = WidgetsBinding.instance as SentryWidgetsBindingMixin;
       // Calling pause/resume should be a no-op without options wired but
       // must not throw — proves the mixin's state is initialised.

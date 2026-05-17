@@ -13,9 +13,11 @@
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { LocalDevice } from './device/index.js';
 import { MacDesktopBackend } from './backends/macos.js';
+import { WindowsDesktopBackend } from './backends/windows.js';
 import { LinuxDesktopBackend } from './backends/linux.js';
 import {
   resolveMacHelperPath,
+  resolveWinHelperPath,
   resolveLinuxHelperPath,
   resolveLinuxPythonBin,
 } from './sidecar/sidecarPaths.js';
@@ -62,8 +64,19 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
       );
     }
   } else if (platform === 'win32') {
-    server.logger.info('windows backend owned by worker-I — pending merge');
-    backend = null;
+    const helperPath = resolveWinHelperPath();
+    server.logger.info('probing win helper', { helperPath });
+    backend = await WindowsDesktopBackend.create({
+      device,
+      helperPath,
+      logger: server.logger,
+    });
+    if (!backend) {
+      server.logger.warn(
+        'no windows backend — build the FlaUI sidecar or set FLUTTER_ULTRA_WIN_HELPER',
+        { attempted: helperPath },
+      );
+    }
   } else if (platform === 'linux') {
     const sidecarPath = resolveLinuxHelperPath();
     const pythonBin = resolveLinuxPythonBin();
@@ -107,6 +120,7 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
 export { LocalDevice } from './device/index.js';
 export type { Device, ExecOptions, ExecResult, RpcStream } from './device/index.js';
 export { MacDesktopBackend, TCC_REMEDIATION, describeMacError } from './backends/macos.js';
+export { WindowsDesktopBackend, describeWindowsError } from './backends/windows.js';
 export {
   LinuxDesktopBackend,
   describeLinuxError,
@@ -115,6 +129,7 @@ export {
 export type { DesktopBackend, BackendCapabilities, WindowDescriptor, A11yNode } from './types.js';
 export {
   resolveMacHelperPath,
+  resolveWinHelperPath,
   resolveLinuxHelperPath,
   resolveLinuxPythonBin,
 } from './sidecar/sidecarPaths.js';

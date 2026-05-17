@@ -1,0 +1,58 @@
+name: Sidecar / Windows (FlaUI)
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-native-desktop/sidecars/windows-flaui/**'
+      - '.github/workflows/sidecar-windows.yml'
+  push:
+    branches: [main, next, alpha, beta]
+
+concurrency:
+  group: sidecar-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: dotnet publish flaui (${{ matrix.rid }})
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+          - rid: win-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: dotnet publish (${{ matrix.rid }})
+        working-directory: packages/flutter-ultra-native-desktop/sidecars/windows-flaui
+        run: |
+          dotnet publish FlutterUltraWinHelper/FlutterUltraWinHelper.csproj `
+            -c Release `
+            -r ${{ matrix.rid }} `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:PublishTrimmed=false `
+            -o bin/${{ matrix.rid }}
+
+      - name: Smoke-test --version (x64 only)
+        if: matrix.rid == 'win-x64'
+        working-directory: packages/flutter-ultra-native-desktop/sidecars/windows-flaui
+        run: |
+          $out = & bin/${{ matrix.rid }}/flutter-ultra-win-helper.exe --version
+          if ($out -ne '0.1.0') { Write-Error "expected '0.1.0', got '$out'"; exit 1 }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-ultra-win-helper-${{ matrix.rid }}
+          path: packages/flutter-ultra-native-desktop/sidecars/windows-flaui/bin/${{ matrix.rid }}/flutter-ultra-win-helper.exe
+          if-no-files-found: error
+          retention-days: 14

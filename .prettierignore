@@ -4,5 +4,8 @@
 **/.turbo/**
 **/build/**
 **/.dart_tool/**
+# Vendored fork submodules carry their own prettier config + ignore rules.
+# Treat them as black boxes — formatting decisions belong upstream.
+vendor/
 CHANGELOG.md
 LICENSE

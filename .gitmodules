@@ -1,0 +1,4 @@
+[submodule "vendor/patrol"]
+	path = vendor/patrol
+	url = https://github.com/Bdaya-Dev/patrol.git
+	branch = bdaya-main

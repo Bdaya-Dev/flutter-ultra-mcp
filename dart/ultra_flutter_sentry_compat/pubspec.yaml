@@ -1,23 +1,31 @@
 name: ultra_flutter_sentry_compat
 description: >-
-  Compatibility mixin that lets ultra_flutter coexist with SentryWidgetsFlutterBinding
-  in the same app. Optional add-on for the flutter-ultra-mcp Claude Code plugin.
-version: 0.0.0
+  Sentry-composable binding mixin for ultra_flutter. Provides
+  UltraSentryCompatMixin so AppBinding can extend WidgetsFlutterBinding with
+  both UltraFlutterBinding and Sentry's instrumentation without the
+  one-binding-only constraint that blocks SentryWidgetsFlutterBinding.
+version: 0.0.1-dev.1
 homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 repository: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 issue_tracker: https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues
+topics:
+  - sentry
+  - mcp
+  - ai
+  - testing
 
 publish_to: none
 
 environment:
-  sdk: ^3.5.0
-  flutter: '>=3.24.0'
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.27.0'
 
 resolution: workspace
 
 dependencies:
   flutter:
     sdk: flutter
+  sentry_flutter: ^9.0.0
   ultra_flutter:
     path: ../ultra_flutter
 

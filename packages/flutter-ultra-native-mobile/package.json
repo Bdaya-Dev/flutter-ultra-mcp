@@ -1,15 +1,44 @@
 {
   "name": "@flutter-ultra/flutter-ultra-native-mobile",
-  "version": "0.0.0",
-  "private": true,
-  "description": "MCP server for native mobile overlays: Android UIAutomator via adb, iOS XCUITest via xcrun + go-ios.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "MCP server for native mobile overlays: Android UIAutomator via adb, iOS XCUITest via xcrun + go-ios. Solves Chrome Custom Tabs / SafariViewController OAuth via Playwright + deep-link intent dispatch.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-native-mobile",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "packages/flutter-ultra-native-mobile"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "flutter-ultra",
+    "android",
+    "ios",
+    "adb",
+    "uiautomator",
+    "xcuitest",
+    "go-ios",
+    "oauth",
+    "chrome-custom-tabs"
+  ],
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "flutter-ultra-native-mobile": "dist/index.js"
+    "flutter-ultra-native-mobile": "dist/bin.js"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist",
     "README.md"
@@ -20,5 +49,24 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@flutter-ultra/mcp-runtime": "^0.0.1",
+    "@flutter-ultra/state-store": "^0.0.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "fast-xml-parser": "^4.5.0",
+    "playwright-core": "^1.49.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

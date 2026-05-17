@@ -1,9 +1,26 @@
 {
   "name": "@flutter-ultra/flutter-ultra-gesture",
-  "version": "0.0.0",
-  "private": true,
-  "description": "MCP server for in-app gesture dispatch via the ultra_flutter mixin: tap, text entry, scroll, screenshot.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "MCP server for in-app gesture dispatch via the ultra_flutter mixin: tap, text entry, scroll, screenshot, screencast.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-gesture",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "packages/flutter-ultra-gesture"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "flutter",
+    "mcp",
+    "ultra_flutter",
+    "gesture",
+    "tap",
+    "screencast"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,5 +37,22 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@flutter-ultra/vm-service-client": "^0.0.1",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -10,7 +10,10 @@
   "bin": {
     "flutter-ultra-native-mobile": "dist/index.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint src",

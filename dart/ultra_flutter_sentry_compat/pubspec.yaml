@@ -17,8 +17,8 @@ topics:
 publish_to: none
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
-  flutter: ">=3.27.0"
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.27.0'
 
 resolution: workspace
 

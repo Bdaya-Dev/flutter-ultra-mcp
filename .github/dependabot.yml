@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Etc/UTC
     open-pull-requests-limit: 10
     versioning-strategy: increase
@@ -21,19 +21,19 @@ updates:
         patterns:
           - typescript
           - typescript-eslint
-          - "@types/*"
+          - '@types/*'
           - eslint
           - prettier
       mcp-sdk:
         patterns:
-          - "@modelcontextprotocol/*"
+          - '@modelcontextprotocol/*'
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Etc/UTC
     open-pull-requests-limit: 5
     labels:

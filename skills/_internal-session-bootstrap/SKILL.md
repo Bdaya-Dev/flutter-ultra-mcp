@@ -9,6 +9,7 @@ disable-model-invocation: true
 **Status:** scaffold stub. Implementation owner: wave-3 skills worker (see plan §12).
 
 Triggered by the `SessionStart` hook. Performs:
+
 - Project root detection (`pubspec.yaml` walk)
 - Cached session discovery refresh
 - Plugin-doctor self-check

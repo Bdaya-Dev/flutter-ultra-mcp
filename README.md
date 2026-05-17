@@ -9,16 +9,16 @@
 
 A monolithic Flutter MCP server crashes badly: a malformed `pubspec.yaml` or a flaky AT-SPI binding takes down hot reload, gestures, browser, **and** native automation. We split the surface across **8 MCP servers** so a Linux AT-SPI regression cannot stop your Android tests, and a broken pubspec cannot block your hot reload.
 
-| Server | Purpose |
-|---|---|
-| `flutter-ultra-build` | pubspec, codegen, analyze, format, tests, builds, l10n, assets |
-| `flutter-ultra-runtime` | Attach to `flutter run` debug sessions over DDS; introspect VM Service |
-| `flutter-ultra-gesture` | Tap, text entry, scroll, screenshot via in-app `ultra_flutter` mixin |
-| `flutter-ultra-browser` | Playwright-driven web automation (OAuth redirects, popups, console) |
-| `flutter-ultra-native-mobile` | Native overlays on Android (UIAutomator) + iOS (XCUITest) via adb / xcrun |
-| `flutter-ultra-native-desktop` | Native UI on Windows (UIA), macOS (AX), Linux (AT-SPI) |
-| `flutter-ultra-devtools` | Live MCP activity panel inside Flutter DevTools |
-| `flutter-ultra-patrol` | Orchestrate `patrol_cli` for E2E tests (web + Android + iOS) |
+| Server                         | Purpose                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `flutter-ultra-build`          | pubspec, codegen, analyze, format, tests, builds, l10n, assets            |
+| `flutter-ultra-runtime`        | Attach to `flutter run` debug sessions over DDS; introspect VM Service    |
+| `flutter-ultra-gesture`        | Tap, text entry, scroll, screenshot via in-app `ultra_flutter` mixin      |
+| `flutter-ultra-browser`        | Playwright-driven web automation (OAuth redirects, popups, console)       |
+| `flutter-ultra-native-mobile`  | Native overlays on Android (UIAutomator) + iOS (XCUITest) via adb / xcrun |
+| `flutter-ultra-native-desktop` | Native UI on Windows (UIA), macOS (AX), Linux (AT-SPI)                    |
+| `flutter-ultra-devtools`       | Live MCP activity panel inside Flutter DevTools                           |
+| `flutter-ultra-patrol`         | Orchestrate `patrol_cli` for E2E tests (web + Android + iOS)              |
 
 ## Install
 

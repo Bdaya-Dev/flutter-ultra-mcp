@@ -1,18 +1,47 @@
 {
   "name": "@flutter-ultra/flutter-ultra-native-desktop",
-  "version": "0.0.0",
-  "private": true,
-  "description": "MCP server for native desktop UIs: Windows UIA, macOS AXUIElement, Linux AT-SPI.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "MCP server for native desktop UIs: Windows UIA (FlaUI sidecar), macOS AXUIElement (Swift sidecar + TCC UX), Linux AT-SPI (PyGObject sidecar). Cross-OS feature detection registers ZERO tools per OS path when its sidecar is unavailable.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-native-desktop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "packages/flutter-ultra-native-desktop"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "desktop",
+    "axuielement",
+    "accessibility",
+    "macos",
+    "tcc",
+    "ui-automation"
+  ],
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "flutter-ultra-native-desktop": "dist/index.js"
+    "flutter-ultra-native-desktop": "dist/bin.js"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "sidecars/macos-swift/Package.swift",
+    "sidecars/macos-swift/Sources",
+    "sidecars/macos-swift/README.md"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -20,5 +49,21 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@flutter-ultra/mcp-runtime": "^0.0.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

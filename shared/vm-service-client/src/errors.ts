@@ -46,7 +46,9 @@ export class RpcError extends Error {
 
   constructor(payload: RpcErrorPayload, method?: string) {
     super(
-      method ? `[${method}] (${payload.code}) ${payload.message}` : `(${payload.code}) ${payload.message}`,
+      method
+        ? `[${method}] (${payload.code}) ${payload.message}`
+        : `(${payload.code}) ${payload.message}`,
     );
     this.name = 'RpcError';
     this.code = payload.code;
@@ -63,7 +65,11 @@ export class SentinelException extends Error {
   readonly method: string | undefined;
 
   constructor(kind: string, valueAsString: string, method?: string) {
-    super(method ? `[${method}] Sentinel(${kind}): ${valueAsString}` : `Sentinel(${kind}): ${valueAsString}`);
+    super(
+      method
+        ? `[${method}] Sentinel(${kind}): ${valueAsString}`
+        : `Sentinel(${kind}): ${valueAsString}`,
+    );
     this.name = 'SentinelException';
     this.kind = kind;
     this.valueAsString = valueAsString;

@@ -114,12 +114,8 @@ describe('VmServiceClient', () => {
           version: '3.5.0',
           pid: 12345,
           startTime: 1700000000000,
-          isolates: [
-            { type: '@Isolate', id: 'isolates/1', name: 'main' },
-          ],
-          isolateGroups: [
-            { type: '@IsolateGroup', id: 'isolateGroups/1', name: 'main' },
-          ],
+          isolates: [{ type: '@Isolate', id: 'isolates/1', name: 'main' }],
+          isolateGroups: [{ type: '@IsolateGroup', id: 'isolateGroups/1', name: 'main' }],
         },
       }));
       const vm = await client.getVM();
@@ -233,7 +229,12 @@ describe('VmServiceClient', () => {
         result: {
           type: 'FlagList',
           flags: [
-            { name: 'pause_isolates_on_start', comment: 'X', modified: false, valueAsString: 'false' },
+            {
+              name: 'pause_isolates_on_start',
+              comment: 'X',
+              modified: false,
+              valueAsString: 'false',
+            },
           ],
         },
       }));

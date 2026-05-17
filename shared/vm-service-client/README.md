@@ -46,13 +46,13 @@ const client = new VmServiceClient({ host: '127.0.0.1', port: 8181, ws_path: 'ab
 
 ## Ported method surface
 
-| Group | RPCs |
-|---|---|
-| Inspection | `getVM`, `getIsolate`, `getObject`, `getFlagList`, `getInstances`, `getStack` |
-| Evaluation | `evaluate`, `evaluateInFrame`, `callServiceExtension` |
-| Streams | `streamListen`, `streamCancel`, `getStreamHistory` |
-| Execution | `pause`, `resume`, `setLibraryDebuggable` |
-| DDS coordination | `setClientName`, `getStreamHistory` |
+| Group            | RPCs                                                                          |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Inspection       | `getVM`, `getIsolate`, `getObject`, `getFlagList`, `getInstances`, `getStack` |
+| Evaluation       | `evaluate`, `evaluateInFrame`, `callServiceExtension`                         |
+| Streams          | `streamListen`, `streamCancel`, `getStreamHistory`                            |
+| Execution        | `pause`, `resume`, `setLibraryDebuggable`                                     |
+| DDS coordination | `setClientName`, `getStreamHistory`                                           |
 
 Plus typed event subscriptions:
 
@@ -113,12 +113,12 @@ on `client.transport`) to drive a retry loop in your tool layer.
 
 ## Error model
 
-| Class | Thrown on |
-|---|---|
-| `RpcError` | JSON-RPC error response (carries `code`, `message`, optional `data`, originating method name) |
-| `SentinelException` | `getIsolate` / `getObject` got back a `Sentinel` instead of the requested type |
-| `ConnectionDisposedError` | Transport closed before the request completed |
-| `ConnectionTimeoutError` | WS connect or per-request timeout fired |
+| Class                     | Thrown on                                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `RpcError`                | JSON-RPC error response (carries `code`, `message`, optional `data`, originating method name) |
+| `SentinelException`       | `getIsolate` / `getObject` got back a `Sentinel` instead of the requested type                |
+| `ConnectionDisposedError` | Transport closed before the request completed                                                 |
+| `ConnectionTimeoutError`  | WS connect or per-request timeout fired                                                       |
 
 `RpcErrorCode` exports the documented VM service + DDS error codes
 (`-32601` `MethodNotFound`, `106` `IsolateMustBePaused`, etc.).

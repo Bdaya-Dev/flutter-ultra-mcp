@@ -15,11 +15,7 @@
 
 import { EventEmitter } from 'node:events';
 import { SentinelException } from './errors.js';
-import {
-  type ConnectTarget,
-  type TransportOptions,
-  VmServiceTransport,
-} from './transport.js';
+import { type ConnectTarget, type TransportOptions, VmServiceTransport } from './transport.js';
 import {
   type EvaluateResult,
   EvaluateResultSchema,
@@ -94,7 +90,12 @@ export class VmServiceClient extends EventEmitter<VmServiceClientEvents> {
     this.transport.on('notification', (frame) => {
       // Notifications from streamListen arrive as method='streamNotify' with
       // params={streamId, event}. We re-emit on a typed channel per stream.
-      if (frame.method === 'streamNotify' && frame.params && typeof frame.params === 'object' && !Array.isArray(frame.params)) {
+      if (
+        frame.method === 'streamNotify' &&
+        frame.params &&
+        typeof frame.params === 'object' &&
+        !Array.isArray(frame.params)
+      ) {
         const params = frame.params as { streamId?: unknown; event?: unknown };
         const streamId = typeof params.streamId === 'string' ? params.streamId : undefined;
         const eventResult = EventSchema.safeParse(params.event);
@@ -229,7 +230,8 @@ export class VmServiceClient extends EventEmitter<VmServiceClientEvents> {
   ): Promise<InstanceSet> {
     const params: Record<string, JsonValue> = { isolateId, objectId, limit };
     if (opts.includeSubclasses !== undefined) params.includeSubclasses = opts.includeSubclasses;
-    if (opts.includeImplementers !== undefined) params.includeImplementers = opts.includeImplementers;
+    if (opts.includeImplementers !== undefined)
+      params.includeImplementers = opts.includeImplementers;
     const raw = await this.transport.request('getInstances', params);
     return InstanceSetSchema.parse(raw);
   }

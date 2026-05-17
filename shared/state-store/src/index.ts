@@ -1,8 +1,25 @@
-// @flutter-ultra/state-store — file-based IPC for cross-server shared state.
+// Public surface of @flutter-ultra/state-store.
 //
-// Plan §4 IPC strategy: JSON files under ${CLAUDE_PLUGIN_DATA}/state/, atomic
-// read-modify-write via proper-lockfile, change notifications via chokidar.
-//
-// Will export: stateRead, stateWrite, stateWatch, appendJsonl.
+// File-based IPC: lock-guarded JSON CRUD + append-only JSONL streams.
 
-export const PACKAGE_NAME = '@flutter-ultra/state-store';
+export {
+  appendJsonl,
+  readJsonl,
+  stateRead,
+  stateRelative,
+  stateUpdate,
+  stateWriteAtomic,
+  type JsonlReadResult,
+  type StateUpdateOptions,
+} from './store.js';
+
+export {
+  jobFilePath,
+  jobsDir,
+  locksDir,
+  pluginDataDir,
+  sessionsFilePath,
+  stateDir,
+  streamFilePath,
+  streamsDir,
+} from './paths.js';

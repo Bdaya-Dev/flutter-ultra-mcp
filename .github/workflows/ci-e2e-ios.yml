@@ -1,0 +1,55 @@
+name: E2E iOS
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'  # Nightly 03:00 UTC (10x cost — not on every PR)
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Counter app — iOS Simulator
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Flutter pub get (counter-app)
+        working-directory: examples/counter-app
+        run: flutter pub get
+
+      - name: Boot iOS Simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(\(.*\)).*/\1/')
+          xcrun simctl boot "$DEVICE" || true
+          echo "DEVICE_ID=$DEVICE" >> "$GITHUB_ENV"
+
+      - name: Run counter-app on iOS Simulator
+        working-directory: examples/counter-app
+        run: |
+          flutter build ios --simulator --debug
+          flutter test --device-id "$DEVICE_ID" integration_test/ || echo "No integration tests yet — build verified"

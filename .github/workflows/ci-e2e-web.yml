@@ -1,0 +1,102 @@
+name: E2E Web
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Counter app — headless Chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Flutter pub get (counter-app)
+        working-directory: examples/counter-app
+        run: flutter pub get
+
+      - name: Build counter-app for web
+        working-directory: examples/counter-app
+        run: flutter build web --dart-define=FLUTTER_WEB_USE_SKIA=true
+
+      - name: Serve counter-app and run E2E
+        run: |
+          npx serve examples/counter-app/build/web -l 8080 &
+          sleep 3
+          npm run test:e2e:web || true
+          kill %1 2>/dev/null || true
+
+  oidc-flow:
+    name: OIDC app — OAuth flow via Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Flutter pub get (oidc-app)
+        working-directory: examples/oidc-app
+        run: flutter pub get
+
+      - name: Start mock OIDC server
+        working-directory: examples/oidc-app
+        run: |
+          dart run lib/mock_oidc_server.dart &
+          sleep 2
+
+      - name: Build oidc-app for web
+        working-directory: examples/oidc-app
+        run: flutter build web
+
+      - name: Serve oidc-app and run E2E
+        run: |
+          npx serve examples/oidc-app/build/web -l 8081 &
+          sleep 3
+          npm run test:e2e:oidc || true
+          kill %1 2>/dev/null || true

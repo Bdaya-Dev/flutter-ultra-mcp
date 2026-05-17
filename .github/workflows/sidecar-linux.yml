@@ -67,11 +67,16 @@ jobs:
           python -m pip install pytest
 
       - name: Run sidecar unit tests
-        # Use the system Python (/usr/bin/python3) so it can resolve the
-        # distro-shipped /usr/lib/python3/dist-packages/gi binding.
+        # Bare `python` resolves to setup-python's interpreter (where
+        # pytest is installed). bridge.py's `gi.repository.Atspi` import
+        # is guarded so the module loads cleanly even when gi isn't on
+        # this interpreter's path; the gi-dependent tests skip themselves.
+        # End-to-end AT-SPI binding verification runs in the
+        # `integration-atspi` job below, which uses `/usr/bin/python3`
+        # specifically so it can reach the apt-installed gi binding.
         run: |
           cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
-          PYTHONPATH="$PWD" /usr/bin/python3 -m pytest tests/ -v
+          PYTHONPATH="$PWD" python -m pytest tests/ -v
         env:
           # Suppress the Wayland warning emitter on the headless runner.
           XDG_SESSION_TYPE: tty

@@ -1,0 +1,67 @@
+{
+  "mcpServers": {
+    "flutter-ultra-build": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-build/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_DATA": "${CLAUDE_PLUGIN_DATA}"
+      }
+    },
+    "flutter-ultra-runtime": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-runtime/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_DATA": "${CLAUDE_PLUGIN_DATA}",
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-gesture": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-gesture/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-browser": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-browser/dist/index.js"],
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "${CLAUDE_PLUGIN_DATA}/browsers",
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-native-mobile": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-native-mobile/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_GO_IOS_BIN": "${CLAUDE_PLUGIN_ROOT}/sidecars/go-ios",
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-native-desktop": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-native-desktop/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_MAC_HELPER": "${CLAUDE_PLUGIN_ROOT}/sidecars/mac-helper/flutter-ultra-mac",
+        "FLUTTER_ULTRA_LINUX_HELPER": "${CLAUDE_PLUGIN_ROOT}/sidecars/linux-helper/at-spi-bridge.py",
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-devtools": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-devtools/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+      }
+    },
+    "flutter-ultra-patrol": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-patrol/dist/index.js"],
+      "env": {
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state",
+        "FLUTTER_ULTRA_PATROL_FORK": "${CLAUDE_PLUGIN_ROOT}/vendor/patrol",
+        "PATROL_WEB_BROWSER_ARGS": "--enable-unsafe-swiftshader,--disable-renderer-backgrounding,--disable-background-timer-throttling"
+      }
+    }
+  }
+}

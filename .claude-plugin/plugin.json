@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "flutter",
+  "description": "Durable cross-platform Flutter automation via 8 specialized MCP servers, in-app mixin binding, and an optional DevTools panel. Replaces marionette_mcp and the official dart mcp-server for Claude Code.",
+  "author": {
+    "name": "Bdaya-Dev",
+    "url": "https://github.com/Bdaya-Dev"
+  },
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
+  "repository": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "flutter",
+    "dart",
+    "mcp",
+    "automation",
+    "testing",
+    "devtools",
+    "claude-code"
+  ]
+}

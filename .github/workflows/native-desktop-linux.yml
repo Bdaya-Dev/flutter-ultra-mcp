@@ -1,0 +1,166 @@
+name: native-desktop / linux
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-native-desktop/**'
+      - '.github/workflows/native-desktop-linux.yml'
+  push:
+    branches: [main, next, alpha, beta]
+    paths:
+      - 'packages/flutter-ultra-native-desktop/**'
+      - '.github/workflows/native-desktop-linux.yml'
+
+concurrency:
+  group: native-desktop-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sidecar-unit:
+    name: Python sidecar unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install AT-SPI system packages
+        # python3-gi gives us PyGObject; gir1.2-atspi-2.0 supplies the
+        # GObject Introspection typelib so `gi.require_version('Atspi', '2.0')`
+        # resolves. at-spi2-core provides the registry daemon.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-gi \
+            gir1.2-atspi-2.0 \
+            at-spi2-core \
+            libgirepository1.0-dev \
+            gcc
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # PyGObject from system; install pytest into the venv-less interp.
+          python -m pip install pytest
+
+      - name: Run sidecar unit tests
+        # PYTHONPATH points at the sidecar directory; use the system Python
+        # so it can find /usr/lib/python3/dist-packages/gi.
+        run: |
+          cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
+          PYTHONPATH="$PWD" /usr/bin/python3 -m pytest tests/ -v
+        env:
+          # Suppress the Wayland warning emitter on the headless runner.
+          XDG_SESSION_TYPE: tty
+
+  ts-unit-linux:
+    name: TS unit tests on Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build native-desktop + deps
+        run: npx turbo run build --filter=@flutter-ultra/flutter-ultra-native-desktop
+
+      - name: Test native-desktop
+        run: npx turbo run test --filter=@flutter-ultra/flutter-ultra-native-desktop
+
+  integration-atspi:
+    name: AT-SPI integration smoke (xvfb + at-spi-bus-launcher)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [sidecar-unit, ts-unit-linux]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AT-SPI + Xvfb + a GTK test app
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-gi \
+            gir1.2-atspi-2.0 \
+            at-spi2-core \
+            xvfb \
+            xauth \
+            dbus-x11 \
+            gtk-update-icon-cache \
+            zenity
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Build the package
+        run: npx turbo run build --filter=@flutter-ultra/flutter-ultra-native-desktop
+
+      - name: Start D-Bus session + Xvfb + AT-SPI bus launcher and probe sidecar
+        # at-spi-bus-launcher is auto-spawned by D-Bus the first time the
+        # a11y bus name is requested. We need a session bus + an X display
+        # for AT-SPI to attach to. The Python smoke is inline so the
+        # shell-set env (XDG_RUNTIME_DIR, DISPLAY, DBUS_SESSION_BUS_ADDRESS)
+        # propagates to the spawned sidecar via os.environ inheritance.
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.run"
+          export XDG_RUNTIME_DIR="$HOME/.run"
+          export DISPLAY=:99
+          export XDG_SESSION_TYPE=x11
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 1
+          eval "$(dbus-launch --sh-syntax)"
+          export GTK_MODULES=gail:atk-bridge
+          # Touch the a11y bus so the registry daemon spawns.
+          /usr/libexec/at-spi-bus-launcher --launch-immediately &
+          sleep 1
+          cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
+          PYTHONPATH="$PWD" /usr/bin/python3 - <<'PY'
+          import json, os, subprocess, sys
+          proc = subprocess.Popen(
+              ['/usr/bin/python3', '-u', '-m', 'atspi_bridge'],
+              stdin=subprocess.PIPE,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+              env=os.environ.copy(),
+          )
+          assert proc.stdin is not None and proc.stdout is not None
+          proc.stdin.write(b'{"jsonrpc":"2.0","id":1,"method":"status"}\n')
+          proc.stdin.flush()
+          line = proc.stdout.readline()
+          proc.stdin.close()
+          try:
+              proc.wait(timeout=5)
+          except subprocess.TimeoutExpired:
+              proc.kill()
+              raise
+          resp = json.loads(line)
+          print('status response:', json.dumps(resp, indent=2))
+          assert resp['result']['atspiAvailable'] is True, 'AT-SPI binding should be available on CI runner'
+          assert resp['result']['atspiInitialised'] is True, 'AT-SPI should have initialised'
+          PY

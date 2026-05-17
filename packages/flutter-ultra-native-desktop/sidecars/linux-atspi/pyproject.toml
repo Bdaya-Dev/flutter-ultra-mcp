@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flutter-ultra-atspi-bridge"
+version = "0.0.1"
+description = "JSON-RPC sidecar that exposes AT-SPI 2 (Linux a11y) to the flutter-ultra-native-desktop MCP server."
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "Bdaya-Dev" }]
+dependencies = [
+  # PyGObject + AT-SPI 2 are installed via system packages (PyGI bindings live
+  # outside PyPI for distros that ship GObject Introspection). The sidecar
+  # imports gi.repository.Atspi at runtime; see README for distro-specific
+  # install instructions.
+  "PyGObject>=3.42 ; sys_platform == 'linux'",
+]
+
+[project.scripts]
+flutter-ultra-atspi-bridge = "atspi_bridge.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["atspi_bridge*"]

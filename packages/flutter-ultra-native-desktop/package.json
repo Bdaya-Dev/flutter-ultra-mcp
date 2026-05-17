@@ -1,9 +1,30 @@
 {
   "name": "@flutter-ultra/flutter-ultra-native-desktop",
-  "version": "0.0.0",
-  "private": true,
-  "description": "MCP server for native desktop UIs: Windows UIA, macOS AXUIElement, Linux AT-SPI.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "MCP server for native desktop UIs: Windows UIA, macOS AXUIElement, Linux AT-SPI. Linux path implemented via a PyGObject AT-SPI 2 sidecar.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-native-desktop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "packages/flutter-ultra-native-desktop"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "flutter",
+    "mcp",
+    "native-desktop",
+    "at-spi",
+    "atspi",
+    "accessibility",
+    "linux",
+    "pygobject",
+    "uia",
+    "axuielement"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,6 +33,7 @@
   },
   "files": [
     "dist",
+    "sidecars/linux-atspi",
     "README.md"
   ],
   "scripts": {
@@ -20,5 +42,21 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

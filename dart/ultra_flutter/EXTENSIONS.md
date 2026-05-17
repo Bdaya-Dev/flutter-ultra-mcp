@@ -4,24 +4,24 @@ Every extension below is registered by `UltraFlutterBinding.initServiceExtension
 
 ## Parity matrix vs marionette
 
-| `ext.flutter.ultra.*` | marionette equivalent | Notes |
-|---|---|---|
-| `getVersion` | `marionette.getVersion` | Returns `{version: <semver>}` from `src/version.g.dart`. |
-| `interactiveElements` | `marionette.interactiveElements` | Returns `{elements: [...]}` from `ElementTreeFinder`. |
-| `tap` | `marionette.tap` | Body: `WidgetMatcher` JSON (`key`/`text`/`type`/`x`+`y`/`focused`). |
-| `doubleTap` | `marionette.doubleTap` | Optional `delay` (ms, positive). Default 100ms. |
-| `longPress` | `marionette.longPress` | Optional `duration` (ms). Default 600ms. |
-| `enterText` | `marionette.enterText` | Requires `input` plus a matcher. |
-| `clearText` | *(new — enhancement)* | Convenience wrapper around `enterText('')`. Saves agents two round-trips. |
-| `swipe` | `marionette.swipe` | Either coord-based (`startX/Y` + `endX/Y`) or element + `direction` + `distance`. |
-| `pinchZoom` | `marionette.pinchZoom` | Required `scale`, optional `startDistance` (default 200). |
-| `scrollTo` | `marionette.scrollTo` | Scrolls until the matched widget is visible. |
-| `getLogs` | `marionette.getLogs` | Requires a `LogCollector` in `UltraConfiguration`. |
-| `takeScreenshots` | `marionette.takeScreenshots` | Returns one screenshot per `RenderView`. |
-| `startScreencast` | `marionette.startScreencast` | Optional `maxWidth`, `maxHeight`, `wsPort`. |
-| `stopScreencast` | `marionette.stopScreencast` | Idempotent. |
-| `pressBackButton` | `marionette.pressBackButton` | Returns `didPop`. |
-| `listExtensions` | `marionette.listExtensions` | Returns user-registered custom extensions (registered via `registerUltraExtension`). |
+| `ext.flutter.ultra.*` | marionette equivalent            | Notes                                                                                |
+| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
+| `getVersion`          | `marionette.getVersion`          | Returns `{version: <semver>}` from `src/version.g.dart`.                             |
+| `interactiveElements` | `marionette.interactiveElements` | Returns `{elements: [...]}` from `ElementTreeFinder`.                                |
+| `tap`                 | `marionette.tap`                 | Body: `WidgetMatcher` JSON (`key`/`text`/`type`/`x`+`y`/`focused`).                  |
+| `doubleTap`           | `marionette.doubleTap`           | Optional `delay` (ms, positive). Default 100ms.                                      |
+| `longPress`           | `marionette.longPress`           | Optional `duration` (ms). Default 600ms.                                             |
+| `enterText`           | `marionette.enterText`           | Requires `input` plus a matcher.                                                     |
+| `clearText`           | _(new — enhancement)_            | Convenience wrapper around `enterText('')`. Saves agents two round-trips.            |
+| `swipe`               | `marionette.swipe`               | Either coord-based (`startX/Y` + `endX/Y`) or element + `direction` + `distance`.    |
+| `pinchZoom`           | `marionette.pinchZoom`           | Required `scale`, optional `startDistance` (default 200).                            |
+| `scrollTo`            | `marionette.scrollTo`            | Scrolls until the matched widget is visible.                                         |
+| `getLogs`             | `marionette.getLogs`             | Requires a `LogCollector` in `UltraConfiguration`.                                   |
+| `takeScreenshots`     | `marionette.takeScreenshots`     | Returns one screenshot per `RenderView`.                                             |
+| `startScreencast`     | `marionette.startScreencast`     | Optional `maxWidth`, `maxHeight`, `wsPort`.                                          |
+| `stopScreencast`      | `marionette.stopScreencast`      | Idempotent.                                                                          |
+| `pressBackButton`     | `marionette.pressBackButton`     | Returns `didPop`.                                                                    |
+| `listExtensions`      | `marionette.listExtensions`      | Returns user-registered custom extensions (registered via `registerUltraExtension`). |
 
 15 extensions in total: 14 ported + 1 enhancement (`clearText`).
 

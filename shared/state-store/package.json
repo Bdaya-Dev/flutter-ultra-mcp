@@ -1,0 +1,18 @@
+{
+  "name": "@flutter-ultra/state-store",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cross-server shared state: atomic JSON-file IPC under CLAUDE_PLUGIN_DATA/state, proper-lockfile + chokidar.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

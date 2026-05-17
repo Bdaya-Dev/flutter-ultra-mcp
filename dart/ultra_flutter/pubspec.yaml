@@ -1,0 +1,25 @@
+name: ultra_flutter
+description: >-
+  In-app Flutter binding mixin that exposes ext.flutter.ultra.* VM service
+  extensions for the flutter-ultra-mcp Claude Code plugin (gesture, screenshot,
+  inspector). Wave-1 worker-B delivers the implementation.
+version: 0.0.0
+homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp
+repository: https://github.com/Bdaya-Dev/flutter-ultra-mcp
+issue_tracker: https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues
+
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

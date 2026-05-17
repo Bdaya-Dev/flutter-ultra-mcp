@@ -1,0 +1,24 @@
+name: ultra_flutter_devtools
+description: >-
+  Flutter DevTools extension showing live MCP activity for the flutter-ultra-mcp
+  Claude Code plugin (sessions, recent tool calls, errors, screenshot grid).
+version: 0.0.0
+homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp
+repository: https://github.com/Bdaya-Dev/flutter-ultra-mcp
+issue_tracker: https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues
+
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

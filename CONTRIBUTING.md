@@ -45,13 +45,13 @@ Every commit must follow [Conventional Commits 1.0](https://www.conventionalcomm
 <type>(<scope>)?: <subject>
 ```
 
-| Type | Effect on version | Example |
-|---|---|---|
-| `feat` | minor bump | `feat(gesture): add scroll_until_visible` |
-| `fix` | patch bump | `fix(runtime): handle DDS reconnect race` |
-| `feat!` / `fix!` / `BREAKING CHANGE:` footer | major bump | `feat(api)!: rename screenshot to take_screenshot` |
-| `perf` | patch bump | `perf(browser): cache Playwright contexts` |
-| `refactor`, `docs`, `test`, `chore`, `build`, `ci`, `style` | no version change | `chore(deps): bump zod to 3.25` |
+| Type                                                        | Effect on version | Example                                            |
+| ----------------------------------------------------------- | ----------------- | -------------------------------------------------- |
+| `feat`                                                      | minor bump        | `feat(gesture): add scroll_until_visible`          |
+| `fix`                                                       | patch bump        | `fix(runtime): handle DDS reconnect race`          |
+| `feat!` / `fix!` / `BREAKING CHANGE:` footer                | major bump        | `feat(api)!: rename screenshot to take_screenshot` |
+| `perf`                                                      | patch bump        | `perf(browser): cache Playwright contexts`         |
+| `refactor`, `docs`, `test`, `chore`, `build`, `ci`, `style` | no version change | `chore(deps): bump zod to 3.25`                    |
 
 `commitlint` runs as a `commit-msg` hook (installed by `husky`) and as a PR-blocking CI check.
 

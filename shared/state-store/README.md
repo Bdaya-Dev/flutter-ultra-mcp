@@ -5,6 +5,7 @@ Cross-server shared-state helper. Implements the file-based IPC strategy from pl
 **Status:** scaffold stub. Implementation owner: shared infra (wave 2).
 
 Files under `state/` (per plan §4 table):
+
 - `sessions.json` — owned by `flutter-ultra-runtime`
 - `browsers.json` — owned by `flutter-ultra-browser`
 - `native-targets.json` — owned by native-mobile/-desktop

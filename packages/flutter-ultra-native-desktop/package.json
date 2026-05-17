@@ -20,7 +20,11 @@
     "accessibility",
     "macos",
     "tcc",
-    "ui-automation"
+    "ui-automation",
+    "at-spi",
+    "atspi",
+    "linux",
+    "pygobject"
   ],
   "type": "module",
   "main": "dist/index.js",
@@ -43,7 +47,11 @@
     "sidecars/macos-swift/Sources",
     "sidecars/macos-swift/README.md",
     "sidecars/windows-flaui/FlutterUltraWinHelper",
-    "sidecars/windows-flaui/README.md"
+    "sidecars/windows-flaui/README.md",
+    "sidecars/linux-atspi/atspi_bridge",
+    "sidecars/linux-atspi/pyproject.toml",
+    "sidecars/linux-atspi/requirements.txt",
+    "sidecars/linux-atspi/README.md"
   ],
   "scripts": {
     "build": "tsc -b",

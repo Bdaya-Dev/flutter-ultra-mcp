@@ -10,6 +10,16 @@ import type { FlutterUltraServer } from '@flutter-ultra/mcp-runtime';
 import type { DesktopBackend } from './types.js';
 import { describeMacError } from './backends/macos.js';
 
+/** Best-effort error stringifier — prefers the backend's own describer. */
+function describe(backend: DesktopBackend, err: unknown): string {
+  if (typeof backend.describeError === 'function') {
+    return backend.describeError(err);
+  }
+  // Legacy fallback for backends that don't implement describeError yet
+  // (today: macOS, which still uses describeMacError directly).
+  return describeMacError(err);
+}
+
 export interface RegisterDesktopToolsOptions {
   server: FlutterUltraServer;
   backend: DesktopBackend | null;
@@ -50,7 +60,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
         const windows = await backend.listWindows(args);
         return { windows, count: windows.length };
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -73,7 +83,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.dumpWindowTree(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -98,7 +108,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
         const matches = await backend.desktopQuery(args);
         return { matches, count: matches.length };
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -125,7 +135,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.desktopClick(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -149,7 +159,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.desktopType(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -175,7 +185,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
           content: [{ type: 'image' as const, data: pngBase64, mimeType: 'image/png' }],
         };
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -199,7 +209,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.selectFileInDialog(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -222,7 +232,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.confirmDialog(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );
@@ -253,7 +263,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       try {
         return backend.waitForWindow(args);
       } catch (err) {
-        throw new Error(describeMacError(err));
+        throw new Error(describe(backend, err));
       }
     },
   );

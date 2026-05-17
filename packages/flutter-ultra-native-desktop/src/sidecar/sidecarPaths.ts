@@ -30,9 +30,30 @@ export function resolveWinHelperPath(): string {
   return resolve(PACKAGE_SIDECARS, 'windows-flaui', 'bin', 'flutter-ultra-win-helper.exe');
 }
 
-/** Resolve the Linux helper path. Owned by worker-K but referenced here for unified registry. */
+/**
+ * Resolve the Linux AT-SPI sidecar directory.
+ *
+ * Unlike the macOS/Windows binaries this points at the *directory* holding
+ * the ``atspi_bridge/`` Python package — the Linux backend invokes
+ * ``python3 -u -m atspi_bridge`` with this on PYTHONPATH so the package
+ * boots correctly. Override via ``FLUTTER_ULTRA_LINUX_HELPER`` to point at
+ * a custom location (e.g. a virtualenv-installed copy).
+ */
 export function resolveLinuxHelperPath(): string {
   const fromEnv = process.env.FLUTTER_ULTRA_LINUX_HELPER;
   if (fromEnv && fromEnv.length > 0) return fromEnv;
-  return resolve(PACKAGE_SIDECARS, 'linux-atspi', 'at-spi-bridge.py');
+  return resolve(PACKAGE_SIDECARS, 'linux-atspi');
+}
+
+/**
+ * Resolve the Python interpreter for the Linux AT-SPI sidecar.
+ *
+ * Defaults to ``python3`` on PATH; override via ``FLUTTER_ULTRA_LINUX_PYTHON``
+ * for distro-specific paths (e.g. ``/usr/bin/python3.12``) or for using a
+ * virtualenv with ``vext``-installed PyGObject.
+ */
+export function resolveLinuxPythonBin(): string {
+  const fromEnv = process.env.FLUTTER_ULTRA_LINUX_PYTHON;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  return 'python3';
 }

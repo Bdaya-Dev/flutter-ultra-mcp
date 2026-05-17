@@ -6,14 +6,19 @@
 // healthy + permissioned. Otherwise we register zero tools and log the
 // reason (AC-ND4).
 //
-// Worker-J (this file) owns the macOS path. Worker-I and worker-K will
-// merge their Windows / Linux backends into ./backends/ post-PR; the
-// registration glue is intentionally OS-agnostic.
+// Worker-J owns the macOS path; worker-I the Windows path; worker-K (this
+// PR) the Linux path. Each backend implements DesktopBackend and slots into
+// the registry switch below; the registration glue is OS-agnostic.
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { LocalDevice } from './device/index.js';
 import { MacDesktopBackend } from './backends/macos.js';
-import { resolveMacHelperPath } from './sidecar/sidecarPaths.js';
+import { LinuxDesktopBackend } from './backends/linux.js';
+import {
+  resolveMacHelperPath,
+  resolveLinuxHelperPath,
+  resolveLinuxPythonBin,
+} from './sidecar/sidecarPaths.js';
 import { registerDesktopTools } from './registry.js';
 import type { DesktopBackend } from './types.js';
 
@@ -53,17 +58,28 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
     if (!backend) {
       server.logger.warn(
         'no mac backend — install the Swift helper or set FLUTTER_ULTRA_MAC_HELPER',
-        {
-          attempted: helperPath,
-        },
+        { attempted: helperPath },
       );
     }
   } else if (platform === 'win32') {
     server.logger.info('windows backend owned by worker-I — pending merge');
     backend = null;
   } else if (platform === 'linux') {
-    server.logger.info('linux backend owned by worker-K — pending merge');
-    backend = null;
+    const sidecarPath = resolveLinuxHelperPath();
+    const pythonBin = resolveLinuxPythonBin();
+    server.logger.info('probing linux at-spi sidecar', { sidecarPath, pythonBin });
+    backend = await LinuxDesktopBackend.create({
+      device,
+      sidecarPath,
+      pythonBin,
+      logger: server.logger,
+    });
+    if (!backend) {
+      server.logger.warn(
+        'no linux backend — install python3-gi + gir1.2-atspi-2.0 or set FLUTTER_ULTRA_LINUX_HELPER',
+        { attempted: sidecarPath },
+      );
+    }
   } else {
     server.logger.warn('unsupported platform — no desktop backend will register', { platform });
     backend = null;
@@ -91,6 +107,16 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
 export { LocalDevice } from './device/index.js';
 export type { Device, ExecOptions, ExecResult, RpcStream } from './device/index.js';
 export { MacDesktopBackend, TCC_REMEDIATION, describeMacError } from './backends/macos.js';
+export {
+  LinuxDesktopBackend,
+  describeLinuxError,
+  ATSPI_BUS_REMEDIATION,
+} from './backends/linux.js';
 export type { DesktopBackend, BackendCapabilities, WindowDescriptor, A11yNode } from './types.js';
-export { resolveMacHelperPath } from './sidecar/sidecarPaths.js';
+export {
+  resolveMacHelperPath,
+  resolveLinuxHelperPath,
+  resolveLinuxPythonBin,
+} from './sidecar/sidecarPaths.js';
 export { JsonRpcClient, JsonRpcError } from './rpc/jsonRpcClient.js';
+export { detectLocalDistro, detectDeviceDistro } from './platform.js';

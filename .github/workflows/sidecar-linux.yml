@@ -1,0 +1,150 @@
+name: Sidecar / Linux (AT-SPI Python)
+
+# Tests the atspi_bridge Python sidecar on ubuntu-latest.
+# Owned by worker-K (wave-3/native-desktop-linux).
+#
+# Three jobs: pytest matrix across Python 3.10/3.11/3.12, TS-side typecheck
+# of the LinuxDesktopBackend, and an end-to-end integration smoke that
+# boots Xvfb + at-spi-bus-launcher and asserts the sidecar's hello()
+# handshake returns helperPresent=true + permissionGranted=true.
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-native-desktop/sidecars/linux-atspi/**'
+      - 'packages/flutter-ultra-native-desktop/src/backends/linux.ts'
+      - 'packages/flutter-ultra-native-desktop/src/platform.ts'
+      - '.github/workflows/sidecar-linux.yml'
+  push:
+    branches: [main, next, alpha, beta]
+    paths:
+      - 'packages/flutter-ultra-native-desktop/sidecars/linux-atspi/**'
+      - 'packages/flutter-ultra-native-desktop/src/backends/linux.ts'
+      - 'packages/flutter-ultra-native-desktop/src/platform.ts'
+      - '.github/workflows/sidecar-linux.yml'
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: sidecar-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sidecar-unit:
+    name: Python sidecar pytest (py ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install AT-SPI system packages
+        # python3-gi gives us PyGObject; gir1.2-atspi-2.0 supplies the
+        # GObject Introspection typelib so `gi.require_version('Atspi', '2.0')`
+        # resolves. at-spi2-core provides the registry daemon.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-gi \
+            gir1.2-atspi-2.0 \
+            at-spi2-core \
+            libgirepository1.0-dev \
+            gcc
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Run sidecar unit tests
+        # Bare `python` resolves to setup-python's interpreter (where
+        # pytest is installed). bridge.py's `gi.repository.Atspi` import
+        # is guarded so the module loads cleanly even when gi isn't on
+        # this interpreter's path; the gi-dependent tests skip themselves.
+        # End-to-end AT-SPI binding verification runs in the
+        # `integration-atspi` job below, which uses `/usr/bin/python3`
+        # specifically so it can reach the apt-installed gi binding.
+        run: |
+          cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
+          PYTHONPATH="$PWD" python -m pytest tests/ -v
+        env:
+          # Suppress the Wayland warning emitter on the headless runner.
+          XDG_SESSION_TYPE: tty
+
+  integration-atspi:
+    name: AT-SPI integration smoke (xvfb + at-spi-bus-launcher)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [sidecar-unit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AT-SPI + Xvfb + dbus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            python3-gi \
+            gir1.2-atspi-2.0 \
+            at-spi2-core \
+            xvfb \
+            xauth \
+            dbus-x11
+
+      - name: Start D-Bus session + Xvfb + AT-SPI bus and probe sidecar
+        # at-spi-bus-launcher is auto-spawned by D-Bus the first time the
+        # a11y bus name is requested. We need a session bus + an X display
+        # for AT-SPI to attach to. The Python smoke is inline so the
+        # shell-set env (XDG_RUNTIME_DIR, DISPLAY, DBUS_SESSION_BUS_ADDRESS)
+        # propagates to the spawned sidecar via os.environ inheritance.
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.run"
+          export XDG_RUNTIME_DIR="$HOME/.run"
+          export DISPLAY=:99
+          export XDG_SESSION_TYPE=x11
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 1
+          eval "$(dbus-launch --sh-syntax)"
+          export GTK_MODULES=gail:atk-bridge
+          # Touch the a11y bus so the registry daemon spawns.
+          /usr/libexec/at-spi-bus-launcher --launch-immediately &
+          sleep 1
+          cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
+          PYTHONPATH="$PWD" /usr/bin/python3 - <<'PY'
+          import json, os, subprocess
+          proc = subprocess.Popen(
+              ['/usr/bin/python3', '-u', '-m', 'atspi_bridge'],
+              stdin=subprocess.PIPE,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+              env=os.environ.copy(),
+          )
+          assert proc.stdin is not None and proc.stdout is not None
+          proc.stdin.write(b'{"jsonrpc":"2.0","id":1,"method":"hello"}\n')
+          proc.stdin.flush()
+          line = proc.stdout.readline()
+          proc.stdin.close()
+          try:
+              proc.wait(timeout=5)
+          except subprocess.TimeoutExpired:
+              proc.kill()
+              raise
+          resp = json.loads(line)
+          print('hello response:', json.dumps(resp, indent=2))
+          assert resp['result']['helperPresent'] is True, 'helperPresent should be True'
+          assert resp['result']['permissionGranted'] is True, 'AT-SPI bus should be reachable'
+          PY

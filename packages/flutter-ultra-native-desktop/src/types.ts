@@ -68,6 +68,12 @@ export interface DesktopBackend {
   selectFileInDialog(opts: SelectFileInDialogOptions): Promise<{ confirmed: true }>;
   confirmDialog(opts: ConfirmDialogOptions): Promise<{ confirmed: true; matchedButton: string }>;
   waitForWindow(opts: WaitForWindowOptions): Promise<WindowDescriptor>;
+  /**
+   * Format a backend error (typically a JsonRpcError from the OS sidecar)
+   * into a human-readable string including OS-specific remediation hints.
+   * Optional — registry falls back to a generic stringifier when omitted.
+   */
+  describeError?(err: unknown): string;
   shutdown(): Promise<void>;
 }
 

@@ -172,7 +172,7 @@ enum Dialogs {
             }
             usleep(useconds_t(pollMs * 1000))
         }
-        throw lastError is HelperError ? lastError : HelperError.dialogTimeout("waitForWindow")
+        throw lastError
     }
 
     // MARK: - tiny key helpers

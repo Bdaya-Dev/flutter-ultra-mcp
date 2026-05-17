@@ -61,7 +61,7 @@ enum Screenshot {
                 kCGNullWindowID,
                 imageOptions
             ) else {
-                throw HelperError.axFailure("CGWindowListCreateImage", .failure)
+                throw HelperError.axFailure("CGWindowListCreateImage", AXError.failure)
             }
             return try encodePng(fb)
         }
@@ -98,7 +98,7 @@ enum Screenshot {
     private static func encodePng(_ image: CGImage) throws -> String {
         let bitmap = NSBitmapImageRep(cgImage: image)
         guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
-            throw HelperError.axFailure("PNG encoding", .failure)
+            throw HelperError.axFailure("PNG encoding", AXError.failure)
         }
         return pngData.base64EncodedString()
     }

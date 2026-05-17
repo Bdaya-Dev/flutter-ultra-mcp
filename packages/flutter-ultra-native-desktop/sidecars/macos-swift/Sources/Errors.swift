@@ -2,6 +2,7 @@
 // (see ../../src/backends/macos.ts MAC_ERR_*).
 
 import Foundation
+import ApplicationServices
 
 enum HelperError: Error, CustomStringConvertible {
     case tccNotGranted

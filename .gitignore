@@ -1,0 +1,63 @@
+# Node / TypeScript
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.turbo/
+.eslintcache
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+.fvm/
+build/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+!.vscode/settings.json
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Native build outputs
+sidecars/*/bin/
+sidecars/*/obj/
+*.dll
+*.exe
+*.so
+*.dylib
+*.pdb
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

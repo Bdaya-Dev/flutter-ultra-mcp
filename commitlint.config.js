@@ -1,0 +1,40 @@
+// Conventional Commits — enforced via Husky commit-msg hook and CI lint job.
+// Scopes match server / package names per plan §22.1.
+export default {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'build',
+        'runtime',
+        'gesture',
+        'browser',
+        'native-mobile',
+        'native-desktop',
+        'devtools',
+        'patrol',
+        'ultra_flutter',
+        'ultra_flutter_devtools',
+        'ultra_flutter_sentry_compat',
+        'vm-service-client',
+        'mcp-runtime',
+        'state-store',
+        'keyring',
+        'shared',
+        'skills',
+        'docs',
+        'ci',
+        'scaffold',
+        'release',
+        'deps',
+        'submodule',
+        'submodules',
+        '*',
+      ],
+    ],
+    'subject-case': [0],
+    'header-max-length': [2, 'always', 120],
+  },
+};

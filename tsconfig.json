@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    { "path": "./packages/flutter-ultra-build" },
+    { "path": "./packages/flutter-ultra-runtime" },
+    { "path": "./packages/flutter-ultra-gesture" },
+    { "path": "./packages/flutter-ultra-browser" },
+    { "path": "./packages/flutter-ultra-native-mobile" },
+    { "path": "./packages/flutter-ultra-native-desktop" },
+    { "path": "./packages/flutter-ultra-devtools" },
+    { "path": "./packages/flutter-ultra-patrol" },
+    { "path": "./shared/vm-service-client" },
+    { "path": "./shared/mcp-runtime" },
+    { "path": "./shared/state-store" },
+    { "path": "./shared/keyring" }
+  ]
+}

@@ -1,0 +1,8 @@
+**/dist/**
+**/node_modules/**
+**/coverage/**
+**/.turbo/**
+**/build/**
+**/.dart_tool/**
+CHANGELOG.md
+LICENSE

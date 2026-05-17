@@ -8,3 +8,5 @@ workspace:
   - dart/ultra_flutter
   - dart/ultra_flutter_devtools
   - dart/ultra_flutter_sentry_compat
+  - examples/counter-app
+  - examples/oidc-app

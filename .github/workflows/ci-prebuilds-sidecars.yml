@@ -1,0 +1,127 @@
+name: Prebuild Sidecars
+
+on:
+  pull_request:
+    paths:
+      - 'vendor/sidecar-flaui/**'
+      - 'vendor/sidecar-ax-swift/**'
+      - 'vendor/sidecar-atspi-python/**'
+  push:
+    branches: [main]
+    paths:
+      - 'vendor/sidecar-flaui/**'
+      - 'vendor/sidecar-ax-swift/**'
+      - 'vendor/sidecar-atspi-python/**'
+  workflow_dispatch:
+
+concurrency:
+  group: prebuilds-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  flaui-windows:
+    name: FlaUI sidecar (Windows x64)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build FlaUI sidecar
+        working-directory: vendor/sidecar-flaui
+        run: |
+          if (Test-Path "FlaUISidecar.csproj") {
+            dotnet publish -c Release -r win-x64 --self-contained -o bin/win-x64
+          } else {
+            Write-Host "FlaUI sidecar source not yet available"
+            exit 0
+          }
+        shell: pwsh
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-flaui-win-x64
+          path: vendor/sidecar-flaui/bin/win-x64/
+          if-no-files-found: ignore
+
+  ax-swift-macos:
+    name: AX sidecar (macOS universal)
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build AX sidecar (universal binary)
+        working-directory: vendor/sidecar-ax-swift
+        run: |
+          if [ -f "Package.swift" ]; then
+            swift build -c release --arch arm64 --arch x86_64
+          else
+            echo "AX sidecar source not yet available"
+            exit 0
+          fi
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-ax-swift-macos-universal
+          path: vendor/sidecar-ax-swift/.build/release/
+          if-no-files-found: ignore
+
+  atspi-python-linux:
+    name: AT-SPI sidecar (Linux x64 — PyInstaller bundle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AT-SPI deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-atspi-2.0 libatspi2.0-dev
+
+      - name: Build AT-SPI sidecar
+        working-directory: vendor/sidecar-atspi-python
+        run: |
+          if [ -f "main.py" ]; then
+            pip install pyinstaller pygobject
+            pyinstaller --onefile --name sidecar-atspi main.py
+          else
+            echo "AT-SPI sidecar source not yet available"
+            exit 0
+          fi
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-atspi-linux-x64
+          path: vendor/sidecar-atspi-python/dist/
+          if-no-files-found: ignore
+
+  release-artifacts:
+    name: Attach sidecar binaries to release
+    needs: [flaui-windows, ax-swift-macos, atspi-python-linux]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List artifacts
+        run: find artifacts/ -type f | head -50 || echo "No artifacts produced yet"

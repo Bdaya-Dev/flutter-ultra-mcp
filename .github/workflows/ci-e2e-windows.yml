@@ -1,0 +1,74 @@
+name: E2E Windows Desktop
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Counter app — Windows desktop + FlaUI sidecar
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Flutter pub get (counter-app)
+        working-directory: examples/counter-app
+        run: flutter pub get
+
+      - name: Build counter-app for Windows
+        working-directory: examples/counter-app
+        run: flutter build windows --debug
+
+      - name: Download FlaUI sidecar
+        run: |
+          if (Test-Path "vendor/sidecar-flaui/bin") {
+            Write-Host "FlaUI sidecar already present"
+          } else {
+            Write-Host "FlaUI sidecar not yet built — skipping native automation"
+          }
+        shell: pwsh
+
+      - name: Launch app and verify
+        working-directory: examples/counter-app
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter "counter_app.exe" build\windows\ | Select-Object -First 1
+          if ($exe) {
+            $proc = Start-Process -FilePath $exe.FullName -PassThru
+            Start-Sleep -Seconds 5
+            if (-not $proc.HasExited) {
+              Write-Host "App launched successfully (PID: $($proc.Id))"
+              Stop-Process -Id $proc.Id -Force
+            } else {
+              Write-Host "App exited early with code: $($proc.ExitCode)"
+              exit 1
+            }
+          } else {
+            Write-Host "Build artifact not found"
+            exit 1
+          }
+        shell: pwsh

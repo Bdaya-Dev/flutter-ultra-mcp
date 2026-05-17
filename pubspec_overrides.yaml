@@ -1,9 +1,1 @@
-resolution: workspace
-
-dependency_overrides:
-  patrol:
-    path: vendor/patrol/packages/patrol
-  patrol_finders:
-    path: vendor/patrol/packages/patrol_finders
-  patrol_log:
-    path: vendor/patrol/packages/patrol_log
+dependency_overrides: {}

@@ -1,0 +1,24 @@
+name: oidc_app
+description: OIDC example app demonstrating browser-server OAuth flow with ultra_flutter binding.
+publish_to: none
+version: 1.0.0
+
+resolution: workspace
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ultra_flutter:
+    path: ../../dart/ultra_flutter
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

@@ -21,19 +21,19 @@ prebuilds on `windows-latest` and uploads them as release artifacts (plan §22).
 
 ## Tools
 
-| Method | Plan §5.6 tool |
-|---|---|
-| `hello` | handshake — returns `{version, uiaInitialized}` |
-| `listWindows` | `list_windows` — enumerate top-level windows |
-| `dumpWindowTree` | `dump_window_tree` — a11y tree for a window |
-| `desktopQuery` | `desktop_query` — XPath-style query |
-| `desktopClick` | `desktop_click` — click element/coords |
-| `desktopType` | `desktop_type` — type text into focused element |
-| `desktopScreenshot` | `desktop_screenshot` — PNG of window or screen |
+| Method               | Plan §5.6 tool                                         |
+| -------------------- | ------------------------------------------------------ |
+| `hello`              | handshake — returns `{version, uiaInitialized}`        |
+| `listWindows`        | `list_windows` — enumerate top-level windows           |
+| `dumpWindowTree`     | `dump_window_tree` — a11y tree for a window            |
+| `desktopQuery`       | `desktop_query` — XPath-style query                    |
+| `desktopClick`       | `desktop_click` — click element/coords                 |
+| `desktopType`        | `desktop_type` — type text into focused element        |
+| `desktopScreenshot`  | `desktop_screenshot` — PNG of window or screen         |
 | `selectFileInDialog` | `select_file_in_dialog` — drives Win32 #32770 (AC-ND1) |
-| `confirmDialog` | `confirm_dialog` — intent → button mapper |
-| `waitForWindow` | `wait_for_window` — poll by title/process |
-| `shutdown` | notification — closes the RPC channel |
+| `confirmDialog`      | `confirm_dialog` — intent → button mapper              |
+| `waitForWindow`      | `wait_for_window` — poll by title/process              |
+| `shutdown`           | notification — closes the RPC channel                  |
 
 Unlike macOS, Windows UI Automation needs no runtime permission grant — `uiaInitialized`
 is always true once the COM init succeeds.

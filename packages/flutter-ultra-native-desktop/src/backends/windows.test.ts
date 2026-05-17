@@ -34,12 +34,17 @@ const runIntegration = isWindows && helperPresent;
 
 describe('WindowsDesktopBackend', () => {
   it('describeWindowsError handles JsonRpcError + plain Error + unknown', () => {
-    expect(describeWindowsError(new JsonRpcError(-32_001, 'Window not found'))).toMatch(/list_windows/);
-    expect(describeWindowsError(new JsonRpcError(-32_002, 'no element'))).toMatch(/dump_window_tree/);
+    expect(describeWindowsError(new JsonRpcError(-32_001, 'Window not found'))).toMatch(
+      /list_windows/,
+    );
+    expect(describeWindowsError(new JsonRpcError(-32_002, 'no element'))).toMatch(
+      /dump_window_tree/,
+    );
     expect(describeWindowsError(new JsonRpcError(-32_003, 'COM fail'))).toMatch(/UIA/);
     expect(describeWindowsError(new JsonRpcError(-32_004, 'timeout'))).toMatch(/timeout/i);
-    expect(describeWindowsError(new JsonRpcError(-32_000, 'helper down', { remediation: 'rebuild' })))
-      .toBe('rebuild');
+    expect(
+      describeWindowsError(new JsonRpcError(-32_000, 'helper down', { remediation: 'rebuild' })),
+    ).toBe('rebuild');
     expect(describeWindowsError(new JsonRpcError(-32_010, 'unknown', undefined))).toMatch(/-32010/);
     expect(describeWindowsError(new Error('plain'))).toBe('plain');
     expect(describeWindowsError('string err')).toBe('string err');

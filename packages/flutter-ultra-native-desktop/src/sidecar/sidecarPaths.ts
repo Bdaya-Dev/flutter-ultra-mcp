@@ -1,0 +1,59 @@
+// Path resolution for bundled per-OS sidecars.
+//
+// During development the binaries live under sidecars/<os>/build/; in
+// installed plugins they live at ${CLAUDE_PLUGIN_ROOT}/packages/
+// flutter-ultra-native-desktop/sidecars/<os>/. The env vars exposed by
+// .mcp.json (FLUTTER_ULTRA_MAC_HELPER, etc.) are the authoritative
+// override — they win over the auto-detected paths so distribution can
+// relocate binaries freely.
+
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+// src/sidecar/sidecarPaths.ts → ../../sidecars
+const PACKAGE_SIDECARS = resolve(HERE, '..', '..', 'sidecars');
+
+/** Resolve the macOS helper path, preferring the explicit env var. */
+export function resolveMacHelperPath(): string {
+  const fromEnv = process.env.FLUTTER_ULTRA_MAC_HELPER;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  // SwiftPM builds to .build/release/flutter-ultra-mac-helper inside the
+  // sidecars/macos-swift/ project; CI ALSO copies it to sidecars/macos-swift/bin/.
+  return resolve(PACKAGE_SIDECARS, 'macos-swift', 'bin', 'flutter-ultra-mac-helper');
+}
+
+/** Resolve the Windows helper path. Owned by worker-I but referenced here for unified registry. */
+export function resolveWinHelperPath(): string {
+  const fromEnv = process.env.FLUTTER_ULTRA_WIN_HELPER;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  return resolve(PACKAGE_SIDECARS, 'windows-flaui', 'bin', 'flutter-ultra-win-helper.exe');
+}
+
+/**
+ * Resolve the Linux AT-SPI sidecar directory.
+ *
+ * Unlike the macOS/Windows binaries this points at the *directory* holding
+ * the ``atspi_bridge/`` Python package — the Linux backend invokes
+ * ``python3 -u -m atspi_bridge`` with this on PYTHONPATH so the package
+ * boots correctly. Override via ``FLUTTER_ULTRA_LINUX_HELPER`` to point at
+ * a custom location (e.g. a virtualenv-installed copy).
+ */
+export function resolveLinuxHelperPath(): string {
+  const fromEnv = process.env.FLUTTER_ULTRA_LINUX_HELPER;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  return resolve(PACKAGE_SIDECARS, 'linux-atspi');
+}
+
+/**
+ * Resolve the Python interpreter for the Linux AT-SPI sidecar.
+ *
+ * Defaults to ``python3`` on PATH; override via ``FLUTTER_ULTRA_LINUX_PYTHON``
+ * for distro-specific paths (e.g. ``/usr/bin/python3.12``) or for using a
+ * virtualenv with ``vext``-installed PyGObject.
+ */
+export function resolveLinuxPythonBin(): string {
+  const fromEnv = process.env.FLUTTER_ULTRA_LINUX_PYTHON;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  return 'python3';
+}

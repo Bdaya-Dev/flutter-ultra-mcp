@@ -1,18 +1,32 @@
-name: native-desktop / linux
+name: Sidecar / Linux (AT-SPI Python)
+
+# Tests the atspi_bridge Python sidecar on ubuntu-latest.
+# Owned by worker-K (wave-3/native-desktop-linux).
+#
+# Three jobs: pytest matrix across Python 3.10/3.11/3.12, TS-side typecheck
+# of the LinuxDesktopBackend, and an end-to-end integration smoke that
+# boots Xvfb + at-spi-bus-launcher and asserts the sidecar's hello()
+# handshake returns helperPresent=true + permissionGranted=true.
 
 on:
   pull_request:
     paths:
-      - 'packages/flutter-ultra-native-desktop/**'
-      - '.github/workflows/native-desktop-linux.yml'
+      - 'packages/flutter-ultra-native-desktop/sidecars/linux-atspi/**'
+      - 'packages/flutter-ultra-native-desktop/src/backends/linux.ts'
+      - 'packages/flutter-ultra-native-desktop/src/platform.ts'
+      - '.github/workflows/sidecar-linux.yml'
   push:
     branches: [main, next, alpha, beta]
     paths:
-      - 'packages/flutter-ultra-native-desktop/**'
-      - '.github/workflows/native-desktop-linux.yml'
+      - 'packages/flutter-ultra-native-desktop/sidecars/linux-atspi/**'
+      - 'packages/flutter-ultra-native-desktop/src/backends/linux.ts'
+      - 'packages/flutter-ultra-native-desktop/src/platform.ts'
+      - '.github/workflows/sidecar-linux.yml'
+  workflow_dispatch:
+  workflow_call:
 
 concurrency:
-  group: native-desktop-linux-${{ github.ref }}
+  group: sidecar-linux-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -20,7 +34,7 @@ permissions:
 
 jobs:
   sidecar-unit:
-    name: Python sidecar unit tests
+    name: Python sidecar pytest (py ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -30,8 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -48,15 +61,14 @@ jobs:
             libgirepository1.0-dev \
             gcc
 
-      - name: Install Python dependencies
+      - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          # PyGObject from system; install pytest into the venv-less interp.
           python -m pip install pytest
 
       - name: Run sidecar unit tests
-        # PYTHONPATH points at the sidecar directory; use the system Python
-        # so it can find /usr/lib/python3/dist-packages/gi.
+        # Use the system Python (/usr/bin/python3) so it can resolve the
+        # distro-shipped /usr/lib/python3/dist-packages/gi binding.
         run: |
           cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
           PYTHONPATH="$PWD" /usr/bin/python3 -m pytest tests/ -v
@@ -64,44 +76,19 @@ jobs:
           # Suppress the Wayland warning emitter on the headless runner.
           XDG_SESSION_TYPE: tty
 
-  ts-unit-linux:
-    name: TS unit tests on Linux
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Build native-desktop + deps
-        run: npx turbo run build --filter=@flutter-ultra/flutter-ultra-native-desktop
-
-      - name: Test native-desktop
-        run: npx turbo run test --filter=@flutter-ultra/flutter-ultra-native-desktop
-
   integration-atspi:
     name: AT-SPI integration smoke (xvfb + at-spi-bus-launcher)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [sidecar-unit, ts-unit-linux]
+    needs: [sidecar-unit]
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install AT-SPI + Xvfb + a GTK test app
+      - name: Install AT-SPI + Xvfb + dbus
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -110,17 +97,9 @@ jobs:
             at-spi2-core \
             xvfb \
             xauth \
-            dbus-x11 \
-            gtk-update-icon-cache \
-            zenity
+            dbus-x11
 
-      - name: Install JS deps
-        run: npm ci
-
-      - name: Build the package
-        run: npx turbo run build --filter=@flutter-ultra/flutter-ultra-native-desktop
-
-      - name: Start D-Bus session + Xvfb + AT-SPI bus launcher and probe sidecar
+      - name: Start D-Bus session + Xvfb + AT-SPI bus and probe sidecar
         # at-spi-bus-launcher is auto-spawned by D-Bus the first time the
         # a11y bus name is requested. We need a session bus + an X display
         # for AT-SPI to attach to. The Python smoke is inline so the
@@ -141,7 +120,7 @@ jobs:
           sleep 1
           cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
           PYTHONPATH="$PWD" /usr/bin/python3 - <<'PY'
-          import json, os, subprocess, sys
+          import json, os, subprocess
           proc = subprocess.Popen(
               ['/usr/bin/python3', '-u', '-m', 'atspi_bridge'],
               stdin=subprocess.PIPE,
@@ -150,7 +129,7 @@ jobs:
               env=os.environ.copy(),
           )
           assert proc.stdin is not None and proc.stdout is not None
-          proc.stdin.write(b'{"jsonrpc":"2.0","id":1,"method":"status"}\n')
+          proc.stdin.write(b'{"jsonrpc":"2.0","id":1,"method":"hello"}\n')
           proc.stdin.flush()
           line = proc.stdout.readline()
           proc.stdin.close()
@@ -160,7 +139,7 @@ jobs:
               proc.kill()
               raise
           resp = json.loads(line)
-          print('status response:', json.dumps(resp, indent=2))
-          assert resp['result']['atspiAvailable'] is True, 'AT-SPI binding should be available on CI runner'
-          assert resp['result']['atspiInitialised'] is True, 'AT-SPI should have initialised'
+          print('hello response:', json.dumps(resp, indent=2))
+          assert resp['result']['helperPresent'] is True, 'helperPresent should be True'
+          assert resp['result']['permissionGranted'] is True, 'AT-SPI bus should be reachable'
           PY

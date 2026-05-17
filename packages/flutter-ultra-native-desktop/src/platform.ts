@@ -12,7 +12,7 @@
 // install command. When unparseable we return 'unknown' and a generic hint.
 
 import { promises as fs } from 'node:fs';
-import type { Device } from './device.js';
+import type { Device } from './device/types.js';
 
 export type DistroId =
   | 'debian'
@@ -138,7 +138,7 @@ export async function detectLocalDistro(): Promise<DistroInfo> {
 /** Detect by `cat /etc/os-release` over a Device (works for WSL/SSH). */
 export async function detectDeviceDistro(device: Device): Promise<DistroInfo> {
   const result = await device
-    .exec(['cat', '/etc/os-release'], { timeoutMs: 5000 })
+    .exec('cat', ['/etc/os-release'], { timeoutMs: 5000 })
     .catch(() => null);
   if (!result || result.exitCode !== 0 || !result.stdout) {
     return {

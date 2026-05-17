@@ -1,58 +1,71 @@
 # @flutter-ultra/flutter-ultra-native-desktop
 
-MCP server for **native desktop UIs** that Flutter cannot reach via VM Service:
-Windows UIA (FlaUI C# sidecar), macOS AXUIElement (Swift sidecar), Linux AT-SPI
-(PyGObject sidecar).
+Cross-platform MCP server for **native desktop UI automation** — drives the
+OS-level a11y tree on macOS (AXUIElement via a Swift sidecar), Windows (UIA
+via a FlaUI C# sidecar), and Linux (AT-SPI 2 via a PyGObject sidecar). Used
+by Claude Code skills to introspect dialogs, click buttons, type text, and
+capture window screenshots in apps that Flutter's VM service can't reach.
 
-This README documents the **Linux AT-SPI** path. Windows + macOS paths live in
-sibling sidecars under `sidecars/win-flaui/` and `sidecars/macos-ax/`.
+## Architecture
 
-## Why a sidecar?
+A single platform sidecar process is spawned per MCP-server lifetime. On
+crash the cached entry is dropped and the next tool invocation respawns it.
+Tool handlers stay platform-agnostic — the `DesktopBackend` interface
+(`src/types.ts`) hides every OS-specific quirk. `src/index.ts` switches on
+`process.platform` and selects `MacDesktopBackend`, `WinDesktopBackend`, or
+`LinuxDesktopBackend` accordingly; the registry registers tools only when
+the backend reports `helperPresent && permissionGranted`.
 
-A11y bindings (`gi.repository.Atspi`, `pyobjc-framework-Accessibility`,
-`FlaUI`) crash in well-known edge cases — Wayland under sandboxed apps,
-permission revocation, race conditions during window creation. Hosting them
-out-of-process means a single bad widget query takes down only the sidecar,
-not the MCP server, hot reload, or any other Flutter Ultra tool.
+## Tool surface (9 tools, plan §5.6)
 
-The TS server pipes line-delimited JSON-RPC 2.0 over stdin/stdout of a
-sidecar process per device. On crash, the cached entry is dropped and the
-next tool invocation spawns a fresh sidecar.
+| Tool                    | Purpose                                                                  |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `list_windows`          | Visible top-level windows, optionally filtered by process / title.       |
+| `dump_window_tree`      | Full a11y tree for a window, depth-bounded.                              |
+| `desktop_query`         | XPath subset: `//role`, `//role[@name="X"]`, `//*[@label~="X"]`.         |
+| `desktop_click`         | Click by element id (preferred) or screen coordinates.                   |
+| `desktop_type`          | Type text; optionally clear field first; optional element focus.         |
+| `desktop_screenshot`    | PNG (base64) — window or full screen.                                    |
+| `select_file_in_dialog` | Type a path into the frontmost file dialog + click Open/Save.            |
+| `confirm_dialog`        | Click a dialog button by intent (allow/deny/ok/cancel/yes/no/open/save). |
+| `wait_for_window`       | Poll for a window matching title regex / process; configurable timeout.  |
 
-## Tool surface (15 tools)
+Zero tools register when the per-OS sidecar is missing or the a11y bus is
+unreachable (AC-ND4). Startup logs explain why so users can self-remediate.
 
-| Tool                | Purpose                                                                     |
-| ------------------- | --------------------------------------------------------------------------- |
-| `get_status`        | Probe sidecar availability + binding init + display server type             |
-| `get_install_hint`  | Distro-aware install command for the AT-SPI typelib + PyGObject             |
-| `list_windows`      | All visible windows grouped by application (nodeId + extents)               |
-| `get_active_window` | The window in AT-SPI `ACTIVE` state, or `null`                              |
-| `get_node`          | Re-fetch a single accessible by nodeId                                      |
-| `get_children`      | Direct children of a node                                                   |
-| `get_text`          | Text via the AT-SPI `Text` interface, falling back to accessible-name       |
-| `find_by_name`      | Walk subtree matching accessible-name (exact or case-insensitive substring) |
-| `find_by_role`      | Walk subtree matching role-name (e.g. `push_button`, `text`, `dialog`)      |
-| `find_by_id`        | Walk subtree matching developer-set id via `get_id()` or `attributes['id']` |
-| `click`             | Invoke the `Action` interface (`click`/`press`/`activate`)                  |
-| `double_click`      | Two clicks 80 ms apart (AT-SPI has no native double-click)                  |
-| `type_text`         | Insert text via the `EditableText` interface                                |
-| `grab_focus`        | Request focus via the `Component` interface                                 |
-| `wait_for`          | Poll `find_by_*` until a match appears or `timeoutMs` elapses               |
+## Linux path — AT-SPI via PyGObject
 
-## NodeId scheme
+The Linux backend invokes `python3 -u -m atspi_bridge` from the package's
+`sidecars/linux-atspi/` directory. The Python sidecar:
 
-Stable string IDs of the form `"{app_idx}/{win_idx}/{path[0]}/.../{path[n]}"`
-where each segment is the AT-SPI child index at that depth. IDs round-trip
-across multiple requests **within the same desktop snapshot** but are NOT
-durable across application restarts, focus changes, or window
-creation/destruction. For durable references, re-resolve via `find_by_*`
-each call.
+- Wraps `gi.repository.Atspi` for window enumeration, accessible-tree
+  introspection, and action invocation (`Action.do_action` for click,
+  `EditableText.insert_text` for type).
+- Shells out to `grim` on Wayland or `scrot`/`import` on X11 for
+  screenshots. Both branches required because Wayland sandboxing makes
+  X11 screenshot APIs unusable.
+- Shells out to `xdotool` (X11) or `ydotool` (Wayland) for
+  cursor-coordinate input synthesis when AT-SPI alone can't reach a
+  widget (Flutter Linux desktop is the common case — its custom-painted
+  widgets don't expose the EditableText interface).
 
-## Display server caveats
+### Distro support
 
-AT-SPI works fully on **X11** because the a11y bus is a system D-Bus session
-component accessible to any client process. On **Wayland** the picture is
-mixed:
+| Distro family                | Install command                                                    |
+| ---------------------------- | ------------------------------------------------------------------ |
+| Debian / Ubuntu / Mint / Pop | `sudo apt-get install -y python3-gi gir1.2-atspi-2.0 at-spi2-core` |
+| Fedora / RHEL / Rocky / Alma | `sudo dnf install -y python3-gobject atspi at-spi2-core`           |
+| Arch / Manjaro / EndeavourOS | `sudo pacman -S --needed python-gobject at-spi2-core`              |
+| openSUSE (Leap & Tumbleweed) | `sudo zypper install -y python3-gobject typelib-1_0-Atspi-2_0`     |
+| Alpine                       | `sudo apk add py3-gobject3 at-spi2-core`                           |
+
+Use the exported `detectLocalDistro()` helper to print the exact command
+for the running host.
+
+### Wayland caveat
+
+AT-SPI works fully on **X11**. On **Wayland** the coverage varies by
+toolkit:
 
 | Toolkit                                        | Coverage                                                        |
 | ---------------------------------------------- | --------------------------------------------------------------- |
@@ -61,63 +74,58 @@ mixed:
 | Electron with `--force-renderer-accessibility` | Fully exposed                                                   |
 | Flutter Linux desktop                          | Active window only (flutter/flutter#107016) — use ultra_flutter |
 
-The sidecar surfaces a structured warning via `get_status` whenever
-`$XDG_SESSION_TYPE=wayland`. For Flutter Linux apps prefer the in-app
-`ultra_flutter` binding via `@flutter-ultra/flutter-ultra-gesture` / `-runtime`.
+When `XDG_SESSION_TYPE=wayland` the backend sets `capabilities.waylandLimited
+= true` so the registry can present a one-shot warning. For Flutter Linux
+apps prefer the in-app `ultra_flutter` binding via
+`@flutter-ultra/flutter-ultra-gesture` / `@flutter-ultra/flutter-ultra-runtime`.
 
-## Installation
+### Headless / minimal compositors
 
-The sidecar requires PyGObject + the AT-SPI 2 GObject Introspection typelib.
-Call `get_install_hint` from any session, or pick the distro-appropriate
-command below:
+Sway, river, and hyprland do NOT auto-spawn `at-spi-dbus-bus`. Enable it
+explicitly:
 
-| Distro family                | Command                                                            |
-| ---------------------------- | ------------------------------------------------------------------ |
-| Debian / Ubuntu / Mint / Pop | `sudo apt-get install -y python3-gi gir1.2-atspi-2.0 at-spi2-core` |
-| Fedora / RHEL / Rocky / Alma | `sudo dnf install -y python3-gobject atspi at-spi2-core`           |
-| Arch / Manjaro / EndeavourOS | `sudo pacman -S --needed python-gobject at-spi2-core`              |
-| openSUSE                     | `sudo zypper install -y python3-gobject typelib-1_0-Atspi-2_0`     |
-| Alpine                       | `sudo apk add py3-gobject3 at-spi2-core`                           |
+```bash
+systemctl --user enable --now at-spi-dbus-bus
+```
 
-The sidecar prints a structured `importError` via `status` if the binding
-fails to load — the message includes the import-time exception so users can
-diagnose missing system packages without grepping logs.
+GNOME, KDE, XFCE, MATE, and Cinnamon auto-spawn it on session start.
 
-## Device router (LocalLinuxDevice + WSL/SSH placeholders)
+## Device router placeholder
 
-This package implements the `Device` interface from the (yet to ship)
-`@flutter-ultra/device-router` proposal. The `LocalLinuxDevice` runs every
-command via `child_process.spawn`. Once worker Q lands the router package,
-`WslDevice` (`wsl.exe -d <distro> -e ...`) and `SshDevice` (`ssh user@host
-...`) become drop-in replacements — every MCP tool keeps working
-unchanged because the abstraction is keyed on `device.id`.
-
-For **WSL** in particular, the Python sidecar runs inside the WSL distro
-(where PyGObject + AT-SPI install cleanly via the distro package manager).
-The TS server stays on Windows and pipes JSON-RPC across `wsl.exe`'s stdio.
-AT-SPI inside WSL needs a desktop env with the a11y bus — WSLg (Windows 11's
-built-in Wayland compositor) provides this when the user runs a Flutter
-Linux app via WSLg. Pure CLI use cases don't need AT-SPI at all.
+The TS server consumes the `Device` interface from `src/device/types.ts`.
+Today only `LocalDevice` ships; SSH and WSL `Device` implementations land
+post-wave-3 in `@flutter-ultra/device-router`. The Python sidecar runs
+inside the target Linux environment (local host, WSL distro, or remote
+SSH-Linux); the TS server stays on the MCP host and pipes JSON-RPC across
+stdio. No backend code changes when the router lands — the platform
+switch in `src/index.ts` keeps using `new LocalDevice()` until the router
+swaps it for `routerDevice.select(deviceId)`.
 
 ## Development
 
 ```bash
-# At repo root
+# Repo root
 npm ci
 npm run -w @flutter-ultra/flutter-ultra-native-desktop build
 npm run -w @flutter-ultra/flutter-ultra-native-desktop test
 npm run -w @flutter-ultra/flutter-ultra-native-desktop typecheck
 
-# Python sidecar (Linux only)
+# Python sidecar tests (Linux only)
 cd packages/flutter-ultra-native-desktop/sidecars/linux-atspi
 sudo apt-get install -y python3-gi gir1.2-atspi-2.0 at-spi2-core
 pip install pytest
 PYTHONPATH=. pytest tests/
 ```
 
+## CI
+
+| Workflow                              | Purpose                                                             |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`            | Cross-platform TS unit tests (ubuntu/macos/windows × Node 20/22)    |
+| `.github/workflows/sidecar-macos.yml` | Build the Swift helper on macos-latest + TCC probe smoke            |
+| `.github/workflows/sidecar-linux.yml` | Python sidecar pytest matrix + Xvfb-driven AT-SPI integration smoke |
+
 ## Status
 
-Wave 3 deliverable. Linux path complete. Live AT-SPI verification runs in the
-`integration-atspi` CI job (Xvfb + at-spi-bus-launcher + a GTK accessible
-tree). End-to-end driving of a real Flutter Linux app waits on wave-5
-verifier or WSL remote-device support.
+Wave 3 complete. macOS path merged via PR #17 (worker-J). Linux path
+shipped in this PR (worker-K). Windows path in flight (worker-I).

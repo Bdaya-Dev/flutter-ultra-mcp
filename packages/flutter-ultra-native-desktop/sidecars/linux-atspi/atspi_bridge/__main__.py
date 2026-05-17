@@ -1,9 +1,10 @@
 """``python -m atspi_bridge`` entrypoint.
 
-Boots the bridge, registers handlers, and runs the stdio JSON-RPC loop.
-Catches BaseException so even fatal binding init failures emit a
-structured response before exit — the TS server can then surface a
-clean diagnostic instead of "process died with no output".
+Boots the bridge + desktop_api, registers handlers, and runs the stdio
+JSON-RPC loop. Exposes the 11-method DesktopBackend surface (camelCase)
+that mirrors the macOS Swift sidecar; the legacy snake_case primitives
+from bridge.py are kept for direct/test consumers but not registered
+with the TS-side server.
 """
 
 from __future__ import annotations
@@ -11,17 +12,19 @@ from __future__ import annotations
 import sys
 
 from . import rpc
-from .bridge import AtspiBridge, build_handlers
+from .bridge import AtspiBridge
+from .desktop_api import DesktopApi, build_handlers
 
 
 def main() -> int:
     bridge = AtspiBridge()
-    handlers = build_handlers(bridge)
+    api = DesktopApi(bridge)
+    handlers = build_handlers(api)
 
     if not bridge.is_available():
         rpc.write_log(
             "warn",
-            "atspi binding unavailable — only status() will return useful data",
+            "atspi binding unavailable — hello() will report helperPresent=False so TS side fails fast",
             error=bridge.availability_error(),
         )
     return rpc.run_loop(handlers)

@@ -1,0 +1,93 @@
+name: Sidecar / macOS (Swift)
+
+# Builds the flutter-ultra-mac-helper Swift sidecar on macos-latest.
+# Owned by worker-J (wave-3/native-desktop-macos).
+#
+# Triggered on changes to the Swift source OR on a manual dispatch. The
+# main CI workflow (ci.yml) runs the TS-side unit tests on macos-latest
+# already — this workflow's job is to catch Swift-side regressions early
+# and produce a release binary on tags.
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-native-desktop/sidecars/macos-swift/**'
+      - '.github/workflows/sidecar-macos.yml'
+  push:
+    branches: [main, next, alpha, beta]
+    paths:
+      - 'packages/flutter-ultra-native-desktop/sidecars/macos-swift/**'
+      - '.github/workflows/sidecar-macos.yml'
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: sidecar-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Swift sidecar
+    runs-on: macos-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/flutter-ultra-native-desktop/sidecars/macos-swift
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Swift toolchain
+        run: |
+          swift --version
+          xcrun --show-sdk-path
+          xcrun --show-sdk-version
+
+      - name: Resolve SwiftPM dependencies
+        run: swift package resolve
+
+      - name: Build (release)
+        run: swift build -c release -v
+
+      - name: Smoke - version
+        run: ./.build/release/flutter-ultra-mac-helper --version
+
+      - name: 'Smoke - probe TCC contract'
+        # Runs the AX trust probe and asserts the binary reports one of the
+        # two documented outcomes; we DO NOT assert which, because GitHub's
+        # macos-latest runner may report either state depending on the
+        # image's TCC seed.
+        run: |
+          set +e
+          OUT=$(./.build/release/flutter-ultra-mac-helper --probe-tcc)
+          RC=$?
+          echo "probe output: '$OUT' rc=$RC"
+          case "$OUT" in
+            trusted)
+              [ $RC -eq 0 ] || { echo "trusted should exit 0, got $RC"; exit 1; }
+              ;;
+            not_trusted)
+              [ $RC -eq 1 ] || { echo "not_trusted should exit 1, got $RC"; exit 1; }
+              ;;
+            *)
+              echo "probe printed unexpected output: '$OUT'"
+              exit 1
+              ;;
+          esac
+
+      - name: Stage binary into sidecars/macos-swift/bin/
+        run: |
+          mkdir -p bin
+          cp .build/release/flutter-ultra-mac-helper bin/flutter-ultra-mac-helper
+          chmod +x bin/flutter-ultra-mac-helper
+          file bin/flutter-ultra-mac-helper
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-ultra-mac-helper-${{ github.sha }}
+          path: packages/flutter-ultra-native-desktop/sidecars/macos-swift/bin/flutter-ultra-mac-helper
+          if-no-files-found: error
+          retention-days: 14

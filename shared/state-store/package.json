@@ -1,12 +1,35 @@
 {
   "name": "@flutter-ultra/state-store",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Cross-server shared state: atomic JSON-file IPC under CLAUDE_PLUGIN_DATA/state, proper-lockfile + chokidar.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "File-based IPC for cross-server shared state. Atomic read-modify-write via proper-lockfile.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/state-store",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "shared/state-store"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "flutter-ultra",
+    "ipc",
+    "state"
+  ],
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist",
     "README.md"
@@ -17,5 +40,21 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "proper-lockfile": "^4.1.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/proper-lockfile": "^4.1.4",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

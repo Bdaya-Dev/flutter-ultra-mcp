@@ -1,12 +1,37 @@
 {
   "name": "@flutter-ultra/vm-service-client",
-  "version": "0.0.0",
-  "private": true,
-  "description": "TypeScript Dart VM Service client with DDS multi-client coordination. Wave-1 worker C delivers the implementation.",
+  "version": "0.0.1",
+  "private": false,
+  "description": "TypeScript Dart VM Service client with DDS multi-client coordination. Backs the runtime, gesture, devtools, and patrol MCP servers.",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/vm-service-client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "shared/vm-service-client"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "dart",
+    "flutter",
+    "vm-service",
+    "dds",
+    "debugger",
+    "mcp"
+  ],
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist",
     "README.md"
@@ -17,5 +42,21 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

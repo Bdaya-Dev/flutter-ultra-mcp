@@ -7,13 +7,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default [
   {
-    ignores: [
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/coverage/**',
-      '**/.turbo/**',
-      '**/build/**',
-    ],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/.turbo/**', '**/build/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

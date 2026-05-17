@@ -9,13 +9,5 @@
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
   "repository": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
   "license": "Apache-2.0",
-  "keywords": [
-    "flutter",
-    "dart",
-    "mcp",
-    "automation",
-    "testing",
-    "devtools",
-    "claude-code"
-  ]
+  "keywords": ["flutter", "dart", "mcp", "automation", "testing", "devtools", "claude-code"]
 }

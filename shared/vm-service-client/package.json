@@ -13,7 +13,14 @@
   "bugs": {
     "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
   },
-  "keywords": ["dart", "flutter", "vm-service", "dds", "debugger", "mcp"],
+  "keywords": [
+    "dart",
+    "flutter",
+    "vm-service",
+    "dds",
+    "debugger",
+    "mcp"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -25,7 +32,10 @@
     }
   },
   "sideEffects": false,
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint src",

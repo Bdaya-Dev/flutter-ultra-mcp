@@ -106,7 +106,11 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
 
       const timeout = setTimeout(() => {
         ws.terminate();
-        reject(new ConnectionTimeoutError(`WS connect timed out after ${this.connectTimeoutMs}ms: ${this.uri}`));
+        reject(
+          new ConnectionTimeoutError(
+            `WS connect timed out after ${this.connectTimeoutMs}ms: ${this.uri}`,
+          ),
+        );
       }, this.connectTimeoutMs);
 
       ws.once('open', () => {
@@ -151,7 +155,10 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
     try {
       parsed = JSON.parse(text);
     } catch (err) {
-      this.emit('protocolError', new Error(`Malformed JSON from VM service: ${(err as Error).message}`));
+      this.emit(
+        'protocolError',
+        new Error(`Malformed JSON from VM service: ${(err as Error).message}`),
+      );
       return;
     }
 
@@ -183,12 +190,16 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
 
     this.emit(
       'protocolError',
-      new Error(`Unrecognized JSON-RPC frame: ${asResponse.success ? '(id-less response)' : asResponse.error.message}`),
+      new Error(
+        `Unrecognized JSON-RPC frame: ${asResponse.success ? '(id-less response)' : asResponse.error.message}`,
+      ),
     );
   }
 
   private onClose(code: number, reason: string): void {
-    this.failAllPending(new ConnectionDisposedError(`VM service WS closed (code=${code}, reason=${reason})`));
+    this.failAllPending(
+      new ConnectionDisposedError(`VM service WS closed (code=${code}, reason=${reason})`),
+    );
     this.socket = undefined;
     this.emit('close', code, reason);
 
@@ -199,7 +210,10 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
 
   private scheduleReconnect(): void {
     const idx = Math.min(this.reconnectAttempt, this.reconnectDelaysMs.length - 1);
-    const delay = this.reconnectDelaysMs[idx] ?? this.reconnectDelaysMs[this.reconnectDelaysMs.length - 1] ?? 14_500;
+    const delay =
+      this.reconnectDelaysMs[idx] ??
+      this.reconnectDelaysMs[this.reconnectDelaysMs.length - 1] ??
+      14_500;
     this.reconnectAttempt += 1;
     this.emit('reconnecting', this.reconnectAttempt, delay);
 
@@ -237,7 +251,11 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
     return new Promise<JsonValue>((resolve, reject) => {
       const timeoutHandle = setTimeout(() => {
         this.pending.delete(id);
-        reject(new ConnectionTimeoutError(`RPC ${method} (id=${id}) timed out after ${this.requestTimeoutMs}ms`));
+        reject(
+          new ConnectionTimeoutError(
+            `RPC ${method} (id=${id}) timed out after ${this.requestTimeoutMs}ms`,
+          ),
+        );
       }, this.requestTimeoutMs);
 
       this.pending.set(id, { method, resolve, reject, timeoutHandle });

@@ -15,7 +15,9 @@ export interface MockRpcRequest {
   params?: unknown;
 }
 
-export type MockHandler = (params: unknown) =>
+export type MockHandler = (
+  params: unknown,
+) =>
   | { result: unknown }
   | { error: { code: number; message: string; data?: unknown } }
   | Promise<{ result: unknown } | { error: { code: number; message: string; data?: unknown } }>;

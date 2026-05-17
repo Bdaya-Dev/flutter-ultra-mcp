@@ -1,0 +1,21 @@
+{
+  "name": "@flutter-ultra/flutter-ultra-devtools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server backing the Flutter DevTools panel: live MCP activity, sessions, tool-call timeline.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flutter-ultra-devtools": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@flutter-ultra/flutter-ultra-browser",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server for Playwright-driven browser automation: OAuth redirects, popups, console, network.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flutter-ultra-browser": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

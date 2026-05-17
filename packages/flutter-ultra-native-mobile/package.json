@@ -1,0 +1,21 @@
+{
+  "name": "@flutter-ultra/flutter-ultra-native-mobile",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server for native mobile overlays: Android UIAutomator via adb, iOS XCUITest via xcrun + go-ios.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flutter-ultra-native-mobile": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@flutter-ultra/flutter-ultra-gesture",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server for in-app gesture dispatch via the ultra_flutter mixin: tap, text entry, scroll, screenshot.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flutter-ultra-gesture": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

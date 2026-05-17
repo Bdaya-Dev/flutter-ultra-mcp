@@ -1,0 +1,21 @@
+{
+  "name": "@flutter-ultra/flutter-ultra-patrol",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server for orchestrating patrol_cli E2E tests (web + Android + iOS) using the bundled Bdaya patrol fork.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flutter-ultra-patrol": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  }
+}

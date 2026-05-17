@@ -13,7 +13,8 @@
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { LocalDevice } from './device/index.js';
 import { MacDesktopBackend } from './backends/macos.js';
-import { resolveMacHelperPath } from './sidecar/sidecarPaths.js';
+import { WindowsDesktopBackend } from './backends/windows.js';
+import { resolveMacHelperPath, resolveWinHelperPath } from './sidecar/sidecarPaths.js';
 import { registerDesktopTools } from './registry.js';
 import type { DesktopBackend } from './types.js';
 
@@ -59,8 +60,19 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
       );
     }
   } else if (platform === 'win32') {
-    server.logger.info('windows backend owned by worker-I — pending merge');
-    backend = null;
+    const helperPath = resolveWinHelperPath();
+    server.logger.info('probing win helper', { helperPath });
+    backend = await WindowsDesktopBackend.create({
+      device,
+      helperPath,
+      logger: server.logger,
+    });
+    if (!backend) {
+      server.logger.warn(
+        'no windows backend — build the FlaUI sidecar or set FLUTTER_ULTRA_WIN_HELPER',
+        { attempted: helperPath },
+      );
+    }
   } else if (platform === 'linux') {
     server.logger.info('linux backend owned by worker-K — pending merge');
     backend = null;
@@ -91,6 +103,7 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
 export { LocalDevice } from './device/index.js';
 export type { Device, ExecOptions, ExecResult, RpcStream } from './device/index.js';
 export { MacDesktopBackend, TCC_REMEDIATION, describeMacError } from './backends/macos.js';
+export { WindowsDesktopBackend, describeWindowsError } from './backends/windows.js';
 export type { DesktopBackend, BackendCapabilities, WindowDescriptor, A11yNode } from './types.js';
-export { resolveMacHelperPath } from './sidecar/sidecarPaths.js';
+export { resolveMacHelperPath, resolveWinHelperPath } from './sidecar/sidecarPaths.js';
 export { JsonRpcClient, JsonRpcError } from './rpc/jsonRpcClient.js';

@@ -41,14 +41,17 @@
     "README.md",
     "sidecars/macos-swift/Package.swift",
     "sidecars/macos-swift/Sources",
-    "sidecars/macos-swift/README.md"
+    "sidecars/macos-swift/README.md",
+    "sidecars/windows-flaui/FlutterUltraWinHelper",
+    "sidecars/windows-flaui/README.md"
   ],
   "scripts": {
     "build": "tsc -b",
+    "build:sidecar:windows": "dotnet publish sidecars/windows-flaui/FlutterUltraWinHelper/FlutterUltraWinHelper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o sidecars/windows-flaui/bin",
     "lint": "eslint src",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
-    "clean": "rimraf dist .turbo *.tsbuildinfo"
+    "clean": "rimraf dist .turbo *.tsbuildinfo sidecars/windows-flaui/bin sidecars/windows-flaui/FlutterUltraWinHelper/bin sidecars/windows-flaui/FlutterUltraWinHelper/obj"
   },
   "dependencies": {
     "@flutter-ultra/mcp-runtime": "^0.0.1",

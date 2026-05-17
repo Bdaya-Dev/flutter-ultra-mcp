@@ -1,6 +1,94 @@
-// @flutter-ultra/vm-service-client — TypeScript port of package:vm_service.
+// Public surface of @flutter-ultra/vm-service-client.
 //
-// Wave-1 owner: worker-C. See plan §3 (DDS-first connection) and §5.2 (runtime server consumes this).
-// Will export VmService client, DDS coordination helpers, and typed request/response shapes.
+// TypeScript port of the subset of package:vm_service that the runtime,
+// gesture, devtools, and patrol MCP servers consume. Adds DDS multi-client
+// coordination (setClientName, getStreamHistory) so we coexist cleanly
+// with VS Code's Dart debugger per plan §7.2.
 
-export const PACKAGE_NAME = '@flutter-ultra/vm-service-client';
+export {
+  ConnectionDisposedError,
+  ConnectionTimeoutError,
+  RpcError,
+  RpcErrorCode,
+  SentinelException,
+  type RpcErrorCodeValue,
+  type RpcErrorPayload,
+} from './errors.js';
+
+export {
+  buildWsUri,
+  VmServiceTransport,
+  type ConnectTarget,
+  type TransportEvents,
+  type TransportOptions,
+  type UriParts,
+} from './transport.js';
+
+export {
+  VmServiceClient,
+  type StepKind,
+  type VmServiceClientEvents,
+  type VmServiceClientOptions,
+} from './client.js';
+
+export {
+  ClassRefSchema,
+  ClientNameSchema,
+  ErrorObjSchema,
+  ErrorRefSchema,
+  EvaluateResultSchema,
+  EventKindSchema,
+  EventSchema,
+  FlagListSchema,
+  FlagSchema,
+  FrameSchema,
+  IncomingFrameSchema,
+  InstanceRefSchema,
+  InstanceSchema,
+  InstanceSetSchema,
+  IsolateGroupRefSchema,
+  IsolateRefSchema,
+  IsolateSchema,
+  JsonRpcNotificationSchema,
+  JsonRpcRequestSchema,
+  JsonRpcResponseSchema,
+  JsonValueSchema,
+  LibraryRefSchema,
+  ObjSchema,
+  PauseEventSchema,
+  SentinelKindSchema,
+  SentinelSchema,
+  StackSchema,
+  StreamHistorySchema,
+  SuccessSchema,
+  VMSchema,
+  type ClassRef,
+  type ClientName,
+  type ErrorObj,
+  type ErrorRef,
+  type EvaluateResult,
+  type Event,
+  type EventKind,
+  type Flag,
+  type FlagList,
+  type Frame,
+  type IncomingFrame,
+  type Instance,
+  type InstanceRef,
+  type InstanceSet,
+  type Isolate,
+  type IsolateGroupRef,
+  type IsolateRef,
+  type JsonRpcNotification,
+  type JsonRpcRequest,
+  type JsonRpcResponse,
+  type JsonValue,
+  type LibraryRef,
+  type Obj,
+  type Sentinel,
+  type SentinelKind,
+  type Stack,
+  type StreamHistory,
+  type Success,
+  type VM,
+} from './types.js';

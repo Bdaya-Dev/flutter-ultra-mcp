@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/pressBackButton",
+  "title": "pressBackButton",
+  "description": "ext.flutter.ultra.pressBackButton — simulate Android back button.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.pressBackButton" },
+    "status": { "const": "Success" },
+    "didPop": { "type": "boolean" }
+  },
+  "required": ["type", "method", "didPop"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

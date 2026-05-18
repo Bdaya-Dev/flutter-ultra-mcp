@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/startScreencast",
+  "title": "startScreencast",
+  "description": "ext.flutter.ultra.startScreencast — start an MJPEG screencast server.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.startScreencast" },
+    "status": { "const": "Success" },
+    "wsUrl": { "type": "string" },
+    "port": { "type": "integer" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "maxWidth": { "type": "string" },
+      "maxHeight": { "type": "string" },
+      "wsPort": { "type": "string" }
+    },
+    "additionalProperties": false
+  }
+}

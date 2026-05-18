@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/pinchZoom",
+  "title": "pinchZoom",
+  "description": "ext.flutter.ultra.pinchZoom — two-finger pinch-zoom gesture.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.pinchZoom" },
+    "status": { "const": "Success" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "key": { "type": "string" },
+      "text": { "type": "string" },
+      "type": { "type": "string" },
+      "x": { "type": "string" },
+      "y": { "type": "string" },
+      "focused": { "type": "string", "enum": ["true"] },
+      "scale": { "type": "string" },
+      "startDistance": { "type": "string" }
+    },
+    "required": ["scale"],
+    "additionalProperties": false
+  }
+}

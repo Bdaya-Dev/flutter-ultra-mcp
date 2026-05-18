@@ -1,0 +1,119 @@
+{
+  "getVersion": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.getVersion",
+    "status": "Success",
+    "version": "0.0.1-dev"
+  },
+  "interactiveElements": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.interactiveElements",
+    "status": "Success",
+    "elements": [
+      {
+        "type": "ElevatedButton",
+        "key": "increment",
+        "text": "+",
+        "bounds": { "x": 300, "y": 500, "width": 56, "height": 56 },
+        "visible": true
+      },
+      {
+        "type": "Text",
+        "text": "0",
+        "bounds": { "x": 180, "y": 300, "width": 40, "height": 40 },
+        "visible": true
+      }
+    ]
+  },
+  "tap": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.tap",
+    "status": "Success",
+    "tapped": true
+  },
+  "doubleTap": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.doubleTap",
+    "status": "Success",
+    "tapped": true
+  },
+  "longPress": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.longPress",
+    "status": "Success",
+    "tapped": true
+  },
+  "enterText": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.enterText",
+    "status": "Success"
+  },
+  "clearText": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.clearText",
+    "status": "Success"
+  },
+  "swipe": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.swipe",
+    "status": "Success"
+  },
+  "pinchZoom": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.pinchZoom",
+    "status": "Success"
+  },
+  "scrollTo": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.scrollTo",
+    "status": "Success"
+  },
+  "getLogs": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.getLogs",
+    "status": "Success",
+    "logs": [
+      { "level": "info", "message": "App started", "timestamp": "2026-05-17T00:00:00Z" },
+      { "level": "warning", "message": "Slow frame", "timestamp": "2026-05-17T00:00:01Z" }
+    ]
+  },
+  "takeScreenshots": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.takeScreenshots",
+    "status": "Success",
+    "screenshots": [
+      {
+        "viewId": 0,
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "width": 1,
+        "height": 1
+      }
+    ]
+  },
+  "startScreencast": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.startScreencast",
+    "status": "Success",
+    "wsUrl": "ws://127.0.0.1:9222/screencast",
+    "port": 9222
+  },
+  "stopScreencast": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.stopScreencast",
+    "status": "Success"
+  },
+  "pressBackButton": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.pressBackButton",
+    "status": "Success",
+    "didPop": true
+  },
+  "listExtensions": {
+    "type": "_extensionType",
+    "method": "ext.flutter.ultra.listExtensions",
+    "status": "Success",
+    "extensions": [
+      { "name": "myApp.fetchProfile", "description": "Returns currently signed-in profile." }
+    ]
+  }
+}

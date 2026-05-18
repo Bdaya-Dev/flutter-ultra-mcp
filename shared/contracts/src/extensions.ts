@@ -1,0 +1,58 @@
+export const EXTENSION_NAMES = [
+  'getVersion',
+  'interactiveElements',
+  'tap',
+  'doubleTap',
+  'longPress',
+  'enterText',
+  'clearText',
+  'swipe',
+  'pinchZoom',
+  'scrollTo',
+  'getLogs',
+  'takeScreenshots',
+  'startScreencast',
+  'stopScreencast',
+  'pressBackButton',
+  'listExtensions',
+] as const;
+
+export type ExtensionName = (typeof EXTENSION_NAMES)[number];
+
+export const EXTENSION_METHOD_MAP: Record<ExtensionName, string> = {
+  getVersion: 'ext.flutter.ultra.getVersion',
+  interactiveElements: 'ext.flutter.ultra.interactiveElements',
+  tap: 'ext.flutter.ultra.tap',
+  doubleTap: 'ext.flutter.ultra.doubleTap',
+  longPress: 'ext.flutter.ultra.longPress',
+  enterText: 'ext.flutter.ultra.enterText',
+  clearText: 'ext.flutter.ultra.clearText',
+  swipe: 'ext.flutter.ultra.swipe',
+  pinchZoom: 'ext.flutter.ultra.pinchZoom',
+  scrollTo: 'ext.flutter.ultra.scrollTo',
+  getLogs: 'ext.flutter.ultra.getLogs',
+  takeScreenshots: 'ext.flutter.ultra.takeScreenshots',
+  startScreencast: 'ext.flutter.ultra.startScreencast',
+  stopScreencast: 'ext.flutter.ultra.stopScreencast',
+  pressBackButton: 'ext.flutter.ultra.pressBackButton',
+  listExtensions: 'ext.flutter.ultra.listExtensions',
+};
+
+export const SCHEMA_FILE_MAP: Record<ExtensionName, string> = {
+  getVersion: 'get-version.schema.json',
+  interactiveElements: 'interactive-elements.schema.json',
+  tap: 'tap.schema.json',
+  doubleTap: 'double-tap.schema.json',
+  longPress: 'long-press.schema.json',
+  enterText: 'enter-text.schema.json',
+  clearText: 'clear-text.schema.json',
+  swipe: 'swipe.schema.json',
+  pinchZoom: 'pinch-zoom.schema.json',
+  scrollTo: 'scroll-to.schema.json',
+  getLogs: 'get-logs.schema.json',
+  takeScreenshots: 'take-screenshots.schema.json',
+  startScreencast: 'start-screencast.schema.json',
+  stopScreencast: 'stop-screencast.schema.json',
+  pressBackButton: 'press-back-button.schema.json',
+  listExtensions: 'list-extensions.schema.json',
+};

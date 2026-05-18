@@ -25,7 +25,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "flutter-ultra-gesture": "dist/index.js"
+    "flutter-ultra-gesture": "dist/bin.js"
   },
   "files": [
     "dist",

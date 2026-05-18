@@ -1,7 +1,7 @@
 {
   "name": "@bdayadev/flutter-ultra-mcp",
   "version": "1.0.1",
-  "description": "Flutter Ultra MCP plugin monorepo â€” 8 MCP servers + ultra_flutter Dart packages + skills for Claude Code.",
+  "description": "Flutter Ultra MCP plugin monorepo \u00e2\u20ac\u201d 8 MCP servers + ultra_flutter Dart packages + skills for Claude Code.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
   "repository": {
@@ -27,7 +27,8 @@
     "clean": "turbo run clean && rimraf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
-    "prepare": "husky"
+    "prepare": "npm run build --if-present || true",
+    "postinstall": "test -d packages/flutter-ultra-build/dist || npm run build --if-present || true"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

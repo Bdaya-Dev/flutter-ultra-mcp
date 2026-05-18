@@ -33,13 +33,16 @@ enum Screenshot {
         let windowRect = CGRect(origin: pos, size: size)
 
         let captureRect: CGRect
-        if scope == "screen" {
+        switch scope {
+        case "screen":
             // Find the NSScreen containing this window's center.
             let center = CGPoint(x: windowRect.midX, y: windowRect.midY)
             let screen = NSScreen.screens.first { NSPointInRect(NSPointFromCGPoint(center), $0.frame) }
             captureRect = screen?.frame ?? CGRect.null
-        } else {
+        case "window":
             captureRect = windowRect
+        default:
+            throw HelperError.invalidParam("scope must be 'window' or 'screen', got '\(scope)'")
         }
 
         let listOptions: CGWindowListOption = scope == "window"

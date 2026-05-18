@@ -113,7 +113,13 @@ export class MacDesktopBackend implements DesktopBackend {
       return null;
     }
 
-    const stream = await opts.device.openRpcStream(opts.helperPath, ['--rpc']);
+    let stream;
+    try {
+      stream = await opts.device.openRpcStream(opts.helperPath, ['--rpc']);
+    } catch (err) {
+      opts.logger.error('mac helper spawn failed', { err: String(err) });
+      return null;
+    }
     const rpc = new JsonRpcClient(stream, {
       defaultTimeoutMs: 30_000,
       onStderr: (line) => opts.logger.debug('mac helper stderr', { line }),
@@ -127,8 +133,6 @@ export class MacDesktopBackend implements DesktopBackend {
       opts.logger.error('mac helper handshake failed', { err: String(err) });
       await rpc.close();
       return new MacDesktopBackend(
-        // Even on handshake failure surface a capabilities-only backend so
-        // the server can emit a structured registration warning.
         rpc,
         {
           platform: 'darwin',

@@ -45,6 +45,7 @@ enum Dispatch {
             let y = (params["y"] as? Double) ?? (params["y"] as? Int).map(Double.init)
             let button = params["button"] as? String ?? "left"
             let clickCount = params["clickCount"] as? Int ?? 1
+            if clickCount <= 0 { throw HelperError.invalidParam("clickCount must be positive, got \(clickCount)") }
             try AXBridge.desktopClick(
                 windowId: windowId,
                 elementId: elementId,
@@ -99,6 +100,8 @@ enum Dispatch {
             let processName = params["processName"] as? String
             let timeoutMs = params["timeoutMs"] as? Int ?? 30_000
             let pollMs = params["pollMs"] as? Int ?? 250
+            if pollMs <= 0 { throw HelperError.invalidParam("pollMs must be positive, got \(pollMs)") }
+            if timeoutMs <= 0 { throw HelperError.invalidParam("timeoutMs must be positive, got \(timeoutMs)") }
             let win = try Dialogs.waitForWindow(
                 titlePattern: titlePattern,
                 processName: processName,

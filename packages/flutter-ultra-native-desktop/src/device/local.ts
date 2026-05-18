@@ -115,6 +115,17 @@ export class LocalDevice implements Device {
     if (opts.env !== undefined) spawnOpts.env = { ...process.env, ...opts.env };
     const child = spawn(cmd, args as string[], spawnOpts);
 
+    // Wait for successful spawn before wiring up the stream. Without this
+    // listener an ENOENT (binary missing) emits an unhandled 'error' event
+    // that crashes the entire Node.js process.
+    await new Promise<void>((resolve, reject) => {
+      child.once('error', reject);
+      child.once('spawn', () => {
+        child.removeListener('error', reject);
+        resolve();
+      });
+    });
+
     if (!child.stdin || !child.stdout || !child.stderr) {
       throw new Error(`LocalDevice.openRpcStream: failed to wire stdio for '${cmd}'`);
     }
@@ -124,6 +135,9 @@ export class LocalDevice implements Device {
         resolve(code !== null ? code : signal !== null ? null : 0);
       });
     });
+
+    // Drain post-spawn errors so they don't become unhandled.
+    child.on('error', () => {});
 
     return {
       stdin: child.stdin,

@@ -280,14 +280,21 @@ export class VmServiceTransport extends EventEmitter<TransportEvents> {
     if (this.socket) {
       const sock = this.socket;
       this.socket = undefined;
-      await new Promise<void>((resolve) => {
-        sock.once('close', () => resolve());
-        try {
-          sock.close();
-        } catch {
-          resolve();
-        }
-      });
+      if (sock.readyState === WebSocket.CLOSED) {
+        // Already closed — close() is a no-op and 'close' event won't fire.
+      } else {
+        await Promise.race([
+          new Promise<void>((resolve) => {
+            sock.once('close', () => resolve());
+            try {
+              sock.close();
+            } catch {
+              resolve();
+            }
+          }),
+          new Promise<void>((resolve) => setTimeout(resolve, 1_000)),
+        ]);
+      }
     }
     this.removeAllListeners();
   }

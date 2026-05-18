@@ -50,7 +50,7 @@ const client = new VmServiceClient({ host: '127.0.0.1', port: 8181, ws_path: 'ab
 | ---------------- | ----------------------------------------------------------------------------- |
 | Inspection       | `getVM`, `getIsolate`, `getObject`, `getFlagList`, `getInstances`, `getStack` |
 | Evaluation       | `evaluate`, `evaluateInFrame`, `callServiceExtension`                         |
-| Streams          | `streamListen`, `streamCancel`, `getStreamHistory`                            |
+| Streams          | `streamListen`, `streamCancel`                                                |
 | Execution        | `pause`, `resume`, `setLibraryDebuggable`                                     |
 | DDS coordination | `setClientName`, `getStreamHistory`                                           |
 

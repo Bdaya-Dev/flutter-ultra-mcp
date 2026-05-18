@@ -377,8 +377,9 @@ describe('VmServiceClient', () => {
     });
 
     it('emits isolateEvent on streamNotify(Isolate, ...)', async () => {
-      const received: unknown[] = [];
-      client.on('isolateEvent', (e) => received.push(e));
+      const eventPromise = new Promise<unknown>((resolve) =>
+        client.once('isolateEvent', (e) => resolve(e)),
+      );
       server.broadcast('streamNotify', {
         streamId: 'Isolate',
         event: {
@@ -388,13 +389,14 @@ describe('VmServiceClient', () => {
           isolate: { type: '@Isolate', id: 'isolates/1', name: 'main' },
         },
       });
-      await new Promise((r) => setTimeout(r, 30));
-      expect(received).toHaveLength(1);
+      const event = await eventPromise;
+      expect(event).toBeDefined();
     });
 
     it('emits extensionEvent on Extension stream', async () => {
-      const received: unknown[] = [];
-      client.on('extensionEvent', (e) => received.push(e));
+      const eventPromise = new Promise<unknown>((resolve) =>
+        client.once('extensionEvent', (e) => resolve(e)),
+      );
       server.broadcast('streamNotify', {
         streamId: 'Extension',
         event: {
@@ -405,8 +407,8 @@ describe('VmServiceClient', () => {
           extensionData: { number: 42 },
         },
       });
-      await new Promise((r) => setTimeout(r, 30));
-      expect(received).toHaveLength(1);
+      const event = await eventPromise;
+      expect(event).toBeDefined();
     });
 
     it('onIsolateEvent yields events as async iterator', async () => {

@@ -227,6 +227,9 @@ enum AXBridge {
         clearFirst: Bool
     ) throws {
         guard isAccessibilityTrusted() else { throw HelperError.tccNotGranted }
+        guard HandleRegistry.shared.resolve(windowId) != nil else {
+            throw HelperError.windowNotFound(windowId)
+        }
         if let eid = elementId {
             guard let el = HandleRegistry.shared.resolve(eid) else {
                 throw HelperError.elementNotFound(eid)

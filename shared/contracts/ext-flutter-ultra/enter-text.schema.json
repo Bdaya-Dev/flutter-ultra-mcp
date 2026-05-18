@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/enterText",
+  "title": "enterText",
+  "description": "ext.flutter.ultra.enterText — type text into a matched TextField.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.enterText" },
+    "status": { "const": "Success" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "key": { "type": "string" },
+      "text": { "type": "string" },
+      "type": { "type": "string" },
+      "x": { "type": "string" },
+      "y": { "type": "string" },
+      "focused": { "type": "string", "enum": ["true"] },
+      "input": { "type": "string" }
+    },
+    "required": ["input"],
+    "additionalProperties": false
+  }
+}

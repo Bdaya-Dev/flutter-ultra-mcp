@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/takeScreenshots",
+  "title": "takeScreenshots",
+  "description": "ext.flutter.ultra.takeScreenshots — capture one PNG per RenderView.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.takeScreenshots" },
+    "status": { "const": "Success" },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "viewId": { "type": "integer" },
+          "base64": { "type": "string" },
+          "width": { "type": "integer" },
+          "height": { "type": "integer" }
+        },
+        "required": ["base64"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["type", "method", "screenshots"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

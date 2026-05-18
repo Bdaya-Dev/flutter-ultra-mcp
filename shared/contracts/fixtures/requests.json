@@ -1,0 +1,18 @@
+{
+  "getVersion": {},
+  "interactiveElements": {},
+  "tap": { "key": "increment" },
+  "doubleTap": { "key": "increment", "delay": "200" },
+  "longPress": { "key": "increment", "duration": "600" },
+  "enterText": { "key": "email_field", "input": "test@example.com" },
+  "clearText": { "key": "email_field" },
+  "swipe": { "startX": "100", "startY": "200", "endX": "100", "endY": "400" },
+  "pinchZoom": { "key": "map_view", "scale": "2.0" },
+  "scrollTo": { "key": "bottom_item" },
+  "getLogs": {},
+  "takeScreenshots": {},
+  "startScreencast": { "maxWidth": "800", "maxHeight": "600" },
+  "stopScreencast": {},
+  "pressBackButton": {},
+  "listExtensions": {}
+}

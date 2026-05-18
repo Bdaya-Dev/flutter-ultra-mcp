@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/scrollTo",
+  "title": "scrollTo",
+  "description": "ext.flutter.ultra.scrollTo — scroll until a matched widget is visible.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.scrollTo" },
+    "status": { "const": "Success" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "key": { "type": "string" },
+      "text": { "type": "string" },
+      "type": { "type": "string" },
+      "x": { "type": "string" },
+      "y": { "type": "string" },
+      "focused": { "type": "string", "enum": ["true"] }
+    },
+    "additionalProperties": false
+  }
+}

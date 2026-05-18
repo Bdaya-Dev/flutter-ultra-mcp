@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/getLogs",
+  "title": "getLogs",
+  "description": "ext.flutter.ultra.getLogs — retrieve collected logs from LogCollector.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.getLogs" },
+    "status": { "const": "Success" },
+    "logs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": { "type": "string" },
+          "message": { "type": "string" },
+          "timestamp": { "type": "string" }
+        },
+        "required": ["message"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["type", "method", "logs"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

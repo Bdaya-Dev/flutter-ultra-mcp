@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/stopScreencast",
+  "title": "stopScreencast",
+  "description": "ext.flutter.ultra.stopScreencast — stop an active screencast. Idempotent.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.stopScreencast" },
+    "status": { "const": "Success" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

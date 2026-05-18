@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/longPress",
+  "title": "longPress",
+  "description": "ext.flutter.ultra.longPress — dispatch a long-press gesture.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.longPress" },
+    "status": { "const": "Success" },
+    "tapped": { "type": "boolean" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "key": { "type": "string" },
+      "text": { "type": "string" },
+      "type": { "type": "string" },
+      "x": { "type": "string" },
+      "y": { "type": "string" },
+      "focused": { "type": "string", "enum": ["true"] },
+      "duration": { "type": "string" }
+    },
+    "additionalProperties": false
+  }
+}

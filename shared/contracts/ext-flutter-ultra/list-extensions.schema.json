@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/listExtensions",
+  "title": "listExtensions",
+  "description": "ext.flutter.ultra.listExtensions — enumerate user-registered custom extensions.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.listExtensions" },
+    "status": { "const": "Success" },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["name"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["type", "method", "extensions"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

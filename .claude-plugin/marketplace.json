@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "flutter-ultra-mcp",
-  "description": "The ultimate Flutter MCP plugin — 8 specialized servers, 214 tools, cross-platform automation for Claude Code",
+  "description": "The ultimate Flutter MCP plugin \u2014 8 specialized servers, 214 tools, cross-platform automation for Claude Code",
   "owner": {
     "name": "Bdaya-Dev",
     "email": "ahmednfwela@digrum.com"
@@ -10,14 +10,26 @@
     {
       "name": "flutter",
       "description": "Durable cross-platform Flutter automation via 8 specialized MCP servers, in-app mixin binding, and an optional DevTools panel. Replaces marionette_mcp and the official dart mcp-server for Claude Code.",
-      "version": "0.0.1",
+      "version": "1.0.0",
       "author": {
         "name": "Bdaya-Dev",
         "url": "https://github.com/Bdaya-Dev"
       },
       "repository": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
       "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
-      "license": "Apache-2.0"
+      "license": "Apache-2.0",
+      "source": "./",
+      "category": "development",
+      "tags": [
+        "flutter",
+        "dart",
+        "mcp",
+        "testing",
+        "automation",
+        "patrol",
+        "cross-platform"
+      ]
     }
-  ]
+  ],
+  "version": "1.0.0"
 }

@@ -7,7 +7,7 @@ import type { DeviceRegistry } from '../registry.js';
 import { listDevicesSchema, dumpA11ySchema, waitForNativeElementSchema } from '../schemas.js';
 import { AndroidDevice } from '../android.js';
 import { IosSimDevice } from '../ios.js';
-import { findNode, parseUiautomatorXml, type A11yNode } from '../a11y.js';
+import { findNode, parseUiautomatorXml } from '../a11y.js';
 
 export function registerInspectTools(opts: {
   server: FlutterUltraServer;

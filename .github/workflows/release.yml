@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
@@ -31,9 +31,12 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # Trusted Publishing (OIDC) — no NPM_TOKEN needed.
+      # Requires one-time setup on npmjs.com:
+      #   Package Settings → Trusted Publisher → GitHub Actions
+      #   → org: Bdaya-Dev, repo: flutter-ultra-mcp, workflow: release.yml
+      # Provenance attestations are auto-generated.
       - name: Changesets publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
         run: npx changeset publish

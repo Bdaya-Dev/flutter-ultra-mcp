@@ -53,7 +53,7 @@
     "@flutter-ultra/vm-service-client": "^0.0.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "protobufjs": "^7.4.0",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

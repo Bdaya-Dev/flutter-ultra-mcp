@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.2...v1.1.0) (2026-05-18)
+
+
+### Features
+
+* bundle MCP servers into self-contained .cjs via esbuild ([5e9217e](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/5e9217e786c87eb178a40801f904c412046bc843))
+
 ## [1.0.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.1...v1.0.2) (2026-05-18)
 
 

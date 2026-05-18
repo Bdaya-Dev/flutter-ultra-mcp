@@ -420,24 +420,26 @@ function setupStdoutParser(
   }
 
   async function discoverVmServiceFromWeb(): Promise<void> {
-    // Flutter web's app.started has no vmServiceUri. Probe DWDS at the
-    // web launch URL to discover it via the /$dwdsDevHandler endpoint,
-    // or fall back to scanning localhost ports.
-    const { discover } = await import('./discovery.js');
-    const maxAttempts = 6;
-    for (let i = 0; i < maxAttempts; i++) {
-      if (child.exitCode !== null) return;
-      const found = await discover({ logger });
-      if (found.length > 0) {
-        const match = found[0]!;
-        logger.info('web VM service discovered via probe', { jobId, uri: match.uri });
-        await completeAttach(match.uri);
-        return;
+    try {
+      const { discover } = await import('./discovery.js');
+      const maxAttempts = 6;
+      for (let i = 0; i < maxAttempts; i++) {
+        if (child.exitCode !== null) return;
+        const found = await discover({ logger });
+        if (found.length > 0) {
+          const match = found[0]!;
+          logger.info('web VM service discovered', { jobId, uri: match.uri });
+          await completeAttach(match.uri);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 2_000));
       }
-      await new Promise((r) => setTimeout(r, 2_000));
+      logger.warn('web VM service not found after probing', { jobId, webLaunchUrl });
+      await patchJob(jobId, { stage: 'attached' });
+    } catch (err) {
+      logger.error('discoverVmServiceFromWeb failed', { jobId, err: String(err) });
+      await patchJob(jobId, { stage: 'attached' }).catch(() => {});
     }
-    logger.warn('web VM service not found after probing', { jobId, webLaunchUrl });
-    await patchJob(jobId, { stage: 'attached' });
   }
 
   const onStdoutLine = async (line: string): Promise<void> => {

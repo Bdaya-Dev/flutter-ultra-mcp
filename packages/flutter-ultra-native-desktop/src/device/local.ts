@@ -1,7 +1,6 @@
 // LocalDevice — Device implementation backed by Node child_process.
 //
-// Today's default. For the remote-Mac future we'll add SshDevice with the
-// same surface (see ./ssh.stub.ts).
+// Today's default. For remote-Mac support see @flutter-ultra/device-router SshDevice.
 
 import { spawn } from 'node:child_process';
 import { access, copyFile, mkdir } from 'node:fs/promises';

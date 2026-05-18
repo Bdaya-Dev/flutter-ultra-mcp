@@ -1,12 +1,12 @@
 {
-  "name": "flutter-ultra-mcp",
+  "name": "@bdayadev/flutter-ultra-mcp",
   "version": "0.0.0",
   "description": "Flutter Ultra MCP plugin monorepo \u00e2\u20ac\u201d 8 MCP servers + ultra_flutter Dart packages + skills for Claude Code.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git"
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
@@ -49,7 +49,9 @@
     "vitest": "^3.2.4"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org"
   },
   "files": [
     ".claude-plugin/",

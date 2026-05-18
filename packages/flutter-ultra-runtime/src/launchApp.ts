@@ -254,6 +254,7 @@ export function createLaunchService(opts: {
       env: process.env,
       stdio: ['pipe', 'pipe', 'pipe'],
       windowsHide: true,
+      shell: process.platform === 'win32',
     }) as ChildProcessByStdio<Writable, Readable, Readable>;
 
     PROCESSES.set(jobId, { child, jobId });

@@ -4,7 +4,7 @@
 //   1. If `useRawCli` is true, skip wrapper detection.
 //   2. If project has `./scripts/run_patrol_web.ps1` (Windows) or
 //      `./scripts/run_patrol_web.sh` (Unix), use it — many Bdaya projects
-//      (e.g. Invora) pre-apply env vars + flags via this convention.
+//      pre-apply env vars + flags via this convention.
 //   3. Otherwise spawn `dart run patrol_cli` from the project root. `dart`
 //      transitively resolves the patrol_cli dev-dep, which pubspec_overrides
 //      can pin to our vendored fork.

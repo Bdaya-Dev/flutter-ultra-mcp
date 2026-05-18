@@ -196,7 +196,7 @@ export const solveOauthSchema = z
     redirectUriScheme: z
       .string()
       .min(1)
-      .describe('App scheme prefix, e.g. "app.invora.dev" or "com.example.app".'),
+      .describe('App scheme prefix, e.g. "com.example.myapp" or "app.mycompany.dev".'),
     redirectUriPattern: z
       .string()
       .min(1)

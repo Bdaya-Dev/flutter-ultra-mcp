@@ -55,7 +55,7 @@ Chrome Custom Tabs and SafariViewController hide the OAuth flow behind a system-
 
 1. Launch Playwright Chromium with the provider's `authorize` URL.
 2. Submit credentials (optional `fillFlow`) — pause for human MFA when needed.
-3. Intercept the redirect to the app scheme (`app.invora.dev://callback?code=…`) before Chromium drops it as `ERR_UNKNOWN_URL_SCHEME`.
+3. Intercept the redirect to the app scheme (`com.example.myapp://callback?code=…`) before Chromium drops it as `ERR_UNKNOWN_URL_SCHEME`.
 4. Deliver the same URL into the app via `Device.shell()`:
    - Android: `adb shell am start -W -a android.intent.action.VIEW -d <url>`
    - iOS Sim: `xcrun simctl openurl <udid> <url>`
@@ -90,7 +90,7 @@ iOS tools called on non-darwin hosts return a structured "unsupported" payload (
 - **AC-NM1** — `dismiss_permission_dialog(intent='allow')` clears a runtime permission within 3s on the Android emulator.
 - **AC-NM2** — On iOS Simulator (Mac), `native_tap` on a SafariViewController OAuth login button completes the flow combined with `wait_for_url`.
 - **AC-NM3** — iOS tools cleanly return `unsupported` on win32 / linux.
-- **AC-NM4** — `solve_oauth_cct` end-to-end completes a Zitadel OAuth flow against `dev-auth.invora.app` on Android emulator within 60s.
+- **AC-NM4** — `solve_oauth_cct` end-to-end completes an OIDC OAuth flow against your identity provider on Android emulator within 60s.
 
 ## Development
 

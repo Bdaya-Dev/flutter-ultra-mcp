@@ -8,8 +8,8 @@
  *   flush_service_worker                     — confirm flutter_service_worker.js
  *                                              hash changed after a fresh build
  *
- * `validate_web_redirect` is the headline value-add: the Invora session-pitfall
- * doc cites this as a recurring trap. The check rejects redirect.html files
+ * `validate_web_redirect` is the headline value-add: a missing redirect.html
+ * is a recurring OIDC trap on Flutter web. The check rejects redirect.html files
  * that:
  *   - don't exist
  *   - are smaller than 200 bytes (likely a stub/placeholder)
@@ -73,8 +73,8 @@ export function register(server: McpServer): void {
     name: 'validate_web_redirect',
     description:
       'Assert web/redirect.html exists and contains the JS needed to forward an OIDC redirect into the Flutter SPA. ' +
-      'This catches the 2026-05-11 Invora bug: Firebase Hosting serves static files before rewrites, but only if they exist, ' +
-      'and a Flutter SPA fallback eats the redirect route otherwise.',
+      'Firebase Hosting serves static files before rewrites, but only if they exist — ' +
+      'a Flutter SPA fallback eats the redirect route otherwise.',
     inputSchema: {
       root: rootArg,
       relativePath: z
@@ -102,7 +102,7 @@ export function register(server: McpServer): void {
                     path: join(proj.root, rel),
                     ...result,
                     remediation:
-                      'See clients/invora/invora-flutter/.claude/rules/05-oidc-pkce-web-redirect.md for the canonical redirect.html template.',
+                      'Create web/redirect.html with inline JS that forwards the OIDC authorization code from the URL fragment/query into the Flutter app.',
                   },
                   null,
                   2,

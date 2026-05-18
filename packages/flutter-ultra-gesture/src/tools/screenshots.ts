@@ -41,7 +41,7 @@ const StartScreencastInput = SessionIdInput.extend({
 
 const StopScreencastInput = SessionIdInput;
 
-// Invora's TestScreenSize defaults — keep in sync with plan §5.3 line 577.
+// Default viewport sizes for responsive screenshot testing.
 const DEFAULT_VIEWPORTS: Record<
   z.infer<typeof ViewportNameSchema>,
   { width: number; height: number }

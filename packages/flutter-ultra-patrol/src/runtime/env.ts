@@ -24,7 +24,7 @@ export interface PatrolServerEnv {
 
   /**
    * Comma-separated browser args injected into PATROL_WEB_BROWSER_ARGS by
-   * .mcp.json. Per Invora gotcha #10 the default contains
+   * .mcp.json. The default contains
    * --enable-unsafe-swiftshader plus throttling-off flags. Empty string is
    * a valid value when the user explicitly clears it.
    */

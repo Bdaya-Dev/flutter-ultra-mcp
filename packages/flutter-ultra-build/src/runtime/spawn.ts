@@ -75,7 +75,7 @@ export async function spawnCapture(opts: SpawnOptions): Promise<SpawnResult> {
     cwd: opts.cwd,
     env: opts.env ?? process.env,
     stdio: ['pipe', 'pipe', 'pipe'],
-    shell: false,
+    shell: process.platform === 'win32',
     windowsHide: true,
   });
 

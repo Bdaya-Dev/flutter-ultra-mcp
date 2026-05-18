@@ -35,6 +35,15 @@ export function resolveCli(cli: 'dart' | 'flutter'): string {
     cache.set(cli, override);
     return override;
   }
+  // On Windows, prefer the .bat wrapper — the extensionless file is a bash
+  // stub that cmd.exe / Node spawn cannot execute.
+  if (process.platform === 'win32') {
+    const batFound = whichSync(`${cli}.bat`);
+    if (batFound) {
+      cache.set(cli, batFound);
+      return batFound;
+    }
+  }
   const found = whichSync(cli);
   if (!found) throw new FlutterCliMissingError(cli);
   cache.set(cli, found);

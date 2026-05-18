@@ -259,41 +259,54 @@ export function createLaunchService(opts: {
 
     PROCESSES.set(jobId, { child, jobId });
 
-    child.on('error', async (err) => {
-      logger.error('flutter spawn failed', { jobId, err: err.message });
-      const current = await readJob(jobId);
-      const stderrTail = current.recentLog
-        .filter((l) => l.startsWith('[stderr]'))
-        .slice(-20)
-        .join('\n');
-      const errorMessage = stderrTail
-        ? `${err.message}\n--- last stderr ---\n${stderrTail}`
-        : err.message;
-      await patchJob(jobId, { stage: 'failed', errorMessage });
-      PROCESSES.delete(jobId);
+    child.on('error', (err) => {
+      void (async () => {
+        try {
+          logger.error('flutter spawn failed', { jobId, err: err.message });
+          const current = await readJob(jobId);
+          const stderrTail = current.recentLog
+            .filter((l) => l.startsWith('[stderr]'))
+            .slice(-20)
+            .join('\n');
+          const errorMessage = stderrTail
+            ? `${err.message}\n--- last stderr ---\n${stderrTail}`
+            : err.message;
+          await patchJob(jobId, { stage: 'failed', errorMessage });
+          PROCESSES.delete(jobId);
+        } catch (inner) {
+          logger.error('error handler threw', { jobId, inner: String(inner) });
+          PROCESSES.delete(jobId);
+        }
+      })();
     });
-    child.on('exit', async (code, signal) => {
-      logger.info('flutter exited', { jobId, code, signal });
-      PROCESSES.delete(jobId);
-      const current = await readJob(jobId);
-      if (current.stage === 'stopped') return;
-      const isError = (code ?? 0) !== 0;
-      const stderrTail = current.recentLog
-        .filter((l) => l.startsWith('[stderr]'))
-        .slice(-20)
-        .join('\n');
-      let errorMessage: string | undefined;
-      if (isError) {
-        const parts: string[] = [`exited with code=${code ?? 'null'}`];
-        if (signal) parts[0] += ` signal=${signal}`;
-        if (stderrTail) parts.push('--- last stderr ---', stderrTail);
-        errorMessage = parts.join('\n');
-      }
-      await patchJob(jobId, {
-        stage: isError ? 'failed' : 'stopped',
-        ...(code !== null ? { exitCode: code } : {}),
-        ...(errorMessage !== undefined ? { errorMessage } : {}),
-      });
+    child.on('exit', (code, signal) => {
+      void (async () => {
+        try {
+          logger.info('flutter exited', { jobId, code, signal });
+          PROCESSES.delete(jobId);
+          const current = await readJob(jobId);
+          if (current.stage === 'stopped') return;
+          const isError = (code ?? 0) !== 0;
+          const stderrTail = current.recentLog
+            .filter((l) => l.startsWith('[stderr]'))
+            .slice(-20)
+            .join('\n');
+          let errorMessage: string | undefined;
+          if (isError) {
+            const parts: string[] = [`exited with code=${code ?? 'null'}`];
+            if (signal) parts[0] += ` signal=${signal}`;
+            if (stderrTail) parts.push('--- last stderr ---', stderrTail);
+            errorMessage = parts.join('\n');
+          }
+          await patchJob(jobId, {
+            stage: isError ? 'failed' : 'stopped',
+            ...(code !== null ? { exitCode: code } : {}),
+            ...(errorMessage !== undefined ? { errorMessage } : {}),
+          });
+        } catch (inner) {
+          logger.error('exit handler threw', { jobId, inner: String(inner) });
+        }
+      })();
     });
 
     await patchJob(jobId, {
@@ -324,21 +337,29 @@ export function createLaunchService(opts: {
     const handle = PROCESSES.get(jobId);
     if (handle) {
       try {
-        // Machine-mode flutter accepts 'q' on stdin to stop gracefully.
-        if (!stopOptions.force) {
+        if (stopOptions.force) {
+          // Force: immediate SIGKILL, no grace period.
+          handle.child.kill('SIGKILL');
+        } else {
+          // Machine-mode flutter accepts 'q' on stdin to stop gracefully.
           handle.child.stdin.write('q\n');
         }
-        // Wait up to 5s for graceful, then SIGTERM, then SIGKILL.
+        // Wait for exit (with escalation timeouts for graceful path).
         await new Promise<void>((resolveExit) => {
-          const t1 = setTimeout(() => {
-            if (handle.child.exitCode === null) handle.child.kill('SIGTERM');
-          }, 2_000);
-          const t2 = setTimeout(() => {
-            if (handle.child.exitCode === null) handle.child.kill('SIGKILL');
-            resolveExit();
-          }, 5_000);
+          const t1 = stopOptions.force
+            ? undefined
+            : setTimeout(() => {
+                if (handle.child.exitCode === null) handle.child.kill('SIGTERM');
+              }, 2_000);
+          const t2 = setTimeout(
+            () => {
+              if (handle.child.exitCode === null) handle.child.kill('SIGKILL');
+              resolveExit();
+            },
+            stopOptions.force ? 2_000 : 5_000,
+          );
           handle.child.once('exit', () => {
-            clearTimeout(t1);
+            if (t1) clearTimeout(t1);
             clearTimeout(t2);
             resolveExit();
           });

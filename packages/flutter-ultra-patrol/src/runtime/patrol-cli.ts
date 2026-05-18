@@ -27,7 +27,7 @@ export type PatrolInvocation =
     }
   | {
       kind: 'dart-run';
-      command: 'dart';
+      command: string;
       args: string[];
     };
 
@@ -62,9 +62,10 @@ export function buildPatrolInvocation(input: BuildInvocationInput): PatrolInvoca
     }
   }
 
+  const dartCmd = platform() === 'win32' ? 'dart.bat' : 'dart';
   return {
     kind: 'dart-run',
-    command: 'dart',
+    command: dartCmd,
     args: ['run', 'patrol_cli', ...patrolArgs],
   };
 }
@@ -79,15 +80,34 @@ function detectWrapperScript(projectRoot: string): string | null {
   return null;
 }
 
+function patrolArgsToWrapperArgs(patrolArgs: string[]): string[] {
+  const wrapperArgs: string[] = [];
+  for (let i = 0; i < patrolArgs.length; i++) {
+    const arg = patrolArgs[i]!;
+    if (arg === 'test' || arg === 'develop') continue;
+    if (arg === '--target' || arg === '-t') {
+      const next = patrolArgs[i + 1];
+      if (next) {
+        wrapperArgs.push('-Target', next);
+        i++;
+      }
+      continue;
+    }
+    if (arg.startsWith('--target=')) {
+      wrapperArgs.push('-Target', arg.slice('--target='.length));
+      continue;
+    }
+    wrapperArgs.push(arg);
+  }
+  return wrapperArgs;
+}
+
 function invocationFromWrapper(scriptPath: string, patrolArgs: string[]): PatrolInvocation {
-  // PowerShell needs -File for .ps1; bash can execute .sh directly when
-  // marked executable, but invoking through sh is portable and avoids
-  // requiring +x in CI.
   if (scriptPath.toLowerCase().endsWith('.ps1')) {
     return {
       kind: 'wrapper-script',
       command: 'pwsh',
-      args: ['-NoLogo', '-NoProfile', '-File', scriptPath, ...patrolArgs],
+      args: ['-NoLogo', '-NoProfile', '-File', scriptPath, ...patrolArgsToWrapperArgs(patrolArgs)],
       scriptPath,
     };
   }

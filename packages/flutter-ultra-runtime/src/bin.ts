@@ -10,6 +10,12 @@ async function main(): Promise<void> {
   const runtime = await createRuntimeServer();
   await runtime.start();
 
+  process.on('unhandledRejection', (reason) => {
+    runtime.server.logger.error('unhandledRejection (swallowed to keep server alive)', {
+      err: reason instanceof Error ? reason.stack : String(reason),
+    });
+  });
+
   const stopOnce = async (signal: string): Promise<void> => {
     runtime.server.logger.info('shutdown signal', { signal });
     try {

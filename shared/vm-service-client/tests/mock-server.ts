@@ -59,8 +59,18 @@ export class MockVmServer {
             );
             return;
           }
-          const reply = await handler(req.params);
-          ws.send(JSON.stringify({ jsonrpc: '2.0', id: req.id, ...reply }));
+          try {
+            const reply = await handler(req.params);
+            ws.send(JSON.stringify({ jsonrpc: '2.0', id: req.id, ...reply }));
+          } catch (err) {
+            ws.send(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                id: req.id,
+                error: { code: -32603, message: `Mock handler threw: ${err}` },
+              }),
+            );
+          }
         });
         ws.on('close', () => this.clients.delete(ws));
       });
@@ -99,10 +109,12 @@ export class MockVmServer {
     }
     this.clients.clear();
     await new Promise<void>((resolve) => {
-      this.wss?.close(() => resolve());
+      if (!this.wss) return resolve();
+      this.wss.close(() => resolve());
     });
     await new Promise<void>((resolve) => {
-      this.httpServer?.close(() => resolve());
+      if (!this.httpServer) return resolve();
+      this.httpServer.close(() => resolve());
     });
   }
 }

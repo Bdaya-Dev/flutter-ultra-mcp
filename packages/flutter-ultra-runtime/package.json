@@ -47,6 +47,7 @@
     "clean": "rimraf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@flutter-ultra/device-router": "^0.0.1",
     "@flutter-ultra/mcp-runtime": "^0.0.1",
     "@flutter-ultra/state-store": "^0.0.1",
     "@flutter-ultra/vm-service-client": "^0.0.1",

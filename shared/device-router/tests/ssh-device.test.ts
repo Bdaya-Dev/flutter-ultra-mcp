@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as os from 'node:os';
 import { SshDevice, listSshHosts } from '../src/ssh-device.js';
 
 describe('SshDevice unit', () => {
@@ -35,6 +36,7 @@ describe('listSshHosts', () => {
     }
   });
 
+  // If user has SSH config, verify it doesn't include wildcard entries
   it('excludes wildcard hosts', async () => {
     const hosts = await listSshHosts();
     for (const h of hosts) {

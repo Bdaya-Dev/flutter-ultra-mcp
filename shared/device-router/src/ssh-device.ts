@@ -79,6 +79,8 @@ export class SshDevice implements Device {
 
   constructor(private readonly spec: SshSpec) {
     this.id = `ssh:${spec.user}@${spec.host}`;
+    // On Windows, OpenSSH doesn't support Unix socket ControlPath — use a named pipe path
+    // via a temp directory. On Unix, use tmpdir.
     const suffix = randomUUID().slice(0, 8);
     if (os.platform() === 'win32') {
       this.controlPath = path.join(os.tmpdir(), `fu-ssh-${suffix}`);
@@ -93,11 +95,16 @@ export class SshDevice implements Device {
 
   private sshBaseArgs(): string[] {
     const args: string[] = [
-      '-o', 'BatchMode=yes',
-      '-o', 'StrictHostKeyChecking=accept-new',
-      '-o', 'ControlMaster=auto',
-      '-o', `ControlPath=${this.controlPath}`,
-      '-o', 'ControlPersist=10m',
+      '-o',
+      'BatchMode=yes',
+      '-o',
+      'StrictHostKeyChecking=accept-new',
+      '-o',
+      'ControlMaster=auto',
+      '-o',
+      `ControlPath=${this.controlPath}`,
+      '-o',
+      'ControlPersist=10m',
     ];
     if (this.spec.identityFile) {
       args.push('-i', this.spec.identityFile);
@@ -114,6 +121,8 @@ export class SshDevice implements Device {
 
   private async ensureConnected(): Promise<void> {
     if (this.connected) return;
+
+    // Open a ControlMaster background session
     const args = [...this.sshBaseArgs(), '-N', '-f', this.target()];
     const result = await this.sshExec(args);
     if (result.exitCode !== 0) {
@@ -260,12 +269,15 @@ export class SshDevice implements Device {
 
   async uploadFile(localPath: string, remotePath: string): Promise<void> {
     await this.ensureConnected();
+    // Ensure remote parent dir exists
     const remoteDir = path.posix.dirname(remotePath);
     await this.exec(['mkdir', '-p', remoteDir]);
 
     const scpArgs = [
-      '-o', `ControlPath=${this.controlPath}`,
-      '-o', 'BatchMode=yes',
+      '-o',
+      `ControlPath=${this.controlPath}`,
+      '-o',
+      'BatchMode=yes',
       ...(this.spec.port ? ['-P', String(this.spec.port)] : []),
       localPath,
       `${this.target()}:${remotePath}`,
@@ -281,8 +293,10 @@ export class SshDevice implements Device {
     await fs.mkdir(path.dirname(localPath), { recursive: true });
 
     const scpArgs = [
-      '-o', `ControlPath=${this.controlPath}`,
-      '-o', 'BatchMode=yes',
+      '-o',
+      `ControlPath=${this.controlPath}`,
+      '-o',
+      'BatchMode=yes',
       ...(this.spec.port ? ['-P', String(this.spec.port)] : []),
       `${this.target()}:${remotePath}`,
       localPath,
@@ -340,9 +354,12 @@ export class SshDevice implements Device {
     const localPort = await getAvailablePort();
 
     const forwardArgs = [
-      '-o', `ControlPath=${this.controlPath}`,
-      '-O', 'forward',
-      '-L', `${localPort}:${remoteHost}:${remotePort}`,
+      '-o',
+      `ControlPath=${this.controlPath}`,
+      '-O',
+      'forward',
+      '-L',
+      `${localPort}:${remoteHost}:${remotePort}`,
       this.target(),
     ];
     const result = await this.sshExec(forwardArgs);
@@ -357,9 +374,12 @@ export class SshDevice implements Device {
       localPort,
       close: async () => {
         const cancelArgs = [
-          '-o', `ControlPath=${this.controlPath}`,
-          '-O', 'cancel',
-          '-L', spec,
+          '-o',
+          `ControlPath=${this.controlPath}`,
+          '-O',
+          'cancel',
+          '-L',
+          spec,
           this.target(),
         ];
         await this.sshExec(cancelArgs);
@@ -421,12 +441,16 @@ export class SshDevice implements Device {
   async close(): Promise<void> {
     if (!this.connected) return;
 
+    // Cancel all active tunnels
     for (const tunnel of [...this.activeTunnels]) {
       try {
         const cancelArgs = [
-          '-o', `ControlPath=${this.controlPath}`,
-          '-O', 'cancel',
-          '-L', tunnel.remoteSpec,
+          '-o',
+          `ControlPath=${this.controlPath}`,
+          '-O',
+          'cancel',
+          '-L',
+          tunnel.remoteSpec,
           this.target(),
         ];
         await this.sshExec(cancelArgs);
@@ -436,12 +460,9 @@ export class SshDevice implements Device {
     }
     this.activeTunnels = [];
 
+    // Close ControlMaster
     try {
-      const exitArgs = [
-        '-o', `ControlPath=${this.controlPath}`,
-        '-O', 'exit',
-        this.target(),
-      ];
+      const exitArgs = ['-o', `ControlPath=${this.controlPath}`, '-O', 'exit', this.target()];
       await this.sshExec(exitArgs);
     } catch {
       /* best-effort */
@@ -449,6 +470,7 @@ export class SshDevice implements Device {
 
     this.connected = false;
 
+    // Clean up socket file
     try {
       await fs.unlink(this.controlPath);
     } catch {
@@ -501,6 +523,7 @@ export async function listSshHosts(): Promise<
 
     if (key?.toLowerCase() === 'host') {
       if (current) hosts.push(current);
+      // Skip wildcard entries
       if (value?.includes('*') || value?.includes('?')) {
         current = null;
       } else {

@@ -27,6 +27,7 @@ describe('LegacyDeviceAdapter', () => {
 
   it('fileExists works for existing and missing paths', async () => {
     if (process.platform === 'win32') {
+      // test -e doesn't work on Windows without WSL/bash
       return;
     }
     const exists = await adapter.fileExists('/tmp');

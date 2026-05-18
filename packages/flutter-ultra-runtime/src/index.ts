@@ -4,9 +4,11 @@
 // (28 tools across lifecycle + inspect + logs/http). Plan §5.2 + §17.
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
+import { DeviceRouter } from '@flutter-ultra/device-router';
 import { createHttpCaptureService } from './httpCapture.js';
 import { createLaunchService } from './launchApp.js';
 import { createSessionRegistry } from './sessions.js';
+import { registerDeviceTools } from './tools/devices.js';
 import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
@@ -27,6 +29,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
       : {}),
   });
 
+  const deviceRouter = new DeviceRouter();
   const sessions = createSessionRegistry({ serverName: 'runtime', logger: server.logger });
   const httpCapture = createHttpCaptureService({ logger: server.logger });
   const launch = createLaunchService({
@@ -44,6 +47,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
     },
   });
 
+  registerDeviceTools({ server, router: deviceRouter });
   registerLifecycleTools({ server, sessions, launch });
   registerInspectTools({ server, sessions });
   registerLogsAndHttpTools({ server, sessions, http: httpCapture });
@@ -53,10 +57,12 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
     sessions,
     launch,
     httpCapture,
+    deviceRouter,
     async start() {
       await server.start();
     },
     async stop() {
+      await deviceRouter.closeAll();
       await launch.shutdown();
       await sessions.shutdown();
       await httpCapture.shutdown();

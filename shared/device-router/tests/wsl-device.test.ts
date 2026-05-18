@@ -11,6 +11,7 @@ describe('WslDevice', () => {
   beforeAll(async () => {
     if (isWindows) {
       distros = await listWslDistros();
+      // Use Debian (not docker-desktop) if available
       const preferred = distros.find((d) => !d.toLowerCase().includes('docker'));
       const distro = preferred ?? distros[0];
       if (distro) {

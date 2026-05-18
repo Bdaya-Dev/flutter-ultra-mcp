@@ -215,6 +215,7 @@ export class WslDevice implements Device {
   }
 
   async forwardTcpPort(remoteHost: string, remotePort: number): Promise<PortForward> {
+    // WSL2 shares localhost with Windows host — no tunnel needed for loopback
     if (remoteHost === 'localhost' || remoteHost === '127.0.0.1' || remoteHost === '::1') {
       return { localPort: remotePort, close: async () => {} };
     }
@@ -263,7 +264,9 @@ export class WslDevice implements Device {
     };
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> {
+    // No persistent connection to clean up for WSL
+  }
 }
 
 /** List available WSL distros by parsing `wsl --list --quiet`. */

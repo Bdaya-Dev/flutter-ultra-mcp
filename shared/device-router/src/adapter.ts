@@ -1,5 +1,17 @@
+/**
+ * Adapter between the canonical §23.3 Device interface and worker-J's legacy
+ * Device shape (label/isLocal/exec/uploadFile/fileExists/openRpcStream).
+ *
+ * Existing native-desktop backends can consume either shape via this adapter.
+ */
+
 import type { Device, LegacyDevice, ExecResult } from './types.js';
 
+/**
+ * Wrap a canonical Device as a LegacyDevice so existing code that expects
+ * the v1 shape (label/isLocal/exec/uploadFile/fileExists/openRpcStream)
+ * can consume it without changes.
+ */
 export class LegacyDeviceAdapter implements LegacyDevice {
   constructor(private readonly device: Device) {}
 
@@ -36,6 +48,11 @@ export class LegacyDeviceAdapter implements LegacyDevice {
   }
 }
 
+/**
+ * Wrap a LegacyDevice as a canonical Device. Only exec, uploadFile, and
+ * forwardTcpPort (via openRpcStream) are available; other methods throw
+ * with a clear migration message.
+ */
 export class CanonicalDeviceAdapter implements Device {
   readonly id: string;
   readonly kind: 'local' | 'wsl' | 'ssh';
@@ -102,5 +119,7 @@ export class CanonicalDeviceAdapter implements Device {
     };
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> {
+    // Legacy devices have no close
+  }
 }

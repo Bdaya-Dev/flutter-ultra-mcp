@@ -4,6 +4,10 @@ import { WslDevice, listWslDistros } from './wsl-device.js';
 import { SshDevice, listSshHosts, type SshSpec } from './ssh-device.js';
 import type { Device, DeviceSummary, ConnectSpec } from './types.js';
 
+/**
+ * Central device registry. Discovers available devices, manages connections,
+ * and resolves device IDs to Device instances.
+ */
 export class DeviceRouter {
   private readonly devices = new Map<string, Device>();
   private readonly localDevice = new LocalDevice();
@@ -12,10 +16,12 @@ export class DeviceRouter {
     this.devices.set('local', this.localDevice);
   }
 
+  /** Resolve a device by ID. Returns undefined if not connected. */
   get(deviceId: string): Device | undefined {
     return this.devices.get(deviceId);
   }
 
+  /** Resolve a device, defaulting to local if no ID provided. */
   resolve(deviceId?: string): Device {
     const id = deviceId ?? 'local';
     const device = this.devices.get(id);
@@ -27,6 +33,12 @@ export class DeviceRouter {
     return device;
   }
 
+  /**
+   * Enumerate available devices without connecting.
+   * - Always includes 'local'
+   * - On Windows, includes WSL distros
+   * - Includes SSH hosts from ~/.ssh/config
+   */
   async listAvailable(): Promise<DeviceSummary[]> {
     const summaries: DeviceSummary[] = [
       {
@@ -37,6 +49,7 @@ export class DeviceRouter {
       },
     ];
 
+    // WSL discovery (Windows only)
     if (os.platform() === 'win32') {
       try {
         const distros = await listWslDistros();
@@ -53,6 +66,7 @@ export class DeviceRouter {
       }
     }
 
+    // SSH host discovery
     try {
       const sshHosts = await listSshHosts();
       for (const h of sshHosts) {
@@ -60,7 +74,7 @@ export class DeviceRouter {
         summaries.push({
           id: `ssh:${user}@${h.host}`,
           kind: 'ssh',
-          platform: 'linux',
+          platform: 'linux', // resolved on probe()
           label: `SSH: ${user}@${h.host}${h.port ? `:${h.port}` : ''}`,
         });
       }
@@ -68,6 +82,7 @@ export class DeviceRouter {
       /* no SSH config */
     }
 
+    // Include already-connected devices not in discovery
     for (const [id, device] of this.devices) {
       if (!summaries.some((s) => s.id === id)) {
         summaries.push({
@@ -82,6 +97,10 @@ export class DeviceRouter {
     return summaries;
   }
 
+  /**
+   * Connect to a device. Creates the Device, probes it, and stores it.
+   * Returns the probe result.
+   */
   async connect(
     spec: ConnectSpec,
   ): Promise<{ device: Device; probe: Awaited<ReturnType<Device['probe']>> }> {
@@ -110,6 +129,7 @@ export class DeviceRouter {
     return { device, probe: probeResult };
   }
 
+  /** Disconnect a device by ID. */
   async disconnect(deviceId: string): Promise<void> {
     if (deviceId === 'local') {
       throw new Error('Cannot disconnect local device');
@@ -120,12 +140,14 @@ export class DeviceRouter {
     this.devices.delete(deviceId);
   }
 
+  /** Disconnect all non-local devices. */
   async closeAll(): Promise<void> {
     const toClose = [...this.devices.entries()].filter(([id]) => id !== 'local');
     await Promise.allSettled(toClose.map(async ([, device]) => device.close()));
     for (const [id] of toClose) this.devices.delete(id);
   }
 
+  /** Get all currently connected device IDs. */
   connectedIds(): string[] {
     return [...this.devices.keys()];
   }

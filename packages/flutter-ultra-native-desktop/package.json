@@ -45,6 +45,7 @@
     "README.md",
     "sidecars/macos-swift/Package.swift",
     "sidecars/macos-swift/Sources",
+    "sidecars/macos-swift/bin",
     "sidecars/macos-swift/README.md",
     "sidecars/windows-flaui/FlutterUltraWinHelper",
     "sidecars/windows-flaui/README.md",

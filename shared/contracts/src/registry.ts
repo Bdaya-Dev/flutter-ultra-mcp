@@ -1,5 +1,19 @@
-import Ajv2020, { type ValidateFunction } from 'ajv/dist/2020.js';
-import addFormats from 'ajv-formats';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const Ajv2020 = require('ajv/dist/2020') as { new (opts: Record<string, unknown>): AjvInstance };
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const addFormats = require('ajv-formats') as (ajv: AjvInstance) => void;
+
+interface AjvInstance {
+  addSchema(schema: Record<string, unknown>, key: string): void;
+  compile(schema: Record<string, unknown>): ValidateFunction;
+}
+interface ValidateFunction {
+  (data: unknown): boolean;
+  errors?: Array<{ instancePath?: string; message?: string }>;
+}
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +31,7 @@ export interface ExtensionContract {
 }
 
 export class ContractRegistry {
-  private readonly ajv: Ajv2020;
+  private readonly ajv: AjvInstance;
   private readonly contracts = new Map<ExtensionName, ExtensionContract>();
 
   constructor() {
@@ -78,7 +92,7 @@ export class ContractRegistry {
     const valid = validator(data);
     const errors = valid
       ? []
-      : (validator.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
+      : (validator.errors ?? []).map((e: { instancePath?: string; message?: string }) => `${e.instancePath} ${e.message}`);
     return { valid: valid as boolean, errors };
   }
 

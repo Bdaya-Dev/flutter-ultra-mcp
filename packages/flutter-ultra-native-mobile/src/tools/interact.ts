@@ -219,7 +219,7 @@ export function registerInteractTools(opts: {
   ): void {
     server.defineTool(
       { name, description, inputShape: schemaShape, timeoutClass: 'quick' },
-      async (args: { deviceId: string; timeoutMs: number }, { signal }) => {
+      async (args, { signal }) => {
         if (signal.aborted) throw signal.reason as Error;
         const device = await registry.get(args.deviceId);
         if (device instanceof AndroidDevice) {

@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [main, next, alpha, beta]
+    branches: [main]
 
 concurrency:
   group: release-${{ github.ref }}
@@ -16,27 +16,26 @@ permissions:
 
 jobs:
   release:
-    name: Publish packages
+    name: Build, test & publish
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+
       - run: npm ci
       - run: npm run build
       - run: npm test
-      # Trusted Publishing (OIDC) — no NPM_TOKEN needed.
-      # Requires one-time setup on npmjs.com:
-      #   Package Settings → Trusted Publisher → GitHub Actions
-      #   → org: Bdaya-Dev, repo: flutter-ultra-mcp, workflow: release.yml
-      # Provenance attestations are auto-generated.
-      - name: Changesets publish
+
+      - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx changeset publish
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release

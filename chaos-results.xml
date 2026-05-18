@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="37" failures="0" errors="0" time="19.7502508">
+    <testsuite name="tests/chaos/concurrent-lock.test.ts" timestamp="2026-05-18T05:30:08.543Z" hostname="AhmedFwela-Laptop" tests="7" failures="0" errors="0" skipped="0" time="0.9044736">
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: concurrent lock contention on state files &gt; 10 sequential stateUpdate increments produce correct final count" time="0.1419936">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: concurrent lock contention on state files &gt; 5 concurrent stateUpdate calls serialize correctly" time="0.4121154">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: concurrent lock contention on state files &gt; interleaved reads during writes see consistent snapshots" time="0.0831529">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: concurrent lock contention on state files &gt; stateUpdate after manual file creation works" time="0.0307934">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: SessionResource ref-counting under contention &gt; 100 concurrent acquire/release cycles do not leak resources" time="0.0179362">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: SessionResource ref-counting under contention &gt; acquire during disposal waits for cleanup" time="0.2150911">
+        </testcase>
+        <testcase classname="tests/chaos/concurrent-lock.test.ts" name="chaos: SessionResource ref-counting under contention &gt; double release is safe (no negative refCount)" time="0.0005191">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/chaos/corrupt-jsonrpc.test.ts" timestamp="2026-05-18T05:30:08.548Z" hostname="AhmedFwela-Laptop" tests="6" failures="0" errors="0" skipped="0" time="0.6916788">
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: corrupt JSON-RPC frames &gt; server ignores corrupt incoming frames without crashing" time="0.050106">
+        </testcase>
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: corrupt JSON-RPC frames &gt; server handles partial JSON frame (truncated mid-object)" time="0.0115068">
+        </testcase>
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: corrupt JSON-RPC frames &gt; server returns error for frame with missing method field" time="0.1095939">
+        </testcase>
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: corrupt JSON-RPC frames &gt; 100% corruption rate means no valid responses, but server stays alive" time="0.510778">
+        </testcase>
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: corrupt frame helpers &gt; corruptJsonRpcFrame produces deterministic corruption" time="0.000558">
+        </testcase>
+        <testcase classname="tests/chaos/corrupt-jsonrpc.test.ts" name="chaos: binary frame injection &gt; server survives receiving binary frames instead of text" time="0.0074138">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/chaos/keepalive-idle.test.ts" timestamp="2026-05-18T05:30:08.552Z" hostname="AhmedFwela-Laptop" tests="2" failures="0" errors="0" skipped="0" time="8.1093938">
+        <testcase classname="tests/chaos/keepalive-idle.test.ts" name="chaos: server survives idle periods &gt; server responds after 5s idle gap" time="5.0814507">
+        </testcase>
+        <testcase classname="tests/chaos/keepalive-idle.test.ts" name="chaos: server survives idle periods &gt; multiple rapid calls after idle all succeed" time="3.0257156">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/chaos/state-corruption.test.ts" timestamp="2026-05-18T05:30:08.553Z" hostname="AhmedFwela-Laptop" tests="10" failures="0" errors="0" skipped="0" time="0.5099448">
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: state file corruption recovery &gt; stateRead throws on corrupt JSON (not silently returns default)" time="0.0137041">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: state file corruption recovery &gt; stateUpdate fails on corrupt file, recovers after manual fix" time="0.0299998">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: state file corruption recovery &gt; stateWriteAtomic does not leave .tmp files" time="0.0265827">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: state file corruption recovery &gt; truncated JSON file is detected on read" time="0.0072651">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: state file corruption recovery &gt; sequential stateUpdate calls produce correct final state" time="0.0837905">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: JSONL append under adverse conditions &gt; readJsonl skips malformed lines without crashing" time="0.0190805">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: JSONL append under adverse conditions &gt; appendJsonl respects maxLines cap under rapid writes" time="0.2893607">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: JSONL append under adverse conditions &gt; appendJsonl on non-existent directory creates it" time="0.0121561">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: JSONL append under adverse conditions &gt; readJsonl on non-existent file returns empty without throwing" time="0.0024689">
+        </testcase>
+        <testcase classname="tests/chaos/state-corruption.test.ts" name="chaos: job state survives server crash &gt; job file persists across simulated process restart" time="0.0227291">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/chaos/watchdog-under-fault.test.ts" timestamp="2026-05-18T05:30:08.557Z" hostname="AhmedFwela-Laptop" tests="7" failures="0" errors="0" skipped="0" time="0.8429901">
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; watchdog kills a handler that hangs due to unresponsive WS" time="0.1129967">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; watchdog does not interfere with a fast handler under latency" time="0.060131">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; concurrent watchdogs are independent (no shared timer leaks)" time="0.1082704">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; external abort races with watchdog - first wins" time="0.0325867">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; progress callback keeps firing even when handler is slow" time="0.3112958">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; env override ceiling is respected under fault" time="0.0900214">
+        </testcase>
+        <testcase classname="tests/chaos/watchdog-under-fault.test.ts" name="chaos: watchdog fires correctly under fault conditions &gt; 10 concurrent calls with different watchdog ceilings resolve independently" time="0.1254381">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/chaos/ws-disconnect.test.ts" timestamp="2026-05-18T05:30:08.560Z" hostname="AhmedFwela-Laptop" tests="5" failures="0" errors="0" skipped="0" time="8.6917697">
+        <testcase classname="tests/chaos/ws-disconnect.test.ts" name="chaos: WebSocket disconnect mid-call &gt; client receives error when server kills connection mid-RPC" time="0.0934891">
+        </testcase>
+        <testcase classname="tests/chaos/ws-disconnect.test.ts" name="chaos: WebSocket disconnect mid-call &gt; client reconnects and succeeds after server recovers from disconnect" time="0.0139129">
+        </testcase>
+        <testcase classname="tests/chaos/ws-disconnect.test.ts" name="chaos: WebSocket disconnect mid-call &gt; handles 50% frame drop rate with retries" time="8.0420842">
+        </testcase>
+        <testcase classname="tests/chaos/ws-disconnect.test.ts" name="chaos: WebSocket disconnect mid-call &gt; server terminate (no close frame) triggers error on client" time="0.0087997">
+        </testcase>
+        <testcase classname="tests/chaos/ws-disconnect.test.ts" name="chaos: WebSocket latency injection &gt; calls succeed under high latency without data corruption" time="0.5318881">
+        </testcase>
+    </testsuite>
+</testsuites>

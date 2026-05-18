@@ -132,6 +132,11 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
       annotations: { destructiveHint: false, idempotentHint: false },
     },
     async (args) => {
+      if (!args.elementId && args.x === undefined && args.y === undefined) {
+        throw new Error(
+          'desktop_click requires either elementId or (x, y) coordinates to target the click',
+        );
+      }
       try {
         return await backend.desktopClick(args);
       } catch (err) {

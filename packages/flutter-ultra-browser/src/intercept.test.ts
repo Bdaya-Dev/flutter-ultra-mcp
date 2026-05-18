@@ -2,7 +2,7 @@
 // works without launching a real browser. We verify the URL-parsing logic
 // that intercept_redirect uses to surface OAuth code/state.
 //
-// Full end-to-end against dev-auth.invora.app-style is in the integration
+// Full end-to-end against a real OIDC provider is in the integration
 // suite (wave-5 verifier agent), not unit tests.
 
 import { describe, it, expect } from 'vitest';
@@ -29,11 +29,11 @@ function extractAuthParams(matchedUrl: string): {
 describe('intercept_redirect URL extraction (AC-Br1 fragment)', () => {
   it('extracts authorization code + state from query (auth-code flow)', () => {
     const url =
-      'app.invora.dev://callback?code=XYZ123&state=abc-def&iss=https%3A%2F%2Fdev-auth.invora.app';
+      'com.example.myapp://callback?code=XYZ123&state=abc-def&iss=https%3A%2F%2Fauth.example.com';
     const { query, fragment } = extractAuthParams(url);
     expect(query.code).toBe('XYZ123');
     expect(query.state).toBe('abc-def');
-    expect(query.iss).toBe('https://dev-auth.invora.app');
+    expect(query.iss).toBe('https://auth.example.com');
     expect(fragment).toEqual({});
   });
 
@@ -55,10 +55,10 @@ describe('intercept_redirect URL extraction (AC-Br1 fragment)', () => {
     expect(fragment.state).toBe('f1');
   });
 
-  it('regex pattern matches Invora-style OAuth redirect', () => {
+  it('regex pattern matches OAuth redirect with code param', () => {
     const pattern = /.*\/callback.*code=/;
-    expect(pattern.test('app.invora.dev://callback?code=XYZ&state=abc')).toBe(true);
-    expect(pattern.test('https://dev-auth.invora.app/login')).toBe(false);
-    expect(pattern.test('https://dev-dashboard.invora.app/callback?code=foo')).toBe(true);
+    expect(pattern.test('com.example.myapp://callback?code=XYZ&state=abc')).toBe(true);
+    expect(pattern.test('https://auth.example.com/login')).toBe(false);
+    expect(pattern.test('https://dashboard.example.com/callback?code=foo')).toBe(true);
   });
 });

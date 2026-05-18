@@ -253,7 +253,7 @@ export function registerLogsAndHttpTools(opts: {
         messageType: z
           .string()
           .min(1)
-          .describe('Fully-qualified message name, e.g. invora.invoicing.v2.ListInvoicesResponse.'),
+          .describe('Fully-qualified message name, e.g. myapp.billing.v2.ListInvoicesResponse.'),
       },
       timeoutClass: 'quick',
     },

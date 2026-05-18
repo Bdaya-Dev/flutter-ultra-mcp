@@ -2,7 +2,7 @@
 
 **Investigator:** worker-P  
 **Environment:** Windows 11 Pro 10.0.26200, Flutter 3.41.9 (stable), Dart SDK 3.11.5, VS Code Dart-Code 3.134.0 (flutter-3.134.0), IntelliJ: NOT INSTALLED  
-**Guinea pig:** `clients/invora/invora-flutter/` (invora Flutter app, lib/main_development.dart)
+**Guinea pig:** a Flutter app (`lib/main_development.dart`)
 
 ---
 
@@ -120,7 +120,7 @@ The DDS process is always launched with `--bind-port=0`, meaning **the DDS port 
 
 ### `.dart_tool/` directory (project-local)
 
-Pre-existing content in `clients/invora/invora-flutter/.dart_tool/`:
+Pre-existing content in the project's `.dart_tool/`:
 
 ```
 .dart_tool/
@@ -221,7 +221,7 @@ Once the DTD is running, Dart-Code registers these JSON-RPC services on it:
       "debuggerType": "Flutter",
       "flutterDeviceId": "chrome",
       "flutterMode": "debug",
-      "projectRootPath": "D:\\projects\\devops-aggregate\\clients\\invora\\invora-flutter",
+      "projectRootPath": "D:\\projects\\my-flutter-app",
       "vmServiceUri": "ws://127.0.0.1:<dds-port>/<token>/ws"
     }
   ]
@@ -254,7 +254,7 @@ This requires being a VS Code extension to call. An external MCP server cannot u
 
 The plan mentioned `.vscode/.dart_code_tooling.json` as a possible file written by Dart-Code. This file does **not exist** in:
 
-- `clients/invora/invora-flutter/.vscode/`
+- `<project>/.vscode/`
 - `D:\projects\devops-aggregate\.vscode\`
 - `%APPDATA%\Code\`
 

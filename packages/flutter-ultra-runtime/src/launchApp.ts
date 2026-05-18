@@ -261,17 +261,38 @@ export function createLaunchService(opts: {
 
     child.on('error', async (err) => {
       logger.error('flutter spawn failed', { jobId, err: err.message });
-      await patchJob(jobId, { stage: 'failed', errorMessage: err.message });
+      const current = await readJob(jobId);
+      const stderrTail = current.recentLog
+        .filter((l) => l.startsWith('[stderr]'))
+        .slice(-20)
+        .join('\n');
+      const errorMessage = stderrTail
+        ? `${err.message}\n--- last stderr ---\n${stderrTail}`
+        : err.message;
+      await patchJob(jobId, { stage: 'failed', errorMessage });
+      PROCESSES.delete(jobId);
     });
     child.on('exit', async (code, signal) => {
       logger.info('flutter exited', { jobId, code, signal });
       PROCESSES.delete(jobId);
       const current = await readJob(jobId);
-      const isError = (code ?? 0) !== 0 && current.stage !== 'stopped';
+      if (current.stage === 'stopped') return;
+      const isError = (code ?? 0) !== 0;
+      const stderrTail = current.recentLog
+        .filter((l) => l.startsWith('[stderr]'))
+        .slice(-20)
+        .join('\n');
+      let errorMessage: string | undefined;
+      if (isError) {
+        const parts: string[] = [`exited with code=${code ?? 'null'}`];
+        if (signal) parts[0] += ` signal=${signal}`;
+        if (stderrTail) parts.push('--- last stderr ---', stderrTail);
+        errorMessage = parts.join('\n');
+      }
       await patchJob(jobId, {
         stage: isError ? 'failed' : 'stopped',
         ...(code !== null ? { exitCode: code } : {}),
-        ...(isError && signal ? { errorMessage: `exited with code=${code} signal=${signal}` } : {}),
+        ...(errorMessage !== undefined ? { errorMessage } : {}),
       });
     });
 

@@ -58,5 +58,5 @@ Making the mixin public moves option 2 from "private reach-through" to
 ## When to file
 
 After `ultra_flutter` ships v1.0 and we have at least one real consumer
-(Invora) demonstrating the composition pattern. PR will reference the
+demonstrating the composition pattern. PR will reference the
 ultra_flutter use case as the concrete motivation.

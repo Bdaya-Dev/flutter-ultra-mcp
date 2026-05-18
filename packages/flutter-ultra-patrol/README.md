@@ -26,7 +26,7 @@ MCP server orchestrating **Patrol E2E tests** across web, Android, iOS, and desk
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FLUTTER_ULTRA_PATROL_FORK` | Absolute path to `vendor/patrol/`.                                                                                                                                                                          |
 | `FLUTTER_ULTRA_STATE_DIR`   | Future on-disk job persistence (in-memory in v1.0).                                                                                                                                                         |
-| `PATROL_WEB_BROWSER_ARGS`   | Comma-separated Chromium flags merged into every `--web-browser-args`. Default per Invora gotcha #10: `--enable-unsafe-swiftshader,--disable-renderer-backgrounding,--disable-background-timer-throttling`. |
+| `PATROL_WEB_BROWSER_ARGS`   | Comma-separated Chromium flags merged into every `--web-browser-args`. Default: `--enable-unsafe-swiftshader,--disable-renderer-backgrounding,--disable-background-timer-throttling`. |
 | `FLUTTER_ULTRA_LOG_LEVEL`   | `debug`/`info`/`warn`/`error`. Default `info`.                                                                                                                                                              |
 
 ## Invocation strategy
@@ -34,7 +34,7 @@ MCP server orchestrating **Patrol E2E tests** across web, Android, iOS, and desk
 For each call we pick (in order):
 
 1. `useRawCli: true` → skip wrapper detection.
-2. `./scripts/run_patrol_web.ps1` (Windows) or `./scripts/run_patrol_web.sh` (Unix) at the project root → use it. Many Bdaya projects (Invora) standardize on this wrapper to pre-apply env vars + flags.
+2. `./scripts/run_patrol_web.ps1` (Windows) or `./scripts/run_patrol_web.sh` (Unix) at the project root → use it. Some projects standardize on this wrapper to pre-apply env vars + flags.
 3. Otherwise spawn `dart run patrol_cli` from the project root, which resolves through `pubspec_overrides.yaml` to `vendor/patrol/packages/patrol_cli`.
 
 Web invocations always set `--web-init-timeout 180000` by default (vs upstream's 60000 hardcode — see Bdaya fork PR #9 in `docs/UPSTREAM-PATROL-PRS.md`).

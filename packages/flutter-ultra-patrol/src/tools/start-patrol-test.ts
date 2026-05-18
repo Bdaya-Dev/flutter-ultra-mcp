@@ -182,8 +182,7 @@ export function mergeBrowserArgs(envBrowserArgs: string, extra: string[]): strin
     result.push(trimmed);
   };
 
-  // Always inject the safe defaults — Invora gotcha #10 says they're
-  // mandatory for headless CanvasKit.
+  // Always inject the safe defaults — mandatory for headless CanvasKit.
   for (const flag of SAFE_BROWSER_DEFAULTS) push(flag);
   if (envBrowserArgs) {
     for (const flag of envBrowserArgs.split(',')) push(flag);

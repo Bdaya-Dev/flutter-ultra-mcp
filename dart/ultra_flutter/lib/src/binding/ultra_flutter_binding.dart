@@ -36,13 +36,14 @@ import 'package:ultra_flutter/src/version.g.dart' as v;
 /// }
 /// ```
 ///
-/// For Sentry composition use the
-/// `package:ultra_flutter_sentry_compat/ultra_flutter_sentry_compat.dart`
-/// companion mixin:
+/// For Sentry composition, mix in `SentryWidgetsBindingMixin` directly:
 ///
 /// ```dart
+/// // ignore: implementation_imports
+/// import 'package:sentry_flutter/src/binding_wrapper.dart';
+///
 /// class AppBinding extends WidgetsFlutterBinding
-///     with UltraFlutterBinding, UltraSentryCompatMixin {}
+///     with SentryWidgetsBindingMixin, UltraFlutterBinding {}
 /// ```
 ///
 /// Configuration is delivered via the static [setUltraConfiguration] before

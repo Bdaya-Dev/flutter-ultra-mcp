@@ -23,8 +23,8 @@ v0.5.0 (Apache-2.0).
 
 - `ext.flutter.ultra.clearText` — convenience wrapper around
   `enterText('')`, saves agents two round-trips.
-- `ultra_flutter_sentry_compat` companion package for cleanly composing
-  with `SentryWidgetsBindingMixin`.
+- Sentry composition: mix in `SentryWidgetsBindingMixin` directly (no
+  companion package needed).
 
 ### Test coverage
 

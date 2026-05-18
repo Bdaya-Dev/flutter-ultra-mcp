@@ -44,16 +44,17 @@ Future<void> main() async {
 
 ### Composed with Sentry
 
-Use the companion package `ultra_flutter_sentry_compat`:
+Mix in `SentryWidgetsBindingMixin` directly alongside `UltraFlutterBinding`:
 
 ```dart
 import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
-import 'package:ultra_flutter_sentry_compat/ultra_flutter_sentry_compat.dart';
+// ignore: implementation_imports
+import 'package:sentry_flutter/src/binding_wrapper.dart';
 
 class AppBinding extends WidgetsFlutterBinding
-    with SentryWidgetsBindingMixin, UltraFlutterBinding, UltraSentryCompatMixin {}
+    with SentryWidgetsBindingMixin, UltraFlutterBinding {}
 
 Future<void> main() async {
   AppBinding.ensureInitialized();

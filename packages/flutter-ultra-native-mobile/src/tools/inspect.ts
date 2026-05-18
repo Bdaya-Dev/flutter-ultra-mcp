@@ -7,7 +7,7 @@ import type { DeviceRegistry } from '../registry.js';
 import { listDevicesSchema, dumpA11ySchema, waitForNativeElementSchema } from '../schemas.js';
 import { AndroidDevice } from '../android.js';
 import { IosSimDevice } from '../ios.js';
-import { findNode, parseUiautomatorXml, type A11yNode } from '../a11y.js';
+import { findNode, parseUiautomatorXml } from '../a11y.js';
 
 export function registerInspectTools(opts: {
   server: FlutterUltraServer;
@@ -60,15 +60,14 @@ export function registerInspectTools(opts: {
         return { platform: 'android', deviceId: args.deviceId, tree };
       }
       if (device instanceof IosSimDevice) {
-        // iOS XCUITest dump requires WebDriverAgent or Apple's privateframework.
-        // Surface a structured "unimplemented" so the agent doesn't retry.
         return {
-          platform: 'ios-sim',
-          deviceId: args.deviceId,
-          tree: { path: '', children: [] } as A11yNode,
-          unimplemented: true,
-          message:
-            'dump_a11y_tree on iOS Simulator requires WebDriverAgent or Apple XCUITest harness; not yet implemented. For widget-level access use the flutter-ultra-runtime/gesture server inside the running Flutter app.',
+          content: [
+            {
+              type: 'text' as const,
+              text: 'dump_a11y_tree is not available on iOS Simulator — it requires WebDriverAgent or Apple XCUITest harness. Use flutter-ultra-gesture interactive_elements for Flutter widget introspection instead.',
+            },
+          ],
+          isError: true,
         };
       }
       throw new InvalidToolInputError(
@@ -91,9 +90,13 @@ export function registerInspectTools(opts: {
       const device = await registry.get(args.deviceId);
       if (!(device instanceof AndroidDevice)) {
         return {
-          matched: false,
-          message:
-            'wait_for_native_element currently supports Android only; iOS coverage tracks dump_a11y_tree which is unimplemented for iOS.',
+          content: [
+            {
+              type: 'text' as const,
+              text: 'wait_for_native_element is not available on iOS — it depends on dump_a11y_tree which requires WebDriverAgent. Use flutter-ultra-gesture wait_for with Flutter widget finders instead.',
+            },
+          ],
+          isError: true,
         };
       }
       const deadline = Date.now() + args.timeoutMs;

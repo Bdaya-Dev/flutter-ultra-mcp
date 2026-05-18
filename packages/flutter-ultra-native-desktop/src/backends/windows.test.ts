@@ -12,19 +12,14 @@ import { LocalDevice } from '../device/local.js';
 import { WindowsDesktopBackend, describeWindowsError } from './windows.js';
 import { resolveWinHelperPath } from '../sidecar/sidecarPaths.js';
 import { JsonRpcError } from '../rpc/jsonRpcClient.js';
+import type { Logger } from '@flutter-ultra/mcp-runtime';
 
-interface MinimalLogger {
-  debug(msg: string, extra?: Record<string, unknown>): void;
-  info(msg: string, extra?: Record<string, unknown>): void;
-  warn(msg: string, extra?: Record<string, unknown>): void;
-  error(msg: string, extra?: Record<string, unknown>): void;
-}
-
-const silentLogger: MinimalLogger = {
+const silentLogger: Logger = {
   debug: () => {},
   info: () => {},
   warn: () => {},
   error: () => {},
+  child: () => silentLogger,
 };
 
 const helperPath = resolveWinHelperPath();
@@ -58,8 +53,7 @@ describe('WindowsDesktopBackend', () => {
         device,
         // deliberately bogus path
         helperPath: 'C:\\does-not-exist\\flutter-ultra-win-helper.exe',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        logger: silentLogger as any,
+        logger: silentLogger,
       });
       expect(backend).toBeNull();
     },
@@ -73,8 +67,7 @@ describe('WindowsDesktopBackend', () => {
       const backend = await WindowsDesktopBackend.create({
         device,
         helperPath,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        logger: silentLogger as any,
+        logger: silentLogger,
       });
       expect(backend).not.toBeNull();
       if (!backend) return;

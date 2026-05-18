@@ -224,7 +224,7 @@ export function registerLifecycleTools(opts: {
           .describe(
             'Service extension method, e.g. ext.flutter.inspector.getRootWidgetSummaryTree',
           ),
-        params: z.record(z.unknown()).optional().describe('Optional params map for the extension.'),
+        params: z.record(z.string(), z.any()).optional().describe('Optional params map for the extension.'),
       },
       timeoutClass: 'long',
       ceilingMs: 60_000,

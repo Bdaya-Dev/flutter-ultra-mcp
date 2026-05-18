@@ -1,0 +1,62 @@
+{
+  "name": "@flutter-ultra/device-router",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Device abstraction for flutter-ultra-mcp: run commands on local, WSL, or SSH-remote targets from a single interface.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/device-router",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
+    "directory": "shared/device-router"
+  },
+  "bugs": {
+    "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
+  },
+  "keywords": [
+    "flutter",
+    "mcp",
+    "device",
+    "wsl",
+    "ssh",
+    "remote"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "clean": "rimraf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "execa": "^9.5.1",
+    "ssh-config": "^5.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

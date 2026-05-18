@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v6
         with:
@@ -33,9 +34,12 @@ jobs:
       - run: npm run build
       - run: npm test
 
+      # semantic-release determines version from conventional commits,
+      # generates CHANGELOG, then @semantic-release/exec calls
+      # `npm publish --access public` which auto-detects OIDC
+      # from the id-token:write permission (Trusted Publishing).
+      # Zero tokens needed.
       - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release

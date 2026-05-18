@@ -4,7 +4,10 @@
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
-    "@semantic-release/npm",
+    ["@semantic-release/exec", {
+      "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version",
+      "publishCmd": "npm publish --access public"
+    }],
     ["@semantic-release/git", {
       "assets": ["package.json", "CHANGELOG.md"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"

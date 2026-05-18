@@ -1,7 +1,7 @@
 {
   "name": "@bdayadev/flutter-ultra-mcp",
   "version": "0.0.1",
-  "description": "Flutter Ultra MCP plugin monorepo \u00e2\u20ac\u201d 8 MCP servers + ultra_flutter Dart packages + skills for Claude Code.",
+  "description": "Flutter Ultra MCP plugin monorepo â€” 8 MCP servers + ultra_flutter Dart packages + skills for Claude Code.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp",
   "repository": {
@@ -36,6 +36,7 @@
     "@commitlint/config-conventional": "^19.0.0",
     "@eslint/js": "^9.39.4",
     "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/exec": "7.1.0",
     "@semantic-release/git": "10.0.1",
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",

@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.1...v1.0.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* add postinstall auto-build so plugin works after marketplace clone ([579a1cd](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/579a1cdecccf10f20a1bcf7bfe128c8ef09ff541))
+
 ## [1.0.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.0...v1.0.1) (2026-05-18)
 
 

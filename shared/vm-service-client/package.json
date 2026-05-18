@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/vm-service-client",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "TypeScript Dart VM Service client with DDS multi-client coordination. Backs the runtime, gesture, devtools, and patrol MCP servers.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/vm-service-client",

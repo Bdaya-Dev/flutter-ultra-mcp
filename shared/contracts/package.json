@@ -2,7 +2,7 @@
   "name": "@flutter-ultra/contracts",
   "version": "0.0.0",
   "private": true,
-  "description": "JSON Schema contract definitions for ext.flutter.ultra.* wire format — single source of truth for TS↔Dart interop.",
+  "description": "JSON Schema contract definitions for ext.flutter.ultra.* wire format \u00e2\u20ac\u201d single source of truth for TS\u00e2\u2020\u201dDart interop.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.js",

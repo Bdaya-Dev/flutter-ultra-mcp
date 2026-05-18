@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/flutter-ultra-native-desktop",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "MCP server for native desktop UIs: Windows UIA (FlaUI sidecar), macOS AXUIElement (Swift sidecar + TCC UX), Linux AT-SPI (PyGObject sidecar). Cross-OS feature detection registers ZERO tools per OS path when its sidecar is unavailable.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-native-desktop",

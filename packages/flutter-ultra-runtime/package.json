@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/flutter-ultra-runtime",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "MCP server for Flutter runtime: discover + attach to flutter run sessions over DDS, introspect VM Service, hot reload, screenshots, HTTP/gRPC capture.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-runtime",

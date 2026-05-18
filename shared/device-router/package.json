@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/device-router",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "Device abstraction for flutter-ultra-mcp: run commands on local, WSL, or SSH-remote targets from a single interface.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/device-router",

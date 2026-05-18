@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/mcp-runtime",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "Shared MCP server scaffolding: stdio transport, watchdog/timeout, structured logging, session model, finder spec.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/mcp-runtime",

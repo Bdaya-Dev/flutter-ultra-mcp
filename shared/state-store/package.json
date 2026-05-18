@@ -1,7 +1,7 @@
 {
   "name": "@flutter-ultra/state-store",
   "version": "0.0.1",
-  "private": false,
+  "private": true,
   "description": "File-based IPC for cross-server shared state. Atomic read-modify-write via proper-lockfile.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/state-store",

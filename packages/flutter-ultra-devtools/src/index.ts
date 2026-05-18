@@ -143,4 +143,10 @@ server.defineTool(
   },
 );
 
-await server.start();
+const isDirectInvocation =
+  process.argv[1] !== undefined &&
+  import.meta.url === new URL(`file://${process.argv[1].replace(/\\/g, '/')}`).href;
+
+if (isDirectInvocation) {
+  await server.start();
+}

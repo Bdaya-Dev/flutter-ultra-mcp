@@ -81,7 +81,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.dumpWindowTree(args);
+        return await backend.dumpWindowTree(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }
@@ -133,7 +133,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.desktopClick(args);
+        return await backend.desktopClick(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }
@@ -157,7 +157,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.desktopType(args);
+        return await backend.desktopType(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }
@@ -207,7 +207,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.selectFileInDialog(args);
+        return await backend.selectFileInDialog(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }
@@ -230,7 +230,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.confirmDialog(args);
+        return await backend.confirmDialog(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }
@@ -261,7 +261,7 @@ export function registerDesktopTools(opts: RegisterDesktopToolsOptions): number 
     },
     async (args) => {
       try {
-        return backend.waitForWindow(args);
+        return await backend.waitForWindow(args);
       } catch (err) {
         throw new Error(describe(backend, err));
       }

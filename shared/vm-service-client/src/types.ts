@@ -389,7 +389,11 @@ export const JsonRpcResponseSchema = z
       .strict()
       .optional(),
   })
-  .passthrough();
+  .passthrough()
+  .refine(
+    (d) => d.result !== undefined || d.error !== undefined,
+    'JSON-RPC 2.0 response must contain either result or error',
+  );
 export type JsonRpcResponse = z.infer<typeof JsonRpcResponseSchema>;
 
 export const JsonRpcNotificationSchema = z

@@ -400,6 +400,45 @@ function setupStdoutParser(
 ): void {
   let stdoutBuffer = '';
   let stderrBuffer = '';
+  let webLaunchUrl: string | undefined;
+  let appId: string | undefined;
+
+  async function completeAttach(uri: string): Promise<void> {
+    await patchJob(jobId, { stage: 'attached', vmServiceUri: uri });
+    try {
+      const sessionId = await onSessionReady(jobId, {
+        uri,
+        projectRoot: projectDir,
+        device,
+        ...(appId ? { appName: appId } : {}),
+        ...(child.pid !== undefined ? { pid: child.pid } : {}),
+      });
+      await patchJob(jobId, { sessionId });
+    } catch (err) {
+      logger.error('onSessionReady failed', { jobId, err: String(err) });
+    }
+  }
+
+  async function discoverVmServiceFromWeb(): Promise<void> {
+    // Flutter web's app.started has no vmServiceUri. Probe DWDS at the
+    // web launch URL to discover it via the /$dwdsDevHandler endpoint,
+    // or fall back to scanning localhost ports.
+    const { discover } = await import('./discovery.js');
+    const maxAttempts = 6;
+    for (let i = 0; i < maxAttempts; i++) {
+      if (child.exitCode !== null) return;
+      const found = await discover({ logger });
+      if (found.length > 0) {
+        const match = found[0]!;
+        logger.info('web VM service discovered via probe', { jobId, uri: match.uri });
+        await completeAttach(match.uri);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 2_000));
+    }
+    logger.warn('web VM service not found after probing', { jobId, webLaunchUrl });
+    await patchJob(jobId, { stage: 'attached' });
+  }
 
   const onStdoutLine = async (line: string): Promise<void> => {
     if (!line) return;
@@ -413,24 +452,25 @@ function setupStdoutParser(
       if (parsed?.event === 'app.started' && parsed.params) {
         const uri = pickString(parsed.params, ['vmServiceUri', 'wsUri', 'observatoryUri']);
         if (uri) {
-          await patchJob(jobId, { stage: 'attached', vmServiceUri: uri });
-          try {
-            const sessionId = await onSessionReady(jobId, {
-              uri,
-              projectRoot: projectDir,
-              device,
-              ...(pickString(parsed.params, ['appId'])
-                ? { appName: pickString(parsed.params, ['appId'])! }
-                : {}),
-              ...(child.pid !== undefined ? { pid: child.pid } : {}),
-            });
-            await patchJob(jobId, { sessionId });
-          } catch (err) {
-            logger.error('onSessionReady failed', { jobId, err: String(err) });
-          }
+          appId ??= pickString(parsed.params, ['appId']);
+          await completeAttach(uri);
+        } else if (webLaunchUrl) {
+          // Web target: app.started without vmServiceUri. Discover via DWDS.
+          appId ??= pickString(parsed.params, ['appId']);
+          void discoverVmServiceFromWeb();
         }
+      } else if (parsed?.event === 'app.webLaunchUrl' && parsed.params) {
+        webLaunchUrl = pickString(parsed.params, ['url']);
+        logger.info('web launch URL', { jobId, webLaunchUrl });
       } else if (parsed?.event === 'app.start' && parsed.params) {
+        appId = pickString(parsed.params, ['appId']);
         await patchJob(jobId, { stage: 'booting' });
+      } else if (parsed?.event === 'app.debugPort' && parsed.params) {
+        // Some Flutter versions emit vmServiceUri here instead of app.started.
+        const uri = pickString(parsed.params, ['wsUri', 'baseUri']);
+        if (uri) {
+          await completeAttach(uri);
+        }
       } else if (parsed?.event === 'app.progress' && parsed.params) {
         const msg = pickString(parsed.params, ['message']);
         if (msg && /install/i.test(msg)) await patchJob(jobId, { stage: 'installing' });

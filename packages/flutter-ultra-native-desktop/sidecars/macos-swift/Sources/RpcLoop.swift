@@ -72,7 +72,25 @@ final class RpcLoop {
     }
 
     private func write(frame: [String: Any]) {
-        guard let data = try? JSONSerialization.data(withJSONObject: frame, options: []) else { return }
+        let data: Data
+        do {
+            data = try JSONSerialization.data(withJSONObject: frame, options: [])
+        } catch {
+            helperLog(.error, "JSON serialization failed", extra: ["error": "\(error)"])
+            let fallback: [String: Any] = [
+                "jsonrpc": "2.0",
+                "id": frame["id"] ?? NSNull(),
+                "error": ["code": -32603, "message": "internal error: response serialization failed"]
+            ]
+            if let fb = try? JSONSerialization.data(withJSONObject: fallback, options: []) {
+                writeLock.lock()
+                defer { writeLock.unlock() }
+                var out = fb
+                out.append(0x0A)
+                stdout.write(out)
+            }
+            return
+        }
         writeLock.lock()
         defer { writeLock.unlock() }
         var out = data

@@ -99,6 +99,8 @@ enum Dispatch {
             let processName = params["processName"] as? String
             let timeoutMs = params["timeoutMs"] as? Int ?? 30_000
             let pollMs = params["pollMs"] as? Int ?? 250
+            if pollMs <= 0 { throw HelperError.invalidParam("pollMs must be positive, got \(pollMs)") }
+            if timeoutMs <= 0 { throw HelperError.invalidParam("timeoutMs must be positive, got \(timeoutMs)") }
             let win = try Dialogs.waitForWindow(
                 titlePattern: titlePattern,
                 processName: processName,

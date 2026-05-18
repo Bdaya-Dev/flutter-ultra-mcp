@@ -2,8 +2,7 @@
 /// extensions used by the `flutter-ultra-mcp` Claude Code plugin (gesture,
 /// screenshot, inspector, screencast, log collection).
 ///
-/// See `README.md` for the composition guide and the
-/// `ultra_flutter_sentry_compat` companion package for Sentry interop.
+/// See `README.md` for the composition guide.
 library ultra_flutter;
 
 export 'src/binding/register_extension.dart';

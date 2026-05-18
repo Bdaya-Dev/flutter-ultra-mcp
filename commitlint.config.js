@@ -17,7 +17,6 @@ export default {
         'patrol',
         'ultra_flutter',
         'ultra_flutter_devtools',
-        'ultra_flutter_sentry_compat',
         'vm-service-client',
         'mcp-runtime',
         'state-store',

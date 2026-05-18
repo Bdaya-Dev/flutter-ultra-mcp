@@ -15,8 +15,8 @@ export 'src/binding_wrapper.dart'
 ```
 
 The `show` clause hides `SentryWidgetsBindingMixin` from the public API
-even though the mixin is defined in the same file. `ultra_flutter_sentry_compat`
-reaches it via a deliberate `// ignore: implementation_imports` import of
+even though the mixin is defined in the same file. Consumers reach it via a
+deliberate `// ignore: implementation_imports` import of
 `package:sentry_flutter/src/binding_wrapper.dart`.
 
 ## Proposed change

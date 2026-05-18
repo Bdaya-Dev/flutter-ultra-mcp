@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.0...v1.0.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* add source field to marketplace.json for plugin install ([88b64ac](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/88b64ac78eed3ad798556ef08635444939d4ee36))
+
 # 1.0.0 (2026-05-18)
 
 

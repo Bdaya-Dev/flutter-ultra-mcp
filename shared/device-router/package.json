@@ -1,33 +1,30 @@
 {
-  "name": "@flutter-ultra/flutter-ultra-runtime",
+  "name": "@flutter-ultra/device-router",
   "version": "0.0.1",
   "private": false,
-  "description": "MCP server for Flutter runtime: discover + attach to flutter run sessions over DDS, introspect VM Service, hot reload, screenshots, HTTP/gRPC capture.",
+  "description": "Device abstraction for flutter-ultra-mcp: run commands on local, WSL, or SSH-remote targets from a single interface.",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/packages/flutter-ultra-runtime",
+  "homepage": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/tree/main/shared/device-router",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Bdaya-Dev/flutter-ultra-mcp.git",
-    "directory": "packages/flutter-ultra-runtime"
+    "directory": "shared/device-router"
   },
   "bugs": {
     "url": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues"
   },
   "keywords": [
-    "mcp",
     "flutter",
-    "dart",
-    "vm-service",
-    "dds",
-    "hot-reload"
+    "mcp",
+    "device",
+    "wsl",
+    "ssh",
+    "remote"
   ],
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "flutter-ultra-runtime": "dist/bin.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -47,13 +44,9 @@
     "clean": "rimraf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@flutter-ultra/device-router": "^0.0.1",
-    "@flutter-ultra/mcp-runtime": "^0.0.1",
-    "@flutter-ultra/state-store": "^0.0.1",
-    "@flutter-ultra/vm-service-client": "^0.0.1",
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "protobufjs": "^7.4.0",
-    "zod": "^3.23.8"
+    "execa": "^9.5.1",
+    "ssh-config": "^5.0.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",

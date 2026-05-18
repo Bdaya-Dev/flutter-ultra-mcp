@@ -1,11 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import {
-  NativeKeyring,
-  EnvFallbackKeyring,
-  envKey,
-  createKeyring,
-  PACKAGE_NAME,
-} from './index.js';
+import { NativeKeyring, EnvFallbackKeyring, envKey, createKeyring, PACKAGE_NAME } from './index.js';
 
 describe('envKey', () => {
   it('converts service + account to screaming snake env var', () => {

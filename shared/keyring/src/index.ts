@@ -12,7 +12,7 @@ export class NativeKeyring implements Keyring {
   async getSecret(service: string, account: string): Promise<string | null> {
     const entry = new AsyncEntry(service, account);
     try {
-      return await entry.getPassword();
+      return (await entry.getPassword()) ?? null;
     } catch {
       return null;
     }

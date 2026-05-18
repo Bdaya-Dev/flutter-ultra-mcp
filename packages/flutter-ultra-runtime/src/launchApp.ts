@@ -70,6 +70,8 @@ export interface LaunchAppInput {
   pubGetFirst?: boolean;
   // Auto-import from .vscode/launch.json by configuration name.
   importLaunchJsonConfig?: string;
+  // Run web target in headless Chrome. Defaults to true for MCP automation.
+  headless?: boolean;
 }
 
 export interface VscodeLaunchConfig {
@@ -82,9 +84,17 @@ export interface VscodeLaunchConfig {
   toolArgs?: string[];
 }
 
+interface PendingRequest {
+  resolve: (result: unknown) => void;
+  reject: (err: Error) => void;
+}
+
 interface LaunchProcessHandle {
   child: ChildProcessByStdio<Writable, Readable, Readable>;
   jobId: string;
+  appId?: string;
+  pendingRequests: Map<number, PendingRequest>;
+  nextRequestId: number;
 }
 
 const PROCESSES = new Map<string, LaunchProcessHandle>();
@@ -94,7 +104,12 @@ export interface LaunchService {
   start(input: LaunchAppInput): Promise<LaunchJob>;
   poll(jobId: string): Promise<LaunchJob>;
   stop(jobId: string, options?: { force?: boolean }): Promise<LaunchJob>;
-  // Drain all child processes on shutdown.
+  callServiceExtension(
+    jobId: string,
+    methodName: string,
+    params?: Record<string, unknown>,
+  ): Promise<unknown>;
+  restart(jobId: string, options?: { fullRestart?: boolean }): Promise<unknown>;
   shutdown(): Promise<void>;
 }
 
@@ -199,10 +214,16 @@ export function createLaunchService(opts: {
     if (input.flavor) args.push('--flavor', input.flavor);
     else if (vscodeCfg?.flavor) args.push('--flavor', vscodeCfg.flavor);
 
+    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
     if (input.webRenderer) args.push(`--web-renderer=${input.webRenderer}`);
     if (input.webPort !== undefined) args.push(`--web-port=${input.webPort}`);
     if (input.webHostname) args.push(`--web-hostname=${input.webHostname}`);
-    for (const flag of input.webBrowserFlags ?? []) args.push(`--web-browser-flag=${flag}`);
+    const userFlags = input.webBrowserFlags ?? [];
+    const hasHeadlessFlag = userFlags.some((f) => /headless/i.test(f));
+    if (isWebDevice && input.headless !== false && !hasHeadlessFlag) {
+      args.push('--web-browser-flag=--headless=new');
+    }
+    for (const flag of userFlags) args.push(`--web-browser-flag=${flag}`);
     if (input.splitDebugInfo) args.push(`--split-debug-info=${input.splitDebugInfo}`);
 
     const mergedDefines: Record<string, string> = {};
@@ -257,7 +278,7 @@ export function createLaunchService(opts: {
       shell: process.platform === 'win32',
     }) as ChildProcessByStdio<Writable, Readable, Readable>;
 
-    PROCESSES.set(jobId, { child, jobId });
+    PROCESSES.set(jobId, { child, jobId, pendingRequests: new Map(), nextRequestId: 1 });
 
     child.on('error', (err) => {
       void (async () => {
@@ -314,10 +335,10 @@ export function createLaunchService(opts: {
       ...(child.pid !== undefined ? { pid: child.pid } : {}),
     });
 
-    // Set up the line-buffered stdout/stderr parser.
+    const handle = PROCESSES.get(jobId)!;
     setupStdoutParser(
       child,
-      jobId,
+      handle,
       projectDir,
       input.device,
       appendLog,
@@ -382,12 +403,75 @@ export function createLaunchService(opts: {
     }
   }
 
-  return { start, poll, stop, shutdown };
+  function sendDaemonCommand(
+    handle: LaunchProcessHandle,
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs = 30_000,
+  ): Promise<unknown> {
+    return new Promise<unknown>((resolve, reject) => {
+      const id = handle.nextRequestId++;
+      const timer = setTimeout(() => {
+        handle.pendingRequests.delete(id);
+        reject(new Error(`daemon command ${method} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+      handle.pendingRequests.set(id, {
+        resolve: (result) => {
+          clearTimeout(timer);
+          handle.pendingRequests.delete(id);
+          resolve(result);
+        },
+        reject: (err) => {
+          clearTimeout(timer);
+          handle.pendingRequests.delete(id);
+          reject(err);
+        },
+      });
+      const msg = JSON.stringify([{ id, method, params }]);
+      handle.child.stdin.write(msg + '\n');
+    });
+  }
+
+  async function callServiceExtension(
+    jobId: string,
+    methodName: string,
+    params?: Record<string, unknown>,
+  ): Promise<unknown> {
+    const handle = PROCESSES.get(jobId);
+    if (!handle) throw new Error(`no running process for job ${jobId}`);
+    if (!handle.appId) throw new Error(`appId not yet available for job ${jobId}`);
+    return sendDaemonCommand(handle, 'app.callServiceExtension', {
+      appId: handle.appId,
+      methodName,
+      ...(params !== undefined ? { params } : {}),
+    });
+  }
+
+  async function restart(
+    jobId: string,
+    restartOptions: { fullRestart?: boolean } = {},
+  ): Promise<unknown> {
+    const handle = PROCESSES.get(jobId);
+    if (!handle) throw new Error(`no running process for job ${jobId}`);
+    if (!handle.appId) throw new Error(`appId not yet available for job ${jobId}`);
+    return sendDaemonCommand(
+      handle,
+      'app.restart',
+      {
+        appId: handle.appId,
+        fullRestart: restartOptions.fullRestart ?? false,
+        pause: false,
+      },
+      90_000,
+    );
+  }
+
+  return { start, poll, stop, callServiceExtension, restart, shutdown };
 }
 
 function setupStdoutParser(
   child: ChildProcessByStdio<Writable, Readable, Readable>,
-  jobId: string,
+  handle: LaunchProcessHandle,
   projectDir: string,
   device: string,
   appendLog: (jobId: string, line: string) => Promise<void>,
@@ -398,29 +482,30 @@ function setupStdoutParser(
   ) => Promise<string>,
   logger: Logger,
 ): void {
+  const jobId = handle.jobId;
   let stdoutBuffer = '';
   let stderrBuffer = '';
-  let webLaunchUrl: string | undefined;
-  let appId: string | undefined;
+  let isWebTarget = false;
   let attached = false;
 
-  async function completeAttach(uri: string): Promise<void> {
+  async function completeAttach(uri?: string): Promise<void> {
     if (attached) return;
     attached = true;
-    await patchJob(jobId, { stage: 'attached', vmServiceUri: uri });
-    // Web targets use DDS single-client via DWDS. Connecting a second
-    // client kills DWDS and crashes the dev server. Skip auto-attach
-    // for web — the agent calls `attach` manually if needed.
-    if (webLaunchUrl) {
-      logger.info('web target: skipping auto-attach (DDS single-client)', { jobId, uri });
+    await patchJob(jobId, {
+      stage: 'attached',
+      ...(uri ? { vmServiceUri: uri } : {}),
+    });
+    if (isWebTarget) {
+      logger.info('web target attached via stdin proxy', { jobId, uri });
       return;
     }
+    if (!uri) return;
     try {
       const sessionId = await onSessionReady(jobId, {
         uri,
         projectRoot: projectDir,
         device,
-        ...(appId ? { appName: appId } : {}),
+        ...(handle.appId ? { appName: handle.appId } : {}),
         ...(child.pid !== undefined ? { pid: child.pid } : {}),
       });
       await patchJob(jobId, { sessionId });
@@ -429,59 +514,55 @@ function setupStdoutParser(
     }
   }
 
-  async function discoverVmServiceFromWeb(): Promise<void> {
-    try {
-      const { discover } = await import('./discovery.js');
-      const maxAttempts = 6;
-      for (let i = 0; i < maxAttempts; i++) {
-        if (child.exitCode !== null) return;
-        const found = await discover({ logger });
-        if (found.length > 0) {
-          const match = found[0]!;
-          logger.info('web VM service discovered', { jobId, uri: match.uri });
-          await completeAttach(match.uri);
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 2_000));
-      }
-      logger.warn('web VM service not found after probing', { jobId, webLaunchUrl });
-      await patchJob(jobId, { stage: 'attached' });
-    } catch (err) {
-      logger.error('discoverVmServiceFromWeb failed', { jobId, err: String(err) });
-      await patchJob(jobId, { stage: 'attached' }).catch(() => {});
-    }
-  }
-
   const onStdoutLine = async (line: string): Promise<void> => {
     if (!line) return;
     await appendLog(jobId, line);
 
-    // Machine-mode lines wrap a single JSON object in `[ ... ]` brackets.
     const jsonText = extractMachineJson(line);
     if (!jsonText) return;
     try {
-      const parsed = JSON.parse(jsonText) as { event?: string; params?: Record<string, unknown> };
+      const parsed = JSON.parse(jsonText) as {
+        id?: number;
+        event?: string;
+        result?: unknown;
+        error?: { code?: number; message?: string; data?: unknown };
+        params?: Record<string, unknown>;
+      };
+
+      // Route daemon command responses to pending requests.
+      if (parsed.id !== undefined && !parsed.event) {
+        const pending = handle.pendingRequests.get(parsed.id);
+        if (pending) {
+          if (parsed.error) {
+            pending.reject(new Error(parsed.error.message ?? 'daemon command failed'));
+          } else {
+            pending.resolve(parsed.result);
+          }
+        }
+        return;
+      }
+
       if (parsed?.event === 'app.started' && parsed.params) {
         const uri = pickString(parsed.params, ['vmServiceUri', 'wsUri', 'observatoryUri']);
+        const parsedAppId = pickString(parsed.params, ['appId']);
+        if (parsedAppId) handle.appId ??= parsedAppId;
         if (uri) {
-          appId ??= pickString(parsed.params, ['appId']);
           await completeAttach(uri);
-        } else if (webLaunchUrl) {
-          // Web target: app.started without vmServiceUri. Discover via DWDS.
-          appId ??= pickString(parsed.params, ['appId']);
-          void discoverVmServiceFromWeb();
+        } else if (isWebTarget) {
+          await completeAttach();
         }
       } else if (parsed?.event === 'app.webLaunchUrl' && parsed.params) {
-        webLaunchUrl = pickString(parsed.params, ['url']);
-        logger.info('web launch URL', { jobId, webLaunchUrl });
+        isWebTarget = true;
+        logger.info('web launch URL', { jobId, url: pickString(parsed.params, ['url']) });
       } else if (parsed?.event === 'app.start' && parsed.params) {
-        appId = pickString(parsed.params, ['appId']);
+        const startAppId = pickString(parsed.params, ['appId']);
+        if (startAppId) handle.appId = startAppId;
         await patchJob(jobId, { stage: 'booting' });
       } else if (parsed?.event === 'app.debugPort' && parsed.params) {
-        // Some Flutter versions emit vmServiceUri here instead of app.started.
         const uri = pickString(parsed.params, ['wsUri', 'baseUri']);
         if (uri) {
-          await completeAttach(uri);
+          await patchJob(jobId, { vmServiceUri: uri });
+          if (!isWebTarget) await completeAttach(uri);
         }
       } else if (parsed?.event === 'app.progress' && parsed.params) {
         const msg = pickString(parsed.params, ['message']);

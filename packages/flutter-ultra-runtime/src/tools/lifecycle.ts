@@ -139,6 +139,12 @@ export function registerLifecycleTools(opts: {
           .describe(
             'Name of a configuration in .vscode/launch.json to import dart-defines + args from.',
           ),
+        headless: z
+          .boolean()
+          .optional()
+          .describe(
+            'Run web targets in headless Chrome. Defaults to true for MCP automation. Set false for headed.',
+          ),
       },
       timeoutClass: 'quick',
     },
@@ -158,6 +164,7 @@ export function registerLifecycleTools(opts: {
         ...(args.importLaunchJsonConfig !== undefined
           ? { importLaunchJsonConfig: args.importLaunchJsonConfig }
           : {}),
+        ...(args.headless !== undefined ? { headless: args.headless } : {}),
       });
       return { jobId: job.jobId, stage: job.stage };
     },
@@ -202,6 +209,54 @@ export function registerLifecycleTools(opts: {
         }
       }
       return { job: finalJob };
+    },
+  );
+
+  server.defineTool(
+    {
+      name: 'call_service_extension',
+      description:
+        'Invoke a VM service extension via the daemon stdin protocol. Works on ALL platforms including web (no second WebSocket needed). Use for widget inspection, performance overlays, or any `ext.flutter.*` / `ext.dwds.*` call.',
+      inputShape: {
+        jobId: z.string().min(8).describe('Job ID from launch_app.'),
+        methodName: z
+          .string()
+          .describe(
+            'Service extension method, e.g. ext.flutter.inspector.getRootWidgetSummaryTree',
+          ),
+        params: z.record(z.unknown()).optional().describe('Optional params map for the extension.'),
+      },
+      timeoutClass: 'long',
+      ceilingMs: 60_000,
+    },
+    async (args) => {
+      const result = await launch.callServiceExtension(
+        args.jobId,
+        args.methodName,
+        args.params as Record<string, unknown> | undefined,
+      );
+      return { ok: true, result };
+    },
+  );
+
+  server.defineTool(
+    {
+      name: 'daemon_restart',
+      description:
+        'Hot reload or hot restart via the daemon stdin protocol. Equivalent to pressing r/R in the terminal. Works on all platforms including web.',
+      inputShape: {
+        jobId: z.string().min(8).describe('Job ID from launch_app.'),
+        fullRestart: z
+          .boolean()
+          .default(false)
+          .describe('true = hot restart (loses state), false = hot reload (preserves state).'),
+      },
+      timeoutClass: 'long',
+      ceilingMs: 90_000,
+    },
+    async (args) => {
+      const result = await launch.restart(args.jobId, { fullRestart: args.fullRestart });
+      return { ok: true, result };
     },
   );
 

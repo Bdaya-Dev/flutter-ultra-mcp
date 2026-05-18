@@ -402,9 +402,19 @@ function setupStdoutParser(
   let stderrBuffer = '';
   let webLaunchUrl: string | undefined;
   let appId: string | undefined;
+  let attached = false;
 
   async function completeAttach(uri: string): Promise<void> {
+    if (attached) return;
+    attached = true;
     await patchJob(jobId, { stage: 'attached', vmServiceUri: uri });
+    // Web targets use DDS single-client via DWDS. Connecting a second
+    // client kills DWDS and crashes the dev server. Skip auto-attach
+    // for web — the agent calls `attach` manually if needed.
+    if (webLaunchUrl) {
+      logger.info('web target: skipping auto-attach (DDS single-client)', { jobId, uri });
+      return;
+    }
     try {
       const sessionId = await onSessionReady(jobId, {
         uri,

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/doubleTap",
+  "title": "doubleTap",
+  "description": "ext.flutter.ultra.doubleTap — dispatch a double-tap gesture.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.doubleTap" },
+    "status": { "const": "Success" },
+    "tapped": { "type": "boolean" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {
+      "key": { "type": "string" },
+      "text": { "type": "string" },
+      "type": { "type": "string" },
+      "x": { "type": "string" },
+      "y": { "type": "string" },
+      "focused": { "type": "string", "enum": ["true"] },
+      "delay": { "type": "string" }
+    },
+    "additionalProperties": false
+  }
+}

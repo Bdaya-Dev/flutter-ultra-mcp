@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/interactiveElements",
+  "title": "interactiveElements",
+  "description": "ext.flutter.ultra.interactiveElements — enumerate tappable/input widgets.",
+  "definitions": {
+    "bounds": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      },
+      "required": ["x", "y", "width", "height"],
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "key": { "type": "string" },
+        "text": { "type": "string" },
+        "bounds": { "$ref": "#/definitions/bounds" },
+        "visible": { "type": "boolean" }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    }
+  },
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.interactiveElements" },
+    "status": { "const": "Success" },
+    "elements": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/element" }
+    }
+  },
+  "required": ["type", "method", "elements"],
+  "additionalProperties": true,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

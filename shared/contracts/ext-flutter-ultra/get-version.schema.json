@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/getVersion",
+  "title": "getVersion",
+  "description": "ext.flutter.ultra.getVersion — returns the ultra_flutter package version.",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.getVersion" },
+    "status": { "const": "Success" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" }
+  },
+  "required": ["type", "method", "version"],
+  "additionalProperties": false,
+  "request": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/swipe",
+  "title": "swipe",
+  "description": "ext.flutter.ultra.swipe — dispatch a swipe gesture (coord or element form).",
+  "type": "object",
+  "properties": {
+    "type": { "const": "_extensionType" },
+    "method": { "const": "ext.flutter.ultra.swipe" },
+    "status": { "const": "Success" }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true,
+  "request": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "startX": { "type": "string" },
+          "startY": { "type": "string" },
+          "endX": { "type": "string" },
+          "endY": { "type": "string" }
+        },
+        "required": ["startX", "startY", "endX", "endY"],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "text": { "type": "string" },
+          "type": { "type": "string" },
+          "x": { "type": "string" },
+          "y": { "type": "string" },
+          "focused": { "type": "string", "enum": ["true"] },
+          "direction": { "type": "string", "enum": ["left", "right", "up", "down"] },
+          "distance": { "type": "string" }
+        },
+        "required": ["direction"],
+        "additionalProperties": false
+      }
+    ]
+  }
+}

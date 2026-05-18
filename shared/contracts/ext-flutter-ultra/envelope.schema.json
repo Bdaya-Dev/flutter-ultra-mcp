@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ext-flutter-ultra/envelope",
+  "title": "ExtensionEnvelope",
+  "description": "Common envelope returned by all ext.flutter.ultra.* VM service extensions.",
+  "type": "object",
+  "properties": {
+    "type": { "type": "string" },
+    "method": { "type": "string" },
+    "status": { "type": "string", "enum": ["Success", "Error"] }
+  },
+  "required": ["type", "method"],
+  "additionalProperties": true
+}

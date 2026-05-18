@@ -34,11 +34,21 @@ jobs:
       - run: npm run build
       - run: npm test
 
+      # Bundle each MCP server into a single self-contained .cjs file.
+      # These are force-added despite dist/ being in .gitignore, then
+      # committed by @semantic-release/git so main always has up-to-date
+      # bundles that work after git clone with zero npm install + build.
+      - run: npm run bundle
+
       # semantic-release determines version from conventional commits,
       # generates CHANGELOG, then @semantic-release/exec calls
       # `npm publish --access public` which auto-detects OIDC
       # from the id-token:write permission (Trusted Publishing).
       # Zero tokens needed.
+      #
+      # The prepareCmd in .releaserc.json force-stages the bundled .cjs
+      # files so @semantic-release/git can commit them alongside
+      # package.json and CHANGELOG.md.
       - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

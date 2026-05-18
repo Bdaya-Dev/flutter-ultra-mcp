@@ -5,11 +5,15 @@
     "@semantic-release/release-notes-generator",
     ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
     ["@semantic-release/exec", {
-      "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version",
+      "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && git add -f packages/*/dist/bin.cjs",
       "publishCmd": "npm publish --access public"
     }],
     ["@semantic-release/git", {
-      "assets": ["package.json", "CHANGELOG.md"],
+      "assets": [
+        "package.json",
+        "CHANGELOG.md",
+        "packages/*/dist/bin.cjs"
+      ],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     "@semantic-release/github"

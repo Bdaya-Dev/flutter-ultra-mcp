@@ -148,5 +148,16 @@ const isDirectInvocation =
   import.meta.url === new URL(`file://${process.argv[1].replace(/\\/g, '/')}`).href;
 
 if (isDirectInvocation) {
-  await server.start();
+  server.start().catch((err) => {
+    process.stderr.write(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        level: 'error',
+        server: 'flutter-ultra-devtools',
+        msg: 'fatal',
+        err: err instanceof Error ? err.stack : String(err),
+      }) + '\n',
+    );
+    process.exit(1);
+  });
 }

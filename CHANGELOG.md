@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.1...v1.3.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** sync plugin manifest versions with semantic-release ([#78](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/78)) ([a3052d3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/a3052d36769d1e49c9e5876eb4a84ad440108340))
+
 ## [1.3.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.0...v1.3.1) (2026-05-19)
 
 

@@ -1,3 +1,26 @@
+# [1.4.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.2...v1.4.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** format all source files + fix build errors ([abb93ab](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/abb93abea4526dae273b8904578142fe89958f28))
+* **ci:** sync plugin manifest versions with semantic-release ([71f75cb](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/71f75cb4b43099585867c16584b11120ca03a7e1))
+* **mcp-runtime:** remove unused collector param from createDiagnosticsTool ([ef99a86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/ef99a86e42a4c309de0adb4e33c06cf7860cfdfb))
+* **patrol:** resolve Windows crashes and stale result masking ([#72](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/72), [#73](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/73), [#75](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/75)) ([8819814](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/8819814f2c4b541be045e8a33f97f3c74e1a2e3f))
+
+
+### Features
+
+* **ci:** add osv-scanner + SLSA provenance comment ([#60](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/60)) ([3a6c37d](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/3a6c37d0b99ba3cab026800c8b08a3dd5f914815))
+* **ci:** security gates, schema tests, timeouts, plugin validation ([#48](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/48), [#53](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/53), [#61](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/61)) ([c3e5083](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/c3e50833ee19b52b6941dd826438f0dd40675344))
+* **patrol:** add extract_video_frame tool for failure diagnosis ([#43](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/43)) ([f6bfe43](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/f6bfe434199e9b00aaab0cb139675cb2367c1d72))
+* **patrol:** enrich diagnostics and streaming ([#44](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/44), [#45](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/45), [#46](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/46), [#47](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/47)) ([1810129](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/1810129f07f2d54da665ece6009dea554d7d82c6))
+* **patrol:** persist job state across server restarts ([#52](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/52)) ([0930615](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/0930615a917a859b9d5764270d3765661271e553))
+* **skills:** add flutter-bisect skill for automated git bisect ([#51](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/51)) ([82721f3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/82721f348c0e6e04b8e002aac749c217c5e5d6de))
+* **skills:** implement all 7 SKILL.md files ([#63](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/63), [#64](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/64), [#65](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/65), [#66](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/66), [#67](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/67), [#68](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/68), [#69](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/69)) ([8840144](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/8840144c1359a4a837e61b91c9a79acee242698d))
+* **state-store:** schema versioning + orphan cleanup on startup ([#57](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/57)) ([726ef47](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/726ef47255e02bc8e8cdbeea23d94d710ab5a235))
+* token redaction, observability, release workflows ([#54](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/54), [#56](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/56), [#58](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/58)) ([23635f2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/23635f25d7156ff4231d604f402002bb1d053fcb))
+
 ## [1.3.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.1...v1.3.2) (2026-05-19)
 
 

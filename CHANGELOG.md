@@ -1,3 +1,12 @@
+# [1.9.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.8.0...v1.9.0) (2026-05-19)
+
+
+### Features
+
+* **runtime:** Figma design integration — component inventory + 2 skills ([#84](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/84)) ([8bd2c09](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/8bd2c096a73ae214a925277058326c73d46e8892))
+* **runtime:** Flutter-native design audit — accessibility, responsive, theme ([#85](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/85)) ([150423b](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/150423b200df48ee036d9b5e341eeb6c28dc16ae))
+* video/GIF recording across all platforms ([#82](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/82)) ([b9ae6ab](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/b9ae6ab82acffb947dfe6cbc7b803726d55e9489))
+
 # [1.8.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.7.0...v1.8.0) (2026-05-19)
 
 

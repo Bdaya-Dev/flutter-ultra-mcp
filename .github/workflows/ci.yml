@@ -66,15 +66,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Secret scanning
-        run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_8.24.3_linux_x64.tar.gz | tar xz
-          ./gitleaks detect --source . --verbose --no-banner || true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

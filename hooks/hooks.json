@@ -8,10 +8,10 @@
             "command": "node",
             "args": [
               "-e",
-              "try{require.resolve('playwright-core')}catch{require('child_process').execSync('npm install --no-save playwright-core',{stdio:'inherit'})}"
+              "const{existsSync:e,mkdirSync:m,copyFileSync:c}=require('fs'),{execSync:x}=require('child_process'),r=process.env.CLAUDE_PLUGIN_ROOT,d=process.env.CLAUDE_PLUGIN_DATA;if(!r||!d)process.exit(0);const s=r+'/package.json',t=d+'/package.json';try{require.resolve('playwright-core',{paths:[d+'/node_modules']})}catch{if(!e(d))m(d,{recursive:true});c(s,t);x('npm install --no-save --ignore-scripts playwright-core',{cwd:d,stdio:'inherit'})}"
             ],
             "timeout": 120,
-            "statusMessage": "Checking playwright-core..."
+            "statusMessage": "Installing playwright-core..."
           }
         ]
       }

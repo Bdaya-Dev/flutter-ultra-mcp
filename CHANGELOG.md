@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.0...v1.9.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ultra_flutter:** binding crash on Flutter 3.x — check _instance not getter ([#86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/86)) ([0a19e89](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/0a19e89e57d5a656487fb3ac650aba8088709ef5))
+
 # [1.9.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.8.0...v1.9.0) (2026-05-19)
 
 

@@ -1,3 +1,10 @@
+## [1.5.8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.7...v1.5.8) (2026-05-19)
+
+
+### Bug Fixes
+
+* **devtools:** relax WebSocket close propagation wait 50→500ms ([c8b2b7b](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/c8b2b7b199748de8e888090413f316714eedfe78))
+
 ## [1.5.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.6...v1.5.7) (2026-05-19)
 
 

@@ -1,3 +1,21 @@
+# [1.2.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.1.0...v1.2.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* **patrol:** update tests for Windows dart.bat + arg stripping ([ccaf00d](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/ccaf00d121ca2a125a7a13e52ac1cb7ddfaa6190))
+* **runtime:** add try/catch to web VM service discovery ([b22e5da](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/b22e5dabada9b3ddbb2da6d87e087eb0c25e0514))
+* **runtime:** detect VM service on web targets via discovery ([98094e8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/98094e8819290677e0aa47e849f3779e991b4b9d))
+* **runtime:** skip auto-attach on web targets (DDS single-client) ([3c934df](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/3c934df9fb917b524688e077f33d96e3c84d7593))
+* **runtime:** use z.any() for service extension params schema ([f8bb09b](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/f8bb09ba6a1a17ec935f85015a62bf13cfa0877b))
+* Windows spawn compatibility across build, patrol, runtime ([fff2ec5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/fff2ec56e71075ee16c873fcd446f67cec0f408d))
+
+
+### Features
+
+* **runtime:** add runtime_version tool + stderr debug logging ([c9a73f7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/c9a73f74a9bf62b8cf19de7db5aef4a16238b0c7))
+* **runtime:** stdin proxy for VM service calls + headless web default ([0f5585f](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/0f5585f4d93fa55179a26cbc1eb7c333b28a189e))
+
 # [1.1.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.0.2...v1.1.0) (2026-05-18)
 
 

@@ -1,6 +1,6 @@
 // Central MCP server wiring for flutter-ultra-patrol.
 //
-// Registers all 13 tools listed in plan §17B.1, validates input through
+// Registers all 14 tools (13 original per plan §17B.1 + extract_video_frame), validates input through
 // each tool's Zod schema, dispatches to the handler, and serialises the
 // return value into MCP CallToolResult shape. Throws are caught and
 // re-emitted as `{ isError: true, content: [{ type:'text', text:... }] }`
@@ -34,12 +34,13 @@ import { startPatrolRecordingTool } from './tools/start-patrol-recording.js';
 import { stopPatrolRecordingTool } from './tools/stop-patrol-recording.js';
 import { getPatrolBrowserErrorsTool } from './tools/get-patrol-browser-errors.js';
 import { getPatrolWebDebuggerPortTool } from './tools/get-patrol-web-debugger-port.js';
+import { extractVideoFrameTool } from './tools/extract-video-frame.js';
 import type { PatrolTool, ToolContext } from './tools/types.js';
 
 export const SERVER_NAME = 'flutter-ultra-patrol';
 export const SERVER_VERSION = '0.0.0';
 
-// 13 tools per plan §17B.1.
+// 14 tools: 13 original per plan §17B.1 + extract_video_frame (GitHub issue #43).
 export const TOOLS: ReadonlyArray<PatrolTool<ZodTypeAny>> = [
   listTestsTool,
   startPatrolTestTool,
@@ -54,6 +55,7 @@ export const TOOLS: ReadonlyArray<PatrolTool<ZodTypeAny>> = [
   stopPatrolRecordingTool,
   getPatrolBrowserErrorsTool,
   getPatrolWebDebuggerPortTool,
+  extractVideoFrameTool,
 ];
 
 export interface CreatePatrolServerOptions {

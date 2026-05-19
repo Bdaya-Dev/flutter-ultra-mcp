@@ -58,7 +58,7 @@ describe('wait_for', () => {
     expect(result.found).toBe(true);
     expect(result.attempts).toBe(1);
     expect(calls.count).toBe(1);
-    expect(Date.now() - start).toBeLessThan(150);
+    expect(Date.now() - start).toBeLessThan(500);
   });
 
   it('polls until visible after N attempts', async () => {

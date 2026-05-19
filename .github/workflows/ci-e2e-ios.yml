@@ -47,10 +47,9 @@ jobs:
           echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
 
       - name: Run integration tests
-        working-directory: examples/counter-app
         run: |
           flutter pub get
-          flutter test --device-id "$DEVICE_ID" integration_test/app_test.dart
+          flutter test --device-id "$DEVICE_ID" examples/counter-app/integration_test/app_test.dart
 
       - name: Shutdown simulator
         if: always()

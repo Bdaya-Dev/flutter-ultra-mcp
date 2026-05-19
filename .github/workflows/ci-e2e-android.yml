@@ -66,6 +66,5 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            cd examples/counter-app
             flutter pub get
-            flutter test --device-id emulator-5554 integration_test/app_test.dart
+            flutter test --device-id emulator-5554 examples/counter-app/integration_test/app_test.dart

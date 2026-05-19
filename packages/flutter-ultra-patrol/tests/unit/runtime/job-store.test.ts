@@ -174,7 +174,7 @@ describe('JobStore — file persistence', () => {
       expect(parsed['logTail']).toBeUndefined();
       expect(parsed['child']).toBeUndefined();
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 
@@ -200,7 +200,7 @@ describe('JobStore — file persistence', () => {
       expect(parsed['exitCode']).toBe(0);
       expect(typeof parsed['endedAt']).toBe('number');
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 
@@ -225,7 +225,7 @@ describe('JobStore — file persistence', () => {
       const parsed = JSON.parse(await readFile(filePath, 'utf8')) as Record<string, unknown>;
       expect(parsed['status']).toBe('cancelled');
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 
@@ -259,7 +259,7 @@ describe('JobStore — file persistence', () => {
       expect(r!.child).toBeNull();
       expect(r!.logTail).toEqual([]);
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 
@@ -296,7 +296,7 @@ describe('JobStore — file persistence', () => {
       expect(r!.endedAt).not.toBeNull();
       expect(r!.errorMessage).toContain('restarted');
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 
@@ -328,7 +328,7 @@ describe('JobStore — file persistence', () => {
       await expect(readFile(filePath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
       expect(store.get(rec.id)).toBeUndefined();
     } finally {
-      await rm(stateDir, { recursive: true, force: true });
+      await rm(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 

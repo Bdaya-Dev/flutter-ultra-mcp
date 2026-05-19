@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.1...v1.9.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* **browser:** auto-install playwright-core via SessionStart hook ([#86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/86)) ([e878305](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/e87830553c13c479852ef5f92ef4966b1dc28a03))
+
 ## [1.9.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.0...v1.9.1) (2026-05-19)
 
 

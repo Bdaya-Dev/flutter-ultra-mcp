@@ -23,6 +23,7 @@ import type { Readable, Writable } from 'node:stream';
 import { z } from 'zod';
 import type { Logger } from '@flutter-ultra/mcp-runtime';
 import { jobFilePath, stateRead, stateUpdate } from '@flutter-ultra/state-store';
+import { freePort } from './portCleanup.js';
 
 export const LaunchStageSchema = z.enum([
   'pending',
@@ -264,6 +265,15 @@ export function createLaunchService(opts: {
       recentLog: [`Spawning: flutter ${args.join(' ')} (cwd=${projectDir})`],
     };
     await writeJob(initial);
+
+    // Pre-launch: free the web port if an orphan process holds it (#74).
+    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
+    if (isWebDevice && input.webPort !== undefined) {
+      const freed = await freePort(input.webPort, (msg) => logger.info(msg));
+      if (freed.length > 0) {
+        await appendLog(jobId, `[port-cleanup] killed ${freed.length} orphan(s) on port ${input.webPort}: PIDs ${freed.join(', ')}`);
+      }
+    }
 
     let flutterBin = process.env.FLUTTER ?? 'flutter';
     // On Windows the user usually has `flutter.bat` on PATH; spawn finds it.

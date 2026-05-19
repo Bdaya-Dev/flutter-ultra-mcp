@@ -18,6 +18,27 @@ export function registerLifecycleTools(opts: {
 }): void {
   const { server, sessions, launch } = opts;
 
+  const BUILD_TS = '2026-05-19T03:30:00Z';
+  const BUILD_ID = 'f8bb09b-stdin-proxy';
+
+  server.defineTool(
+    {
+      name: 'runtime_version',
+      description: 'Returns the build timestamp and ID of the running runtime server bundle. Use to verify which version Claude Code loaded.',
+      timeoutClass: 'instant',
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    async () => ({
+      buildTimestamp: BUILD_TS,
+      buildId: BUILD_ID,
+      nodeVersion: process.version,
+      platform: process.platform,
+      pid: process.pid,
+      uptime: Math.round(process.uptime()),
+      toolCount: 43,
+    }),
+  );
+
   server.defineTool(
     {
       name: 'discover_sessions',

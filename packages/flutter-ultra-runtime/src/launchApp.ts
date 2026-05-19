@@ -215,6 +215,7 @@ export function createLaunchService(opts: {
     else if (vscodeCfg?.flavor) args.push('--flavor', vscodeCfg.flavor);
 
     const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
+    process.stderr.write(`[flutter-ultra-runtime] buildCliArgs: device=${input.device} isWebDevice=${isWebDevice} headless=${input.headless}\n`);
     if (input.webRenderer) args.push(`--web-renderer=${input.webRenderer}`);
     if (input.webPort !== undefined) args.push(`--web-port=${input.webPort}`);
     if (input.webHostname) args.push(`--web-hostname=${input.webHostname}`);
@@ -489,12 +490,14 @@ function setupStdoutParser(
   let attached = false;
 
   async function completeAttach(uri?: string): Promise<void> {
+    process.stderr.write(`[flutter-ultra-runtime] completeAttach called: attached=${attached} isWebTarget=${isWebTarget} uri=${uri ?? 'none'}\n`);
     if (attached) return;
     attached = true;
     await patchJob(jobId, {
       stage: 'attached',
       ...(uri ? { vmServiceUri: uri } : {}),
     });
+    process.stderr.write(`[flutter-ultra-runtime] patchJob(attached) done for ${jobId}\n`);
     if (isWebTarget) {
       logger.info('web target attached via stdin proxy', { jobId, uri });
       return;
@@ -546,6 +549,7 @@ function setupStdoutParser(
         const uri = pickString(parsed.params, ['vmServiceUri', 'wsUri', 'observatoryUri']);
         const parsedAppId = pickString(parsed.params, ['appId']);
         if (parsedAppId) handle.appId ??= parsedAppId;
+        process.stderr.write(`[flutter-ultra-runtime] app.started: uri=${uri ?? 'none'} isWebTarget=${isWebTarget} appId=${handle.appId}\n`);
         if (uri) {
           await completeAttach(uri);
         } else if (isWebTarget) {
@@ -553,6 +557,7 @@ function setupStdoutParser(
         }
       } else if (parsed?.event === 'app.webLaunchUrl' && parsed.params) {
         isWebTarget = true;
+        process.stderr.write(`[flutter-ultra-runtime] app.webLaunchUrl → isWebTarget=true\n`);
         logger.info('web launch URL', { jobId, url: pickString(parsed.params, ['url']) });
       } else if (parsed?.event === 'app.start' && parsed.params) {
         const startAppId = pickString(parsed.params, ['appId']);

@@ -1,3 +1,10 @@
+## [1.5.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.5...v1.5.6) (2026-05-19)
+
+
+### Bug Fixes
+
+* **patrol:** bump persistence test waitMs 100→500 for Windows CI ([bd47ee4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/bd47ee4075eaa9a7c2348455d2ef68bad4bf336b))
+
 ## [1.5.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.4...v1.5.5) (2026-05-19)
 
 

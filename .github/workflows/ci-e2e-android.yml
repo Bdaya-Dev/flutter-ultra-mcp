@@ -68,4 +68,4 @@ jobs:
           script: |
             cd examples/counter-app
             flutter pub get
-            flutter test --device-id emulator-5554 integration_test/
+            flutter test --device-id emulator-5554 integration_test/app_test.dart

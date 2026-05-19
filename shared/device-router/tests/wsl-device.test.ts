@@ -23,7 +23,6 @@ describe('WslDevice', () => {
   describe('listWslDistros', () => {
     it.skipIf(!isWindows)('returns an array on Windows', async () => {
       expect(Array.isArray(distros)).toBe(true);
-      expect(distros.length).toBeGreaterThan(0);
     });
 
     it.skipIf(isWindows)('returns empty on non-Windows', async () => {

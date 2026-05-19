@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.0...v1.3.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **runtime:** parse two-element --dart-define from launch.json args ([#76](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/76)) ([5c964df](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/5c964df57171147be32f286ce43847b61cc7a177)), closes [#41](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/41)
+* **runtime:** pre-launch port cleanup for orphan processes ([#77](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/77)) ([9b9b584](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/9b9b58450b8c5ee58e084389ad1b36f3e7e6a33d)), closes [#74](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/74)
+
 # [1.3.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.2.0...v1.3.0) (2026-05-19)
 
 

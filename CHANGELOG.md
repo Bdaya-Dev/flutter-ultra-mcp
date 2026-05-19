@@ -1,3 +1,10 @@
+## [1.5.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.6...v1.5.7) (2026-05-19)
+
+
+### Bug Fixes
+
+* **patrol:** await lastPersist instead of waitMs in persistence tests ([aeed705](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/aeed70517f17eb2ec86b60cb2b22cd8c9c7f5f14))
+
 ## [1.5.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.5...v1.5.6) (2026-05-19)
 
 

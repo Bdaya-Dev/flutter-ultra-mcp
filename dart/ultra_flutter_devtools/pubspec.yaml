@@ -7,8 +7,6 @@ homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 repository: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 issue_tracker: https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues
 
-publish_to: none
-
 environment:
   sdk: ^3.5.0
   flutter: '>=3.24.0'

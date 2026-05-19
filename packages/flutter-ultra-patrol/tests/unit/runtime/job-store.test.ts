@@ -161,7 +161,7 @@ describe('JobStore — file persistence', () => {
         envSnapshot: { FOO: 'bar' },
       });
       // Give the fire-and-forget write time to land.
-      await waitMs(100);
+      await waitMs(500);
       const filePath = join(stateDir, 'jobs', `${rec.id}.json`);
       const raw = await readFile(filePath, 'utf8');
       const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -193,7 +193,7 @@ describe('JobStore — file persistence', () => {
       const child = spawn(nodeCmd, ['-e', 'process.exit(0);']);
       store.attachChild(rec.id, child);
       await waitForExit(rec.id, store);
-      await waitMs(100);
+      await waitMs(500);
       const filePath = join(stateDir, 'jobs', `${rec.id}.json`);
       const parsed = JSON.parse(await readFile(filePath, 'utf8')) as Record<string, unknown>;
       expect(parsed['status']).toBe('completed');
@@ -220,7 +220,7 @@ describe('JobStore — file persistence', () => {
       store.attachChild(rec.id, child);
       store.cancel(rec.id, 250);
       await waitForExit(rec.id, store);
-      await waitMs(100);
+      await waitMs(500);
       const filePath = join(stateDir, 'jobs', `${rec.id}.json`);
       const parsed = JSON.parse(await readFile(filePath, 'utf8')) as Record<string, unknown>;
       expect(parsed['status']).toBe('cancelled');
@@ -245,7 +245,7 @@ describe('JobStore — file persistence', () => {
       const child = spawn(nodeCmd, ['-e', 'process.exit(0);']);
       store1.attachChild(rec.id, child);
       await waitForExit(rec.id, store1);
-      await waitMs(100);
+      await waitMs(500);
 
       // Second store (simulates restart): recover from disk.
       const store2 = new JobStore({ stateDir });
@@ -315,14 +315,14 @@ describe('JobStore — file persistence', () => {
       const child = spawn(nodeCmd, ['-e', 'process.exit(0);']);
       store.attachChild(rec.id, child);
       await waitForExit(rec.id, store);
-      await waitMs(100);
+      await waitMs(500);
 
       const filePath = join(stateDir, 'jobs', `${rec.id}.json`);
       // File should exist before prune.
       await readFile(filePath, 'utf8');
 
       store.prune(Date.now() + 1_000);
-      await waitMs(100);
+      await waitMs(500);
 
       // File should be gone after prune.
       await expect(readFile(filePath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

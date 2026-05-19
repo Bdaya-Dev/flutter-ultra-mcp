@@ -25,6 +25,17 @@ export const launchBrowserSchema = z
   })
   .strict();
 
+export const connectOverCdpSchema = z
+  .object({
+    endpointURL: z
+      .string()
+      .describe(
+        'CDP WebSocket or HTTP endpoint (e.g. http://127.0.0.1:58368). Typically the chromeCdpPort from discover_sessions.',
+      ),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
 export const closeBrowserSchema = z.object({ browserId: z.string() }).strict();
 
 export const newContextSchema = z

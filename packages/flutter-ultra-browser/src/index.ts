@@ -68,6 +68,14 @@ const TOOLS: ToolDefErased[] = [
     handler: lifecycle.launchBrowser,
   }),
   defTool({
+    name: 'connect_over_cdp',
+    description:
+      'Attach Playwright to an existing Chrome instance via CDP (Chrome DevTools Protocol). Use with the chromeCdpPort from discover_sessions to control the Flutter-launched Chrome — interact with non-Flutter pages (OIDC login, payment gateways) in the same browser session. Returns discovered contexts and pages.',
+    schema: schemas.connectOverCdpSchema,
+    meta: { class: 'marathon', ceilingMs: 60_000 },
+    handler: lifecycle.connectOverCdp,
+  }),
+  defTool({
     name: 'close_browser',
     description: 'Close a browser instance and all its contexts/pages/captures.',
     schema: schemas.closeBrowserSchema,

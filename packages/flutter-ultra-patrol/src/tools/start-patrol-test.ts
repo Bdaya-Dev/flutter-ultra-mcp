@@ -77,6 +77,24 @@ export const startPatrolTestTool = defineTool({
       .array(z.string())
       .optional()
       .describe('Raw patrol_cli args appended after generated ones.'),
+    fullIsolation: z.boolean().optional().describe('iOS: full simulator isolation between runs.'),
+    noUninstall: z
+      .boolean()
+      .optional()
+      .describe('Keep app installed after tests (faster re-runs).'),
+    clearPermissions: z.boolean().optional().describe('Reset permission state between tests.'),
+    verbose: z.boolean().optional().describe('Enable verbose Flutter log output.'),
+    buildName: z.string().optional().describe('Custom version name for test build.'),
+    buildNumber: z.string().optional().describe('Custom build number for test build.'),
+    noTreeShakeIcons: z.boolean().optional().describe('Skip icon tree-shaking (faster builds).'),
+    coverageIgnore: z
+      .array(z.string())
+      .optional()
+      .describe('Glob patterns to exclude from coverage.'),
+    targets: z
+      .array(z.string())
+      .optional()
+      .describe('Multiple test target files (comma-separated by patrol_cli).'),
   }),
   async handler(input, ctx) {
     const project = findFlutterProject(input.projectRoot);
@@ -160,6 +178,18 @@ export function buildPatrolTestArgs(
       args.push('--web-browser-args', browserArgs.join(','));
     }
   }
+
+  if (input.fullIsolation) args.push('--full-isolation');
+  if (input.noUninstall) args.push('--no-uninstall');
+  if (input.clearPermissions) args.push('--clear-permissions');
+  if (input.verbose) args.push('--verbose');
+  if (input.buildName) args.push('--build-name', input.buildName);
+  if (input.buildNumber) args.push('--build-number', input.buildNumber);
+  if (input.noTreeShakeIcons) args.push('--no-tree-shake-icons');
+  if (input.coverageIgnore) {
+    for (const glob of input.coverageIgnore) args.push('--coverage-ignore', glob);
+  }
+  if (input.targets) args.push('--targets', input.targets.join(','));
 
   if (input.extraArgs) args.push(...input.extraArgs);
   return args;

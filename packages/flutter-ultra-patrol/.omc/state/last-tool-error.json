@@ -1,0 +1,7 @@
+{
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"Set-Location \\\"D:\\\\projects\\\\devops-aggregate\\\\shared\\\\dart\\\\flutter-ultra\\\\packages\\\\flutter-ultra-patrol\\\"; npx vitest run 2>&1 | Select-Object -Last 15\",\"timeout\":60000,\"description\":\"R...",
+  "error": "Exit code 1\n\u001b[31;1m\u001b[36m \u001b[2m❯\u001b[22m tests/unit/runtime/patrol-cli.test.ts:\u001b[2m16:25\u001b[22m\u001b[39m\u001b[0m\r\n\u001b[31;1m    \u001b[90m 14| \u001b[39m    \u001b[34mexpect\u001b[39m(got\u001b[33m.\u001b[39mkind)\u001b[33m.\u001b[39m\u001b[34mtoBe\u001b[39m(\u001b[32m'dart-run'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\r\n\u001b[31;1m    \u001b[90m 15| \u001b[39m    \u001b[35mif\u001b[39m (got\u001b[33m.\u001b[39mkind \u001b[33m!==\u001b[39m \u001b[32m'dart-run'\u001b[39m) \u001b[35mthrow\u001b[39m \u001b[35mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m'narrow'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\r\n\u001b[31;1m    \u001b[90m 16| \u001b[39m    \u001b[34mexpect\u001b[39m(got\u001b[33m.\u001b[39mcommand)\u001b[33m.\u001b[39m\u001b[34mtoBe\u001b...",
+  "timestamp": "2026-05-19T01:41:38.655Z",
+  "retry_count": 1
+}

@@ -1,4 +1,4 @@
-// Server-level invariants: 14 tools exposed, names unique, every input
+// Server-level invariants: 15 tools exposed, names unique, every input
 // schema is a ZodObject, every description fits inside the MCP soft limit.
 
 import { describe, expect, it } from 'vitest';
@@ -6,8 +6,8 @@ import { z } from 'zod';
 import { TOOLS, createPatrolServer } from '../../src/server.js';
 
 describe('TOOLS catalogue', () => {
-  it('exports exactly 14 tools (13 per plan §17B.1 + extract_video_frame #43)', () => {
-    expect(TOOLS).toHaveLength(14);
+  it('exports exactly 15 tools (13 per plan §17B.1 + extract_video_frame #43 + run_patrol_doctor #83)', () => {
+    expect(TOOLS).toHaveLength(15);
   });
 
   it('has unique tool names', () => {
@@ -31,6 +31,7 @@ describe('TOOLS catalogue', () => {
       'get_patrol_browser_errors',
       'get_patrol_web_debugger_port',
       'extract_video_frame',
+      'run_patrol_doctor',
     ];
     expect(TOOLS.map((t) => t.name).sort()).toEqual(expected.sort());
   });

@@ -134,6 +134,89 @@ describe('mergeBrowserArgs', () => {
   });
 });
 
+describe('buildPatrolTestArgs — new CLI flags (#83)', () => {
+  it('passes --full-isolation when fullIsolation is true', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', fullIsolation: true }, '');
+    expect(args).toContain('--full-isolation');
+  });
+
+  it('does not pass --full-isolation when fullIsolation is false', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', fullIsolation: false }, '');
+    expect(args).not.toContain('--full-isolation');
+  });
+
+  it('passes --no-uninstall when noUninstall is true', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', noUninstall: true }, '');
+    expect(args).toContain('--no-uninstall');
+  });
+
+  it('passes --clear-permissions when clearPermissions is true', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', clearPermissions: true }, '');
+    expect(args).toContain('--clear-permissions');
+  });
+
+  it('passes --verbose when verbose is true', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', verbose: true }, '');
+    expect(args).toContain('--verbose');
+  });
+
+  it('passes --build-name with value', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', buildName: '1.2.3' }, '');
+    expect(args).toContain('--build-name');
+    expect(args[args.indexOf('--build-name') + 1]).toBe('1.2.3');
+  });
+
+  it('passes --build-number with value', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', buildNumber: '42' }, '');
+    expect(args).toContain('--build-number');
+    expect(args[args.indexOf('--build-number') + 1]).toBe('42');
+  });
+
+  it('passes --no-tree-shake-icons when noTreeShakeIcons is true', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', noTreeShakeIcons: true }, '');
+    expect(args).toContain('--no-tree-shake-icons');
+  });
+
+  it('passes repeated --coverage-ignore for each glob', () => {
+    const args = buildPatrolTestArgs(
+      { projectRoot: '/x', coverageIgnore: ['**/gen/**', '**/*.g.dart'] },
+      '',
+    );
+    const indices = args.reduce<number[]>(
+      (acc, a, i) => (a === '--coverage-ignore' ? [...acc, i] : acc),
+      [],
+    );
+    expect(indices).toHaveLength(2);
+    expect(args[indices[0]! + 1]).toBe('**/gen/**');
+    expect(args[indices[1]! + 1]).toBe('**/*.g.dart');
+  });
+
+  it('passes --targets as comma-joined list', () => {
+    const args = buildPatrolTestArgs(
+      {
+        projectRoot: '/x',
+        targets: ['integration_test/a_test.dart', 'integration_test/b_test.dart'],
+      },
+      '',
+    );
+    expect(args).toContain('--targets');
+    expect(args[args.indexOf('--targets') + 1]).toBe(
+      'integration_test/a_test.dart,integration_test/b_test.dart',
+    );
+  });
+
+  it('new flags appear before extraArgs', () => {
+    const args = buildPatrolTestArgs(
+      { projectRoot: '/x', verbose: true, extraArgs: ['--sentinel'] },
+      '',
+    );
+    const verboseIdx = args.indexOf('--verbose');
+    const sentinelIdx = args.indexOf('--sentinel');
+    expect(verboseIdx).toBeGreaterThan(-1);
+    expect(sentinelIdx).toBeGreaterThan(verboseIdx);
+  });
+});
+
 describe('buildPatrolTestArgs — platform-specific browser args (#75)', () => {
   it('emits --web-browser-args on non-Windows platforms', () => {
     const args = buildPatrolTestArgs(

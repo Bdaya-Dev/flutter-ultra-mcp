@@ -18,6 +18,7 @@ import { startPatrolRecordingTool } from '../../../src/tools/start-patrol-record
 import { stopPatrolRecordingTool } from '../../../src/tools/stop-patrol-recording.js';
 import { getPatrolBrowserErrorsTool } from '../../../src/tools/get-patrol-browser-errors.js';
 import { getPatrolWebDebuggerPortTool } from '../../../src/tools/get-patrol-web-debugger-port.js';
+import { patrolDoctorTool } from '../../../src/tools/patrol-doctor.js';
 import type { ToolContext } from '../../../src/tools/types.js';
 
 function makeCtx(): {
@@ -729,5 +730,82 @@ describe('get_patrol_web_debugger_port', () => {
       ok: false,
       reason: 'no_source_job',
     });
+  });
+});
+
+describe('run_patrol_doctor schema', () => {
+  it('accepts a valid projectRoot', () => {
+    expect(patrolDoctorTool.inputSchema.safeParse({ projectRoot: '/abs/proj' }).success).toBe(true);
+  });
+
+  it('rejects missing projectRoot', () => {
+    expect(patrolDoctorTool.inputSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('rejects empty projectRoot', () => {
+    expect(patrolDoctorTool.inputSchema.safeParse({ projectRoot: '' }).success).toBe(false);
+  });
+
+  it('has name run_patrol_doctor', () => {
+    expect(patrolDoctorTool.name).toBe('run_patrol_doctor');
+  });
+
+  it('has a non-empty description', () => {
+    expect(typeof patrolDoctorTool.description).toBe('string');
+    expect(patrolDoctorTool.description.length).toBeGreaterThan(0);
+  });
+
+  it('handler is a function', () => {
+    expect(typeof patrolDoctorTool.handler).toBe('function');
+  });
+});
+
+describe('take_patrol_screenshot returnBase64 schema', () => {
+  it('accepts returnBase64: true alongside outputPath', () => {
+    expect(
+      takePatrolScreenshotTool.inputSchema.safeParse({
+        outputPath: '/tmp/x.png',
+        returnBase64: true,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts returnBase64: false', () => {
+    expect(
+      takePatrolScreenshotTool.inputSchema.safeParse({
+        outputPath: '/tmp/x.png',
+        returnBase64: false,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts omitted returnBase64 (optional)', () => {
+    expect(
+      takePatrolScreenshotTool.inputSchema.safeParse({ outputPath: '/tmp/x.png' }).success,
+    ).toBe(true);
+  });
+
+  it('when returnBase64 omitted, still dispatches screenshot command and returns ok:true', () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    const result = takePatrolScreenshotTool.handler({ outputPath: '/tmp/x.png' }, ctx) as Record<
+      string,
+      unknown
+    >;
+    expect(result.ok).toBe(true);
+    expect(result.base64).toBeUndefined();
+  });
+
+  it('when returnBase64:true and file does not exist, returns base64:null with base64Error', () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    // Path that definitely does not exist.
+    const result = takePatrolScreenshotTool.handler(
+      { outputPath: '/nonexistent/path/shot.png', returnBase64: true },
+      ctx,
+    ) as Record<string, unknown>;
+    expect(result.ok).toBe(true);
+    expect(result.base64).toBeNull();
+    expect(result.base64Error).toBe('file_not_yet_written');
   });
 });

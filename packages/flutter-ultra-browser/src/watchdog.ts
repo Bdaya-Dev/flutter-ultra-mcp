@@ -54,12 +54,21 @@ function envOverrideMs(toolName: string): number | undefined {
   return n;
 }
 
+function applyMultiplier(base: number): number {
+  const raw = process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'];
+  if (!raw) return base;
+  const mult = Number.parseFloat(raw);
+  if (!Number.isFinite(mult) || mult <= 0) return base;
+  return Math.round(base * mult);
+}
+
 export function withWatchdog<Args, Result extends ToolReturn>(
   meta: ToolMeta,
   handler: (args: Args, ctx: ToolContext) => Promise<Result>,
 ): (args: Args, ctx?: Partial<ToolContext>) => Promise<Result> {
   return async (args, ctx) => {
-    const ceilingMs = envOverrideMs(meta.name) ?? meta.ceilingMs;
+    const perToolOverride = envOverrideMs(meta.name);
+    const ceilingMs = perToolOverride !== undefined ? perToolOverride : applyMultiplier(meta.ceilingMs);
 
     const controller = new AbortController();
     const upstream = ctx?.signal;

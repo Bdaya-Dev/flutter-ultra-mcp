@@ -15,8 +15,6 @@ topics:
   - agent
   - testing
 
-publish_to: none
-
 environment:
   sdk: '>=3.6.0 <4.0.0'
   flutter: '>=3.27.0'

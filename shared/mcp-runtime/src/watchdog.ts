@@ -40,14 +40,20 @@ export interface ToolContext {
 
 export type ToolBody<Args, Result> = (args: Args, ctx: ToolContext) => Promise<Result>;
 
-function resolveCeiling(config: WatchdogConfig): number {
+export function resolveCeiling(config: WatchdogConfig): number {
   const envKey = `FLUTTER_ULTRA_TOOL_TIMEOUT_${config.name.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
   const envOverride = process.env[envKey];
   if (envOverride) {
     const parsed = Number.parseInt(envOverride, 10);
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
-  return config.ceilingMs ?? DEFAULT_CEILINGS_MS[config.timeoutClass];
+  const base = config.ceilingMs ?? DEFAULT_CEILINGS_MS[config.timeoutClass];
+  const multiplierRaw = process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'];
+  if (multiplierRaw) {
+    const mult = Number.parseFloat(multiplierRaw);
+    if (Number.isFinite(mult) && mult > 0) return Math.round(base * mult);
+  }
+  return base;
 }
 
 // Wraps the supplied body so an AbortController fires after `ceilingMs`

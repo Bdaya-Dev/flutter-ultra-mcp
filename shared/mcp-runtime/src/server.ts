@@ -17,6 +17,8 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js';
 import { z, type ZodRawShape } from 'zod';
 import { createLogger, type Logger, type LoggerOptions } from './logger.js';
+import { redactVmServiceToken } from './redact.js';
+import { createDiagnosticsTool, DiagnosticsCollector } from './diagnostics.js';
 import { startKeepAlive } from './keepAlive.js';
 import {
   type ProgressUpdate,
@@ -81,6 +83,7 @@ export function createServer(opts: CreateServerOptions): FlutterUltraServer {
     },
   });
   const logger = createLogger({ server: opts.info.name, ...(opts.logger ?? {}) });
+  const diagnostics = new DiagnosticsCollector();
   let stopKeepAlive: (() => void) | null = null;
   let started = false;
 
@@ -129,6 +132,7 @@ export function createServer(opts: CreateServerOptions): FlutterUltraServer {
             });
         };
 
+        diagnostics.recordToolCall(config.name);
         const externalSignal = extra.signal;
         try {
           const result = await runWithWatchdog(
@@ -160,6 +164,8 @@ export function createServer(opts: CreateServerOptions): FlutterUltraServer {
     async start() {
       if (started) return;
       started = true;
+      // Auto-register the built-in diagnostics tool before connecting.
+      defineTool(createDiagnosticsTool(diagnostics), async () => diagnostics.snapshot());
       const transport = new StdioServerTransport();
       await mcp.connect(transport);
       stopKeepAlive = startKeepAlive(
@@ -197,7 +203,7 @@ function toCallToolResult(value: unknown): CallToolResult {
   // Return as structured + text mirror so both human-reading agents and
   // JSON-consuming agents get a usable response.
   return {
-    content: [{ type: 'text', text: JSON.stringify(value) }],
+    content: [{ type: 'text', text: redactVmServiceToken(JSON.stringify(value)) }],
     structuredContent: (value as Record<string, unknown>) ?? undefined,
   };
 }

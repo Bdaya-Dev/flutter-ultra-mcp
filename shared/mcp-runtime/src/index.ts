@@ -11,7 +11,20 @@ export {
   type ServerInfo,
 } from './server.js';
 
-export { createLogger, type Logger, type LoggerOptions, type LogLevel } from './logger.js';
+export {
+  createLogger,
+  LogBuffer,
+  type LogEntry,
+  type Logger,
+  type LoggerOptions,
+  type LogLevel,
+} from './logger.js';
+
+export {
+  createDiagnosticsTool,
+  DiagnosticsCollector,
+  type DiagnosticsSnapshot,
+} from './diagnostics.js';
 
 export {
   DEFAULT_CEILINGS_MS,
@@ -48,6 +61,8 @@ export {
   type SessionSource,
   type SessionStatus,
 } from './session.js';
+
+export { redactVmServiceToken } from './redact.js';
 
 export {
   FinderSchema,

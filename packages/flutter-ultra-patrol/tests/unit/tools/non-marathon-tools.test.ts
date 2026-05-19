@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { JobStore, type PatrolJobRecord } from '../../../src/runtime/job-store.js';
 import { DevelopSessionManager } from '../../../src/runtime/develop-session.js';
-import { pollPatrolJobTool } from '../../../src/tools/poll-patrol-job.js';
+import { pollPatrolJobTool, extractSteps } from '../../../src/tools/poll-patrol-job.js';
 import { getPatrolResultTool } from '../../../src/tools/get-patrol-result.js';
 import { cancelPatrolJobTool } from '../../../src/tools/cancel-patrol-job.js';
 import { patrolDevelopRunTool } from '../../../src/tools/patrol-develop-run.js';
@@ -109,6 +109,143 @@ describe('poll_patrol_job', () => {
   it('rejects invalid input', () => {
     expect(pollPatrolJobTool.inputSchema.safeParse({ taskId: '' }).success).toBe(false);
   });
+
+  it('cursor=0 returns most recent logLines lines (fallback behaviour)', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {},
+    });
+    for (let i = 1; i <= 5; i++) {
+      rec.logTail.push({ ts: i, stream: 'stdout', text: `line${i}` });
+    }
+    rec.logTotal = 5;
+    const got = pollPatrolJobTool.handler(
+      { taskId: rec.id, logLines: 3, cursor: 0 },
+      ctx,
+    ) as { logTail: { text: string }[]; logTotal: number };
+    expect(got.logTail.map((l) => l.text)).toEqual(['line3', 'line4', 'line5']);
+    expect(got.logTotal).toBe(5);
+  });
+
+  it('cursor returns only new lines since last poll', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {},
+    });
+    for (let i = 1; i <= 4; i++) {
+      rec.logTail.push({ ts: i, stream: 'stdout', text: `line${i}` });
+    }
+    rec.logTotal = 4;
+
+    // First poll: no cursor — gets last 2 lines
+    const first = pollPatrolJobTool.handler(
+      { taskId: rec.id, logLines: 2 },
+      ctx,
+    ) as { logTail: { text: string }[]; logTotal: number };
+    expect(first.logTail.map((l) => l.text)).toEqual(['line3', 'line4']);
+
+    // Two more lines arrive
+    rec.logTail.push({ ts: 5, stream: 'stdout', text: 'line5' });
+    rec.logTail.push({ ts: 6, stream: 'stdout', text: 'line6' });
+    rec.logTotal = 6;
+
+    // Second poll: cursor = first.logTotal (4) → only lines5 and line6
+    const second = pollPatrolJobTool.handler(
+      { taskId: rec.id, cursor: first.logTotal },
+      ctx,
+    ) as { logTail: { text: string }[]; logTotal: number };
+    expect(second.logTail.map((l) => l.text)).toEqual(['line5', 'line6']);
+    expect(second.logTotal).toBe(6);
+  });
+
+  it('includes steps array in poll response', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {},
+    });
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: 'Running: integration_test/login_test.dart -- logs in' },
+      { ts: 2, stream: 'stdout', text: 'PASS  integration_test/login_test.dart -- logs in' },
+      { ts: 3, stream: 'stdout', text: 'Running: integration_test/cart_test.dart' },
+    );
+    rec.logTotal = 3;
+    const got = pollPatrolJobTool.handler({ taskId: rec.id }, ctx) as {
+      steps: { file: string; status: string }[];
+    };
+    expect(got.steps).toHaveLength(2);
+    expect(got.steps[0]).toMatchObject({ file: 'integration_test/login_test.dart', status: 'passed' });
+    expect(got.steps[1]).toMatchObject({ file: 'integration_test/cart_test.dart', status: 'running' });
+  });
+});
+
+describe('extractSteps', () => {
+  it('returns empty array for empty log', () => {
+    expect(extractSteps([])).toEqual([]);
+  });
+
+  it('tracks running → passed transition', () => {
+    const log = [
+      { ts: 10, stream: 'stdout' as const, text: 'Running: integration_test/foo_test.dart -- my test' },
+      { ts: 20, stream: 'stdout' as const, text: 'PASS  integration_test/foo_test.dart -- my test' },
+    ];
+    const steps = extractSteps(log);
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toEqual({
+      file: 'integration_test/foo_test.dart',
+      test: 'my test',
+      status: 'passed',
+      startedAt: 10,
+    });
+  });
+
+  it('tracks running → failed transition', () => {
+    const log = [
+      { ts: 5, stream: 'stdout' as const, text: 'Running: integration_test/bar_test.dart' },
+      { ts: 15, stream: 'stdout' as const, text: 'FAIL  integration_test/bar_test.dart' },
+    ];
+    const steps = extractSteps(log);
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({ status: 'failed', file: 'integration_test/bar_test.dart' });
+  });
+
+  it('creates step from PASS line alone (no Running: prefix)', () => {
+    const log = [
+      { ts: 1, stream: 'stdout' as const, text: 'PASS  integration_test/a_test.dart -- test name (1.5s)' },
+    ];
+    const steps = extractSteps(log);
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({ status: 'passed', file: 'integration_test/a_test.dart', test: 'test name' });
+  });
+
+  it('handles multiple independent tests', () => {
+    const log = [
+      { ts: 1, stream: 'stdout' as const, text: 'Running: integration_test/a_test.dart' },
+      { ts: 2, stream: 'stdout' as const, text: 'Running: integration_test/b_test.dart' },
+      { ts: 3, stream: 'stdout' as const, text: 'PASS  integration_test/a_test.dart' },
+      { ts: 4, stream: 'stdout' as const, text: 'FAIL  integration_test/b_test.dart' },
+    ];
+    const steps = extractSteps(log);
+    expect(steps).toHaveLength(2);
+    const a = steps.find((s) => s.file === 'integration_test/a_test.dart');
+    const b = steps.find((s) => s.file === 'integration_test/b_test.dart');
+    expect(a?.status).toBe('passed');
+    expect(b?.status).toBe('failed');
+  });
 });
 
 describe('get_patrol_result', () => {
@@ -164,6 +301,187 @@ describe('get_patrol_result', () => {
     expect(getPatrolResultTool.handler({ taskId: 'no' }, ctx)).toMatchObject({
       found: false,
     });
+  });
+
+  it('reports crashedBeforeTests:true with synthetic failure when status=crashed and no tests ran', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {},
+    });
+    rec.status = 'crashed';
+    rec.endedAt = rec.startedAt + 1_000;
+    rec.exitCode = -1;
+    rec.errorMessage = 'spawn ENOENT';
+    // No PASS/FAIL/SKIP lines — patrol crashed at startup.
+    rec.logTail.push({ ts: 0, stream: 'stderr', text: 'Error: spawn ENOENT' });
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      ready: boolean;
+      crashedBeforeTests: boolean;
+      passed: number;
+      failed: number;
+      skipped: number;
+      failures: { error: string }[];
+    };
+    expect(got.ready).toBe(true);
+    expect(got.crashedBeforeTests).toBe(true);
+    expect(got.passed).toBe(0);
+    expect(got.failed).toBe(1);
+    expect(got.skipped).toBe(0);
+    expect(got.failures).toHaveLength(1);
+    expect(got.failures[0]!.error).toBe('spawn ENOENT');
+  });
+
+  it('does NOT set crashedBeforeTests when failed job has test results', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {},
+    });
+    rec.status = 'failed';
+    rec.endedAt = rec.startedAt + 3_000;
+    rec.exitCode = 1;
+    rec.logTail.push(
+      { ts: 0, stream: 'stdout', text: 'PASS  integration_test/ok_test.dart' },
+      { ts: 0, stream: 'stdout', text: 'FAIL  integration_test/bad_test.dart -- assert failed' },
+    );
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as Record<string, unknown>;
+    expect(got.crashedBeforeTests).toBeUndefined();
+    expect(got.failed).toBe(1);
+    expect(got.passed).toBe(1);
+  });
+
+  it('diagnosticHints is null for all hints when no failures', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: { PATROL_WEB_BROWSER_ARGS: '' },
+    });
+    rec.status = 'completed';
+    rec.endedAt = rec.startedAt + 1_000;
+    rec.exitCode = 0;
+    rec.logTail.push({ ts: 0, stream: 'stdout', text: 'PASS  integration_test/a_test.dart' });
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      diagnosticHints: { screenshot: string | null; widgetTree: string | null; browserErrors: string | null };
+    };
+    expect(got.diagnosticHints.screenshot).toBeNull();
+    expect(got.diagnosticHints.widgetTree).toBeNull();
+    expect(got.diagnosticHints.browserErrors).toBeNull();
+  });
+
+  it('diagnosticHints.screenshot and widgetTree are populated for web test failures', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: ['test', '--web-headless', 'new'],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: { PATROL_WEB_BROWSER_ARGS: '--headless' },
+    });
+    rec.status = 'failed';
+    rec.endedAt = rec.startedAt + 2_000;
+    rec.exitCode = 1;
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: '[patrol-web-debugger-port] 9222' },
+      { ts: 2, stream: 'stdout', text: 'FAIL  integration_test/x_test.dart -- broken' },
+      { ts: 3, stream: 'stdout', text: 'err' },
+    );
+    rec.logTotal = 3;
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      diagnosticHints: { screenshot: string | null; widgetTree: string | null; browserErrors: string | null };
+    };
+    expect(got.diagnosticHints.screenshot).toContain('take_patrol_screenshot');
+    expect(got.diagnosticHints.screenshot).toContain('Headless CDP');
+    expect(got.diagnosticHints.widgetTree).toContain('get_widget_tree');
+    expect(got.diagnosticHints.widgetTree).toContain('9222');
+  });
+
+  it('diagnosticHints.widgetTree has no port when port not announced', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: ['test'],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: { PATROL_WEB_BROWSER_ARGS: '' },
+    });
+    rec.status = 'failed';
+    rec.endedAt = rec.startedAt + 2_000;
+    rec.exitCode = 1;
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: 'FAIL  integration_test/x_test.dart -- broken' },
+      { ts: 2, stream: 'stdout', text: 'err' },
+    );
+    rec.logTotal = 2;
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      diagnosticHints: { widgetTree: string | null };
+    };
+    expect(got.diagnosticHints.widgetTree).toContain('get_widget_tree');
+    expect(got.diagnosticHints.widgetTree).not.toContain('port');
+  });
+
+  it('diagnosticHints.browserErrors populated when failures have browser errors', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: { PATROL_WEB_BROWSER_ARGS: '' },
+    });
+    rec.status = 'failed';
+    rec.endedAt = rec.startedAt + 1_000;
+    rec.exitCode = 1;
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: '[browser-error] TypeError: foo is undefined' },
+      { ts: 2, stream: 'stdout', text: 'FAIL  integration_test/x_test.dart -- broken' },
+      { ts: 3, stream: 'stdout', text: 'err' },
+    );
+    rec.logTotal = 3;
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      diagnosticHints: { browserErrors: string | null };
+    };
+    expect(got.diagnosticHints.browserErrors).toContain('browserErrors[]');
+  });
+
+  it('diagnosticHints null for non-web test failures', () => {
+    const { ctx, jobs } = makeCtx();
+    const rec = jobs.create({
+      kind: 'test',
+      command: 'noop',
+      args: [],
+      cwd: '/x',
+      wrapperScript: null,
+      envSnapshot: {}, // no PATROL_WEB_BROWSER_ARGS → not a web test
+    });
+    rec.status = 'failed';
+    rec.endedAt = rec.startedAt + 1_000;
+    rec.exitCode = 1;
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: 'FAIL  integration_test/x_test.dart -- broken' },
+      { ts: 2, stream: 'stdout', text: 'err' },
+    );
+    rec.logTotal = 2;
+    const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
+      diagnosticHints: { screenshot: string | null; widgetTree: string | null };
+    };
+    expect(got.diagnosticHints.screenshot).toBeNull();
+    expect(got.diagnosticHints.widgetTree).toBeNull();
   });
 });
 

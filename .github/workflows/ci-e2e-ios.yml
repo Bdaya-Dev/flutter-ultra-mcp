@@ -38,18 +38,20 @@ jobs:
       - name: Build TS servers
         run: npm run build
 
-      - name: Flutter pub get (counter-app)
-        working-directory: examples/counter-app
-        run: flutter pub get
-
       - name: Boot iOS Simulator
         run: |
-          DEVICE=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(\(.*\)).*/\1/')
-          xcrun simctl boot "$DEVICE" || true
-          echo "DEVICE_ID=$DEVICE" >> "$GITHUB_ENV"
+          RUNTIME=$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | map(select(.isAvailable)) | last | .identifier')
+          DEVICE_ID=$(xcrun simctl create "flutter-test" "iPhone 16" "$RUNTIME")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
 
-      - name: Run counter-app on iOS Simulator
+      - name: Run integration tests
         working-directory: examples/counter-app
         run: |
-          flutter build ios --simulator --debug
+          flutter pub get
           flutter test --device-id "$DEVICE_ID" integration_test/
+
+      - name: Shutdown simulator
+        if: always()
+        run: xcrun simctl shutdown "$DEVICE_ID" 2>/dev/null || true

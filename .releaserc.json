@@ -12,7 +12,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && node -e \"for(const f of ['.claude-plugin/plugin.json','.claude-plugin/marketplace.json']){const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='${nextRelease.version}';if(j.plugins)j.plugins.forEach(p=>p.version='${nextRelease.version}');require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\\n')}\" && git add -f packages/*/dist/bin.cjs",
+        "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && node -e \"for(const f of ['.claude-plugin/plugin.json','.claude-plugin/marketplace.json']){const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='${nextRelease.version}';if(j.plugins)j.plugins.forEach(p=>p.version='${nextRelease.version}');require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\\n')}\" && npx prettier --write .claude-plugin/plugin.json .claude-plugin/marketplace.json && git add -f packages/*/dist/bin.cjs",
         "publishCmd": "npm publish --access public"
       }
     ],

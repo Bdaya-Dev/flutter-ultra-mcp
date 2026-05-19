@@ -52,6 +52,13 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
+      - name: Ensure Linux platform support
+        working-directory: examples/counter-app
+        run: |
+          if [ ! -d "linux" ]; then
+            flutter create --platforms=linux .
+          fi
+
       - name: Build counter-app for Linux
         working-directory: examples/counter-app
         run: flutter build linux --debug

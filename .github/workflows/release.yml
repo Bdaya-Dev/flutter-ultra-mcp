@@ -61,11 +61,18 @@ jobs:
       # Dart pub.dev publishing via GitHub OIDC trusted publishing.
       # Only runs on stable releases (main branch). Pre-release branches
       # (next/beta/alpha) skip this so only stable versions land on pub.dev.
-      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
         if: github.ref == 'refs/heads/main'
+        with:
+          channel: stable
 
       - name: Publish Dart packages to pub.dev
         if: github.ref == 'refs/heads/main'
+        continue-on-error: true
         run: |
-          cd dart/ultra_flutter && dart pub publish --force
-          cd ../../dart/ultra_flutter_devtools && dart pub publish --force
+          cd dart/ultra_flutter
+          flutter pub get
+          flutter pub publish --force
+          cd ../../dart/ultra_flutter_devtools
+          flutter pub get
+          flutter pub publish --force

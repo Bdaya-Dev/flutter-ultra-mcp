@@ -43,6 +43,14 @@ jobs:
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
 
+      - name: Ensure Windows platform support
+        working-directory: examples/counter-app
+        run: |
+          if (!(Test-Path "windows")) {
+            flutter create --platforms=windows .
+          }
+        shell: pwsh
+
       - name: Build counter-app for Windows
         working-directory: examples/counter-app
         run: flutter build windows --debug

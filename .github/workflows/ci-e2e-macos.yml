@@ -46,6 +46,13 @@ jobs:
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
 
+      - name: Ensure macOS platform support
+        working-directory: examples/counter-app
+        run: |
+          if [ ! -d "macos" ]; then
+            flutter create --platforms=macos .
+          fi
+
       - name: Build counter-app for macOS
         working-directory: examples/counter-app
         run: flutter build macos --debug

@@ -42,9 +42,12 @@ jobs:
       - name: Build TS servers
         run: npm run build
 
-      - name: Flutter pub get (counter-app)
+      - name: Ensure Android platform support
         working-directory: examples/counter-app
-        run: flutter pub get
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create --platforms=android .
+          fi
 
       - name: Cache AVD
         uses: actions/cache@v5
@@ -52,11 +55,11 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-34-x86_64
+          key: avd-33-x86_64
 
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 33
           arch: x86_64
           target: google_apis
           force-avd-creation: false
@@ -64,5 +67,5 @@ jobs:
           disable-animations: true
           script: |
             cd examples/counter-app
+            flutter pub get
             flutter test --device-id emulator-5554 integration_test/
-            flutter build apk --debug

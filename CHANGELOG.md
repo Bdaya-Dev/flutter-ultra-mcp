@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.0...v1.5.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** green all CI workflows — format, Dart pub, simulator, desktop, emulator ([904f824](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/904f824e6bafec68d58439800e93ecacc375e89d))
+
 # [1.5.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.4.0...v1.5.0) (2026-05-19)
 
 

@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.1...v1.5.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** osv-scanner CLI, web E2E test scope, integration test binding ([405a2b6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/405a2b61550e6bd95181dc9f0daabbe82bc73726))
+
 ## [1.5.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.0...v1.5.1) (2026-05-19)
 
 

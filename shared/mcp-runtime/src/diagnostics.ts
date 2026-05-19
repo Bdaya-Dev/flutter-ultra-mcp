@@ -5,7 +5,7 @@
 //   // wrap defineTool calls to record:
 //   collector.recordToolCall('my_tool');
 //   // expose the tool:
-//   server.defineTool(createDiagnosticsTool(collector), async () => collector.snapshot());
+//   server.defineTool(createDiagnosticsTool(), async () => collector.snapshot());
 
 export interface DiagnosticsSnapshot {
   uptimeMs: number;
@@ -53,7 +53,7 @@ export class DiagnosticsCollector {
 
 // Returns a DefineToolConfig-compatible descriptor for use with
 // FlutterUltraServer.defineTool().
-export function createDiagnosticsTool(collector: DiagnosticsCollector) {
+export function createDiagnosticsTool() {
   return {
     name: 'dump_diagnostics',
     description:

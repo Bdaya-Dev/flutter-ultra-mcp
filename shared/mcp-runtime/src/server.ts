@@ -165,7 +165,7 @@ export function createServer(opts: CreateServerOptions): FlutterUltraServer {
       if (started) return;
       started = true;
       // Auto-register the built-in diagnostics tool before connecting.
-      defineTool(createDiagnosticsTool(diagnostics), async () => diagnostics.snapshot());
+      defineTool(createDiagnosticsTool(), async () => diagnostics.snapshot());
       const transport = new StdioServerTransport();
       await mcp.connect(transport);
       stopKeepAlive = startKeepAlive(

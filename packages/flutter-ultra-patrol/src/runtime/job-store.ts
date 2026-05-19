@@ -86,6 +86,8 @@ export class JobStore {
   private readonly jobs = new Map<string, PatrolJobRecord>();
   private readonly logTailLimit: number;
   private readonly stateDir: string | undefined;
+  /** Resolves when the last fire-and-forget persistJob completes. Tests use this instead of waitMs. */
+  lastPersist: Promise<void> = Promise.resolve();
 
   constructor(opts: JobStoreOptions = {}) {
     this.logTailLimit = opts.logTailLimit ?? DEFAULT_LOG_TAIL_LIMIT;
@@ -156,8 +158,7 @@ export class JobStore {
       child: null,
     };
     this.jobs.set(record.id, record);
-    // Fire-and-forget; write errors are non-fatal.
-    void this.persistJob(record).catch(() => undefined);
+    this.lastPersist = this.persistJob(record).catch(() => undefined);
     return record;
   }
 
@@ -192,12 +193,12 @@ export class JobStore {
       rec.child = null;
       if (rec.status === 'cancelled') {
         rec.exitCode = code ?? -1;
-        void this.persistJob(rec).catch(() => undefined);
+        this.lastPersist = this.persistJob(rec).catch(() => undefined);
         return;
       }
       rec.exitCode = code ?? (signal != null ? -1 : 0);
       rec.status = code === 0 ? 'completed' : 'failed';
-      void this.persistJob(rec).catch(() => undefined);
+      this.lastPersist = this.persistJob(rec).catch(() => undefined);
     });
     child.on('error', (err) => {
       rec.endedAt = Date.now();
@@ -205,7 +206,7 @@ export class JobStore {
       rec.status = 'crashed';
       rec.errorMessage = err.message;
       rec.child = null;
-      void this.persistJob(rec).catch(() => undefined);
+      this.lastPersist = this.persistJob(rec).catch(() => undefined);
     });
   }
 
@@ -253,7 +254,7 @@ export class JobStore {
         this.jobs.delete(id);
         dropped += 1;
         if (this.stateDir) {
-          void rm(this.jobFilePath(id), { force: true }).catch(() => undefined);
+          this.lastPersist = rm(this.jobFilePath(id), { force: true }).catch(() => undefined);
         }
       }
     }
@@ -318,7 +319,7 @@ export class JobStore {
       this.jobs.set(rec.id, rec);
       // Persist the updated (crashed) status back to disk.
       if (wasRunning) {
-        void this.persistJob(rec).catch(() => undefined);
+        this.lastPersist = this.persistJob(rec).catch(() => undefined);
       }
       recovered.push(rec);
     }

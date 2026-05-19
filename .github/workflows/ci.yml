@@ -59,3 +59,28 @@ jobs:
       - run: |
           node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/plugin.json'));"
           node -e "JSON.parse(require('fs').readFileSync('.mcp.json'));"
+
+  security:
+    name: Security scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+      - name: License compliance
+        run: npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0;SSPL-1.0;EUPL-1.1;EUPL-1.2"

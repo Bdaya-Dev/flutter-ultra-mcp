@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.6.0...v1.7.0) (2026-05-19)
+
+
+### Features
+
+* **skills:** rewrite all 8 skills with full tool catalog + best practices ([f9808b1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/f9808b18ffc6de519f90941c47389dd6037a1b78))
+
 # [1.6.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.8...v1.6.0) (2026-05-19)
 
 

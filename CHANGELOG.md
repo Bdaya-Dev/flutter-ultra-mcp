@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.2.0...v1.3.0) (2026-05-19)
+
+
+### Features
+
+* **browser:** add connect_over_cdp tool for CDP attachment ([#71](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/71)) ([e08a99f](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/e08a99f5973ff0a0e88b03b3e37e20a7ad4d1406)), closes [#42](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/42)
+
 # [1.2.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.1.0...v1.2.0) (2026-05-19)
 
 

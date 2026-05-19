@@ -11,7 +11,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createRuntimeServer } from '../src/index.js';
 import { CHECKS } from '../src/tools/designAudit.js';
 
-const DESIGN_TOOL_NAMES = ['audit_design', 'extract_design_tokens', 'audit_responsive'];
+const DESIGN_TOOL_NAMES = [
+  'audit_design',
+  'extract_design_tokens',
+  'audit_responsive',
+  'extract_component_inventory',
+];
 
 // ── Registration ──────────────────────────────────────────────────────────────
 
@@ -186,7 +191,7 @@ describe('extract_design_tokens schema', () => {
     expect(schema?.safeParse({}).success).toBe(false);
   });
 
-  it('rejects non-object input', () => {
+  it('rejects non-object input (extract_design_tokens)', () => {
     expect(schema?.safeParse(null).success).toBe(false);
     expect(schema?.safeParse('bad').success).toBe(false);
   });
@@ -259,5 +264,56 @@ describe('audit_responsive schema', () => {
   it('rejects non-object input', () => {
     expect(schema?.safeParse(null).success).toBe(false);
     expect(schema?.safeParse('bad').success).toBe(false);
+  });
+});
+
+// ── extract_component_inventory schema ────────────────────────────────────────
+
+describe('extract_component_inventory schema', () => {
+  let schema: { safeParse: (v: unknown) => { success: boolean } } | undefined;
+
+  beforeAll(async () => {
+    const srv = await createRuntimeServer({ keepAliveIntervalMs: 0 });
+    const mcp = srv.server.mcp as unknown as Record<string, Record<string, unknown>>;
+    const tool = (mcp['_registeredTools'] as Record<string, unknown>)[
+      'extract_component_inventory'
+    ] as { inputSchema?: { safeParse: (v: unknown) => { success: boolean } } } | undefined;
+    schema = tool?.inputSchema;
+  });
+
+  it('accepts valid sessionId (empty-input form)', () => {
+    expect(schema?.safeParse({ sessionId: '00000000-0000-0000-0000-000000000001' }).success).toBe(
+      true,
+    );
+  });
+
+  it('rejects missing sessionId', () => {
+    expect(schema?.safeParse({}).success).toBe(false);
+  });
+
+  it('rejects non-object input', () => {
+    expect(schema?.safeParse(null).success).toBe(false);
+    expect(schema?.safeParse('bad').success).toBe(false);
+    expect(schema?.safeParse(42).success).toBe(false);
+  });
+});
+
+// ── extract_component_inventory registration ──────────────────────────────────
+
+describe('extract_component_inventory registration', () => {
+  it('has correct tool name pattern', () => {
+    expect('extract_component_inventory').toMatch(/^[a-z][a-z0-9_]*$/);
+  });
+
+  it('is registered with non-empty description', async () => {
+    const srv = await createRuntimeServer({ keepAliveIntervalMs: 0 });
+    const mcp = srv.server.mcp as unknown as Record<
+      string,
+      Record<string, { description: string; inputSchema: unknown }>
+    >;
+    const registeredTools = new Map(Object.entries(mcp['_registeredTools'] ?? {}));
+    const tool = registeredTools.get('extract_component_inventory');
+    expect(tool, 'extract_component_inventory not registered').toBeDefined();
+    expect(tool!.description.length).toBeGreaterThan(0);
   });
 });

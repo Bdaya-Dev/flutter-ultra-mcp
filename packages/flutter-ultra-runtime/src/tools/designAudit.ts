@@ -333,6 +333,127 @@ async function runEvaluateChecks(
   return issues;
 }
 
+// ── Component inventory ───────────────────────────────────────────────────────
+
+const CATEGORY_MAP: Record<string, string> = {
+  ElevatedButton: 'input',
+  TextButton: 'input',
+  OutlinedButton: 'input',
+  FilledButton: 'input',
+  IconButton: 'input',
+  FloatingActionButton: 'input',
+  TextField: 'input',
+  TextFormField: 'input',
+  Checkbox: 'input',
+  CheckboxListTile: 'input',
+  Switch: 'input',
+  SwitchListTile: 'input',
+  Radio: 'input',
+  RadioListTile: 'input',
+  Slider: 'input',
+  DropdownButton: 'input',
+  DropdownButtonFormField: 'input',
+  PopupMenuButton: 'input',
+  InkWell: 'input',
+  GestureDetector: 'input',
+  Chip: 'input',
+  FilterChip: 'input',
+  ActionChip: 'input',
+  ChoiceChip: 'input',
+  Card: 'container',
+  Container: 'container',
+  DecoratedBox: 'container',
+  AnimatedContainer: 'container',
+  ClipRRect: 'container',
+  ClipOval: 'container',
+  Material: 'container',
+  Scaffold: 'container',
+  Dialog: 'container',
+  AlertDialog: 'container',
+  BottomSheet: 'container',
+  ExpansionTile: 'container',
+  ListTile: 'container',
+  Text: 'display',
+  RichText: 'display',
+  SelectableText: 'display',
+  Icon: 'display',
+  Image: 'display',
+  FadeInImage: 'display',
+  CachedNetworkImage: 'display',
+  CircularProgressIndicator: 'display',
+  LinearProgressIndicator: 'display',
+  Badge: 'display',
+  Tooltip: 'display',
+  Column: 'layout',
+  Row: 'layout',
+  Stack: 'layout',
+  Expanded: 'layout',
+  Flexible: 'layout',
+  Wrap: 'layout',
+  Padding: 'layout',
+  SizedBox: 'layout',
+  Spacer: 'layout',
+  Center: 'layout',
+  Align: 'layout',
+  AspectRatio: 'layout',
+  FractionallySizedBox: 'layout',
+  GridView: 'layout',
+  ListView: 'layout',
+  CustomScrollView: 'layout',
+  SingleChildScrollView: 'layout',
+  AppBar: 'navigation',
+  BottomNavigationBar: 'navigation',
+  NavigationBar: 'navigation',
+  NavigationRail: 'navigation',
+  Drawer: 'navigation',
+  TabBar: 'navigation',
+  Tab: 'navigation',
+  BottomAppBar: 'navigation',
+};
+
+export interface ComponentEntry {
+  type: string;
+  count: number;
+  category: string;
+}
+
+export interface ComponentInventory {
+  components: ComponentEntry[];
+  totalWidgets: number;
+  uniqueTypes: number;
+  categories: Record<string, number>;
+}
+
+function buildInventory(root: Record<string, unknown>): ComponentInventory {
+  const counts = new Map<string, number>();
+  let totalWidgets = 0;
+
+  walkTree(root, (node) => {
+    const type = extractNodeType(node as unknown as Record<string, unknown>);
+    if (type && type !== '<unknown>') {
+      counts.set(type, (counts.get(type) ?? 0) + 1);
+      totalWidgets += 1;
+    }
+    return true;
+  });
+
+  const categories: Record<string, number> = {};
+  const components: ComponentEntry[] = [];
+
+  for (const [type, count] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
+    const category = CATEGORY_MAP[type] ?? 'other';
+    components.push({ type, count, category });
+    categories[category] = (categories[category] ?? 0) + count;
+  }
+
+  return {
+    components,
+    totalWidgets,
+    uniqueTypes: counts.size,
+    categories,
+  };
+}
+
 // ── Tool registration ─────────────────────────────────────────────────────────
 
 export function registerDesignAuditTools(opts: {
@@ -679,6 +800,39 @@ export function registerDesignAuditTools(opts: {
           crossViewportIssues,
           resizeSupported: anyResized,
         };
+      } finally {
+        await release();
+      }
+    },
+  );
+
+  // ── extract_component_inventory ──────────────────────────────────────────
+
+  server.defineTool(
+    {
+      name: 'extract_component_inventory',
+      description:
+        'Walk the live widget tree and count every widget type. Returns a component inventory grouped by category (input, container, display, layout, navigation, other), plus total widget count and unique type count. Useful for bridging Flutter UI state to Figma for design-implementation comparison.',
+      inputShape: {
+        sessionId: SessionIdSchema,
+      },
+      timeoutClass: 'quick',
+      ceilingMs: 15_000,
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    async (args) => {
+      const { isolateId, client, release } = await resolveIsolate(args.sessionId);
+      try {
+        const root = await fetchSummaryTree(client, isolateId);
+        if (!root) {
+          return {
+            components: [],
+            totalWidgets: 0,
+            uniqueTypes: 0,
+            categories: {},
+          } satisfies ComponentInventory;
+        }
+        return buildInventory(root as unknown as Record<string, unknown>);
       } finally {
         await release();
       }

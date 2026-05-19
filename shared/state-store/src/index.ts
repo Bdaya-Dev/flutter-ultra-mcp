@@ -23,3 +23,15 @@ export {
   streamFilePath,
   streamsDir,
 } from './paths.js';
+
+export {
+  readVersionedState,
+  type Migration,
+  type VersionedState,
+} from './versioned-state.js';
+
+export {
+  cleanupStaleState,
+  type CleanupOptions,
+  type CleanupReport,
+} from './cleanup.js';

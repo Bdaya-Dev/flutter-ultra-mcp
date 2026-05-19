@@ -51,7 +51,7 @@ jobs:
         run: |
           npx serve examples/counter-app/build/web -l 8080 &
           sleep 3
-          npm run test:e2e:web || true
+          npm run test:e2e:web
           kill %1 2>/dev/null || true
 
   oidc-flow:

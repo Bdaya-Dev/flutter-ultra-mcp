@@ -64,5 +64,5 @@ jobs:
           disable-animations: true
           script: |
             cd examples/counter-app
-            flutter test --device-id emulator-5554 integration_test/ || echo "No integration tests yet — app launch verified"
+            flutter test --device-id emulator-5554 integration_test/
             flutter build apk --debug

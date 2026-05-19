@@ -40,6 +40,9 @@ jobs:
         working-directory: examples/counter-app
         run: flutter pub get
 
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
       - name: Build counter-app for Windows
         working-directory: examples/counter-app
         run: flutter build windows --debug

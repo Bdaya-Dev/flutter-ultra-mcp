@@ -1,6 +1,7 @@
 name: E2E macOS Desktop
 
 on:
+  pull_request:
   push:
     branches: [main]
   schedule:
@@ -41,6 +42,9 @@ jobs:
       - name: Flutter pub get (counter-app)
         working-directory: examples/counter-app
         run: flutter pub get
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
 
       - name: Build counter-app for macOS
         working-directory: examples/counter-app

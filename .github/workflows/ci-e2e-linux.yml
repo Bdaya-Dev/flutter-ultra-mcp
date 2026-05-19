@@ -49,6 +49,9 @@ jobs:
         working-directory: examples/counter-app
         run: flutter pub get
 
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
       - name: Build counter-app for Linux
         working-directory: examples/counter-app
         run: flutter build linux --debug

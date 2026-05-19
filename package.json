@@ -28,7 +28,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "bundle": "node scripts/bundle.mjs",
-    "prepare": "npm run build --if-present || true"
+    "prepare": "npm run build --if-present || true",
+    "test:e2e:web": "vitest run tests/e2e/web/",
+    "test:e2e:oidc": "vitest run tests/e2e/oidc/",
+    "test:dogfood": "vitest run tests/e2e/dogfood/"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

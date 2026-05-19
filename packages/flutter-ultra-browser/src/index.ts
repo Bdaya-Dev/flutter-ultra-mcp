@@ -28,6 +28,7 @@ import * as consoleTool from './tools/console.js';
 import * as networkTool from './tools/network.js';
 import * as storageTool from './tools/storage.js';
 import * as scripting from './tools/scripting.js';
+import * as webPerf from './tools/webPerf.js';
 
 export const SERVER_NAME = 'flutter-ultra-browser';
 
@@ -236,6 +237,22 @@ const TOOLS: ToolDefErased[] = [
     schema: schemas.evalPlaywrightRecipeSchema,
     meta: { class: 'long', ceilingMs: 5 * 60_000 },
     handler: scripting.evalPlaywrightRecipe,
+  }),
+  defTool({
+    name: 'get_web_perf_metrics',
+    description:
+      'Read Chrome Performance.getMetrics (via CDP) and window.performance navigation timing for a page. Returns V8/Blink counters (JS heap, DOM nodes, layout count, etc.) plus navigation timing (TTFB, DOMContentLoaded, load).',
+    schema: schemas.getWebPerfMetricsSchema,
+    meta: { class: 'quick', ceilingMs: 30_000 },
+    handler: webPerf.getWebPerfMetrics,
+  }),
+  defTool({
+    name: 'take_heap_snapshot',
+    description:
+      'Capture a V8 heap snapshot for a page via CDP HeapProfiler. Writes a .heapsnapshot file (loadable in Chrome DevTools Memory panel). Returns the file path and size in bytes.',
+    schema: schemas.takeHeapSnapshotSchema,
+    meta: { class: 'long', ceilingMs: 5 * 60_000 },
+    handler: webPerf.takeHeapSnapshot,
   }),
 ];
 

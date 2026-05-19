@@ -12,6 +12,7 @@ import { registerDeviceTools } from './tools/devices.js';
 import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
+import { registerPerformanceTools } from './tools/performance.js';
 
 export const SERVER_NAME = 'flutter-ultra-runtime';
 export const SERVER_VERSION = '0.0.1';
@@ -51,6 +52,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
   registerLifecycleTools({ server, sessions, launch });
   registerInspectTools({ server, sessions });
   registerLogsAndHttpTools({ server, sessions, http: httpCapture });
+  registerPerformanceTools({ server, sessions });
 
   return {
     server,

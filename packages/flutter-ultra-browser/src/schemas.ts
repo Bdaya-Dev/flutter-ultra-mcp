@@ -236,3 +236,19 @@ export const evalPlaywrightRecipeSchema = z
     wallTimeMs: z.number().int().positive().max(600_000).default(300_000),
   })
   .strict();
+
+export const getWebPerfMetricsSchema = z
+  .object({
+    pageId: z.string(),
+  })
+  .strict();
+
+export const takeHeapSnapshotSchema = z
+  .object({
+    pageId: z.string(),
+    outputPath: z
+      .string()
+      .optional()
+      .describe('Absolute path where the .heapsnapshot file is written. Defaults to a temp file.'),
+  })
+  .strict();

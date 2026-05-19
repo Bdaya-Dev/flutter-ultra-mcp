@@ -18,6 +18,7 @@ import {
 } from './screenshots.js';
 import { callCustomExtensionTool, listCustomExtensionsTool } from './custom-extensions.js';
 import { waitForTool } from './wait-for.js';
+import { getTextTool } from './getText.js';
 
 // Erased view used by the request-handler dispatch table — each tool can
 // pin its own Zod input/output types internally, but the Server needs a
@@ -76,5 +77,6 @@ export function allTools(registry: SessionRegistry): GestureTool[] {
     callCustomExtensionTool(registry),
     listCustomExtensionsTool(registry),
     waitForTool(registry),
+    getTextTool(registry),
   ] as unknown as GestureTool[];
 }

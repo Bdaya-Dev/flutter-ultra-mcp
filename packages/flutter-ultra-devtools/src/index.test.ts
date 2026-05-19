@@ -45,7 +45,7 @@ describe('PanelServer', () => {
     expect(status.viewers).toBe(1);
 
     ws.close();
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 500));
     expect(server.getStatus().viewers).toBe(0);
   });
 

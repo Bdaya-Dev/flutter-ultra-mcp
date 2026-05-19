@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "-e",
+              "try{require.resolve('playwright-core')}catch{require('child_process').execSync('npm install --no-save playwright-core',{stdio:'inherit'})}"
+            ],
+            "timeout": 120,
+            "statusMessage": "Checking playwright-core..."
+          }
+        ]
+      }
+    ]
+  }
+}

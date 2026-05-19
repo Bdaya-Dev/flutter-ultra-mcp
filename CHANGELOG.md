@@ -1,3 +1,10 @@
+## [1.5.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.4...v1.5.5) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** workspace path resolution, flaky timing, temp dir cleanup ([048f5a9](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/048f5a951b06fb283b0d3c624d1bcfa56a3344b0))
+
 ## [1.5.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.3...v1.5.4) (2026-05-19)
 
 

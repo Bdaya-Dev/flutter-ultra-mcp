@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { platform } from 'node:os';
 import { buildPatrolInvocation } from '../../../src/runtime/patrol-cli.js';
 
 const projectRoot = '/abs/proj';
 const project = { root: projectRoot, packageName: 'demo', isFlutter: true };
+const dartCmd = platform() === 'win32' ? 'dart.bat' : 'dart';
 
 describe('buildPatrolInvocation', () => {
   it('falls back to dart run patrol_cli when no wrapper exists', () => {
@@ -13,7 +15,7 @@ describe('buildPatrolInvocation', () => {
     });
     expect(got.kind).toBe('dart-run');
     if (got.kind !== 'dart-run') throw new Error('narrow');
-    expect(got.command).toBe('dart');
+    expect(got.command).toBe(dartCmd);
     expect(got.args).toEqual([
       'run',
       'patrol_cli',
@@ -48,7 +50,6 @@ describe('buildPatrolInvocation', () => {
       '-NoProfile',
       '-File',
       wrapper,
-      'test',
       '--web-port',
       '4206',
     ]);

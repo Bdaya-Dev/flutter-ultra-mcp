@@ -1,3 +1,11 @@
+## [1.5.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.2...v1.5.3) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** remove gitleaks — public OSS repo has no secrets to scan ([5395e93](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/5395e934604fe4b2fa2af421b20c609647f574eb))
+* **ci:** replace gitleaks-action with free CLI (org license required) ([3fd7cdb](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/3fd7cdb21d7467a32b8da4700fede07db965a88f))
+
 ## [1.5.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.1...v1.5.2) (2026-05-19)
 
 

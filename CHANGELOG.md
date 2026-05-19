@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.8...v1.6.0) (2026-05-19)
+
+
+### Features
+
+* **runtime:** performance monitoring — CPU, memory, frames, timeline, rebuilds ([#81](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/81)) ([68a6f92](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/68a6f92c021f7cf5a338df391439e07f30aaec99))
+
 ## [1.5.8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.7...v1.5.8) (2026-05-19)
 
 

@@ -230,12 +230,8 @@ export function createLaunchService(opts: {
     const mergedDefines: Record<string, string> = {};
     // VS Code config first (lower precedence) then explicit overrides.
     if (vscodeCfg) {
-      for (const a of [...(vscodeCfg.toolArgs ?? []), ...(vscodeCfg.args ?? [])]) {
-        const m = a.match(/^--dart-define[s]?=([^=]+)=(.*)$/);
-        if (m && m[1] !== undefined && m[2] !== undefined) {
-          mergedDefines[m[1]] = m[2];
-        }
-      }
+      const allArgs = [...(vscodeCfg.toolArgs ?? []), ...(vscodeCfg.args ?? [])];
+      parseDartDefinesFromArgs(allArgs, mergedDefines);
     }
     Object.assign(mergedDefines, input.dartDefines ?? {});
     for (const [k, v] of Object.entries(mergedDefines)) {
@@ -618,4 +614,35 @@ function pickString(obj: Record<string, unknown>, keys: string[]): string | unde
     if (typeof v === 'string' && v.length > 0) return v;
   }
   return undefined;
+}
+
+/**
+ * Parse --dart-define / --dart-defines from an args array into a record.
+ * Handles both forms:
+ *   Single-element: ["--dart-define=key=value"]
+ *   Two-element:    ["--dart-define", "key=value"]
+ */
+export function parseDartDefinesFromArgs(
+  args: string[],
+  out: Record<string, string> = {},
+): Record<string, string> {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
+    // Single-element: --dart-define=key=value or --dart-defines=key=value
+    const combined = a.match(/^--dart-defines?=([^=]+)=(.*)$/);
+    if (combined && combined[1] !== undefined && combined[2] !== undefined) {
+      out[combined[1]] = combined[2];
+      continue;
+    }
+    // Two-element: --dart-define key=value or --dart-defines key=value
+    if (/^--dart-defines?$/.test(a) && i + 1 < args.length) {
+      const next = args[i + 1]!;
+      const kv = next.match(/^([^=]+)=(.*)$/);
+      if (kv && kv[1] !== undefined && kv[2] !== undefined) {
+        out[kv[1]] = kv[2];
+        i++; // skip the consumed value element
+      }
+    }
+  }
+  return out;
 }

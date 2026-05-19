@@ -21,6 +21,7 @@ import { registerInspectTools } from './tools/inspect.js';
 import { registerInteractTools } from './tools/interact.js';
 import { registerLogTools } from './tools/logs.js';
 import { registerOauthTools } from './tools/oauth.js';
+import { registerRecordingTools, shutdownRecordings } from './tools/recording.js';
 
 export const SERVER_NAME = 'flutter-ultra-native-mobile';
 export const SERVER_VERSION = '0.0.1';
@@ -45,6 +46,7 @@ export async function createNativeMobileServer(options: CreateNativeMobileServer
   registerInteractTools({ server, registry });
   registerLogTools({ server, registry, logStream });
   registerOauthTools({ server, registry });
+  registerRecordingTools({ server, registry });
 
   return {
     server,
@@ -54,6 +56,7 @@ export async function createNativeMobileServer(options: CreateNativeMobileServer
       await server.start();
     },
     async stop() {
+      shutdownRecordings();
       logStream.shutdown();
       await registry.shutdown();
       await server.stop();

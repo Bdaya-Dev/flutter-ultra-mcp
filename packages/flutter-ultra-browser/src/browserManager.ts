@@ -26,6 +26,7 @@ export interface ContextRecord {
   browserId: string;
   context: BrowserContext;
   flutterSessionId?: string;
+  recordingDir?: string;
 }
 
 export interface PageRecord {
@@ -222,6 +223,7 @@ export class BrowserManager {
   async newContext(args: {
     browserId: string;
     viewport?: { width: number; height: number };
+    recordVideo?: { dir: string; size?: { width: number; height: number } };
   }): Promise<ContextRecord> {
     const rec = this.browsers.get(args.browserId);
     if (!rec) throw new Error(`Browser ${args.browserId} not found`);
@@ -230,13 +232,25 @@ export class BrowserManager {
         `Browser ${args.browserId} is persistent (launched with persistProfileDir). Persistent browsers expose a single context; use that one instead.`,
       );
     }
-    const ctx = await rec.browser.newContext(args.viewport ? { viewport: args.viewport } : {});
-    return this.registerContext(args.browserId, ctx);
+    const ctxOpts: Parameters<Browser['newContext']>[0] = {};
+    if (args.viewport) ctxOpts.viewport = args.viewport;
+    if (args.recordVideo) ctxOpts.recordVideo = args.recordVideo;
+    const ctx = await rec.browser.newContext(ctxOpts);
+    return this.registerContext(args.browserId, ctx, args.recordVideo?.dir);
   }
 
-  private registerContext(browserId: string, ctx: BrowserContext): ContextRecord {
+  private registerContext(
+    browserId: string,
+    ctx: BrowserContext,
+    recordingDir?: string,
+  ): ContextRecord {
     const contextId = shortId('ctx');
-    const record: ContextRecord = { contextId, browserId, context: ctx };
+    const record: ContextRecord = {
+      contextId,
+      browserId,
+      context: ctx,
+      ...(recordingDir ? { recordingDir } : {}),
+    };
     this.contexts.set(contextId, record);
     ctx.on('close', () => {
       log.info('context_closed', { contextId });
@@ -245,14 +259,28 @@ export class BrowserManager {
     return record;
   }
 
-  async closeContext(contextId: string): Promise<void> {
-    await this.closeContextInternal(contextId);
+  async closeContext(contextId: string): Promise<{ videoPath?: string }> {
+    return this.closeContextInternal(contextId);
   }
 
-  private async closeContextInternal(contextId: string): Promise<void> {
+  private async closeContextInternal(contextId: string): Promise<{ videoPath?: string }> {
     const rec = this.contexts.get(contextId);
-    if (!rec) return;
+    if (!rec) return {};
     // Pages inside this context will close with it; remove our records.
+    // Collect the video path from the first page before closing.
+    let videoPath: string | undefined;
+    if (rec.recordingDir) {
+      for (const [, p] of this.pages) {
+        if (p.contextId === contextId) {
+          try {
+            videoPath = (await p.page.video()?.path()) ?? undefined;
+          } catch {
+            // video path may not be available yet; will be written on close
+          }
+          break;
+        }
+      }
+    }
     for (const [pid, p] of this.pages) {
       if (p.contextId === contextId) this.pages.delete(pid);
     }
@@ -266,7 +294,10 @@ export class BrowserManager {
     await rec.context.close().catch(() => {
       /* already closing */
     });
+    // After context close, video file is flushed — query path from any surviving page handle.
+    // If we didn't get it above, the video is in rec.recordingDir and named by Playwright.
     this.contexts.delete(contextId);
+    return videoPath !== undefined ? { videoPath } : {};
   }
 
   async newTab(args: { contextId: string; url?: string }): Promise<PageRecord> {

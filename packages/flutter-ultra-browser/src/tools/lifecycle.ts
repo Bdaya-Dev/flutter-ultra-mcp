@@ -84,8 +84,20 @@ export async function newContext(args: z.infer<typeof newContextSchema>): Promis
     const rec = await browserManager.newContext({
       browserId: args.browserId,
       ...(args.viewport !== undefined ? { viewport: args.viewport } : {}),
+      ...(args.recordVideo !== undefined
+        ? {
+            recordVideo: {
+              dir: args.recordVideo.dir,
+              ...(args.recordVideo.size !== undefined ? { size: args.recordVideo.size } : {}),
+            },
+          }
+        : {}),
     });
-    return ok({ contextId: rec.contextId, browserId: rec.browserId });
+    return ok({
+      contextId: rec.contextId,
+      browserId: rec.browserId,
+      ...(rec.recordingDir !== undefined ? { recordingDir: rec.recordingDir } : {}),
+    });
   } catch (err) {
     const { message, hint } = tryFormatError(err);
     return fail(`new_context failed: ${message}`, hint);
@@ -94,8 +106,11 @@ export async function newContext(args: z.infer<typeof newContextSchema>): Promis
 
 export async function closeContext(args: z.infer<typeof closeContextSchema>): Promise<ToolReturn> {
   try {
-    await browserManager.closeContext(args.contextId);
-    return ok({ closed: args.contextId });
+    const result = await browserManager.closeContext(args.contextId);
+    return ok({
+      closed: args.contextId,
+      ...(result.videoPath !== undefined ? { videoPath: result.videoPath } : {}),
+    });
   } catch (err) {
     const { message, hint } = tryFormatError(err);
     return fail(`close_context failed: ${message}`, hint);

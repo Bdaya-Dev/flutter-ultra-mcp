@@ -48,6 +48,20 @@ export const newContextSchema = z
       })
       .strict()
       .optional(),
+    recordVideo: z
+      .object({
+        dir: z.string().describe('Directory to save videos. Absolute path.'),
+        size: z
+          .object({
+            width: z.number().int().positive(),
+            height: z.number().int().positive(),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional()
+      .describe('Record video of all pages in this context. Video saved on context close.'),
   })
   .strict();
 

@@ -43,6 +43,7 @@ import { register as registerSigning } from './tools/signing.js';
 import { register as registerL10n } from './tools/l10n.js';
 import { register as registerAssets } from './tools/assets.js';
 import { register as registerWebValidators } from './tools/webValidators.js';
+import { register as registerRecording } from './tools/recording.js';
 
 export { SERVER_NAME, SERVER_VERSION };
 
@@ -67,6 +68,7 @@ export function createServer(): McpServer {
   registerL10n(server);
   registerAssets(server);
   registerWebValidators(server);
+  registerRecording(server);
 
   return server;
 }

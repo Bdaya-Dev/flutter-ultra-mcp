@@ -179,6 +179,31 @@ export const pollDeviceLogsSchema = z
 
 export const stopDeviceLogsSchema = z.object({ streamId: z.string().min(1) }).strict();
 
+// Device screen recording split-tool pair.
+export const startDeviceRecordingSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    outputPath: z
+      .string()
+      .min(1)
+      .describe('Absolute local path where the recording will be saved (e.g. /tmp/demo.mp4).'),
+    maxDurationSec: z
+      .number()
+      .int()
+      .min(1)
+      .max(180)
+      .default(30)
+      .describe('Maximum recording duration in seconds (Android screenrecord limit: 180).'),
+    timeoutMs: z.number().int().positive().max(300_000).default(60_000),
+  })
+  .strict();
+
+export const stopDeviceRecordingSchema = z
+  .object({
+    recordingId: z.string().min(1).describe('ID returned by start_device_recording.'),
+  })
+  .strict();
+
 // CCT OAuth composite tool (plan §5.5.1).
 export const solveOauthSchema = z
   .object({

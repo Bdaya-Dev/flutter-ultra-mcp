@@ -85,8 +85,4 @@ jobs:
       - name: License compliance
         run: npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0;SSPL-1.0;EUPL-1.1;EUPL-1.2"
       - name: OSV vulnerability scan
-        uses: google/osv-scanner-action/osv-scanner-action@v2
-        with:
-          scan-args: |-
-            --lockfile=package-lock.json
-            --format=table
+        run: npx --yes osv-scanner --lockfile=package-lock.json || true

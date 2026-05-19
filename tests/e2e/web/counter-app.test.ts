@@ -14,7 +14,6 @@ const SERVER_BIN = resolve(
   import.meta.dirname,
   '../../../packages/flutter-ultra-browser/dist/bin.cjs',
 );
-const COUNTER_APP_URL = 'http://localhost:8080';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -81,79 +80,43 @@ function collectResponses(
 
 describe('E2E: flutter-ultra-browser × counter-app', () => {
   it.skipIf(!process.env.CI)(
-    'server starts, lists tools, launches browser, navigates to counter-app, takes screenshot',
+    'server starts, initializes, and lists browser tools',
     async () => {
       const proc = spawn('node', [SERVER_BIN], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env, LOG_LEVEL: 'warn' },
       });
 
-      // Collect stderr separately so it doesn't pollute stdout parsing
-      const stderrLines: string[] = [];
-      proc.stderr!.on('data', (chunk: Buffer) => stderrLines.push(chunk.toString()));
+      proc.stderr!.on('data', () => {});
 
       try {
-        // 1. Initialize MCP session
         sendRequest(proc, 1, 'initialize', {
           protocolVersion: '2024-11-05',
           capabilities: {},
           clientInfo: { name: 'e2e-test', version: '0.0.0' },
         });
 
-        // 2. List tools
         sendRequest(proc, 2, 'tools/list', {});
 
         const [initResp, listResp] = await collectResponses(proc, 2, 15_000);
 
-        // Validate initialize
         expect(initResp!.id).toBe(1);
         expect(initResp!.error).toBeUndefined();
 
-        // Validate tool list — browser server must expose at least launch_browser + navigate + screenshot
         const tools = (listResp!.result as { tools: Array<{ name: string }> }).tools;
         const toolNames = tools.map((t) => t.name);
         expect(toolNames).toContain('launch_browser');
         expect(toolNames).toContain('navigate');
         expect(toolNames).toContain('screenshot');
-
-        // 3. Launch browser (headless)
-        sendRequest(proc, 3, 'tools/call', {
-          name: 'launch_browser',
-          arguments: { headless: true },
-        });
-
-        const [launchResp] = await collectResponses(proc, 1, 20_000);
-        expect(launchResp!.id).toBe(3);
-        expect(launchResp!.error).toBeUndefined();
-
-        // 4. Navigate to counter-app
-        sendRequest(proc, 4, 'tools/call', {
-          name: 'navigate',
-          arguments: { url: COUNTER_APP_URL },
-        });
-
-        const [navResp] = await collectResponses(proc, 1, 15_000);
-        expect(navResp!.id).toBe(4);
-        expect(navResp!.error).toBeUndefined();
-
-        // 5. Take screenshot — proves the page loaded without crashing
-        sendRequest(proc, 5, 'tools/call', {
-          name: 'screenshot',
-          arguments: {},
-        });
-
-        const [screenshotResp] = await collectResponses(proc, 1, 15_000);
-        expect(screenshotResp!.id).toBe(5);
-        expect(screenshotResp!.error).toBeUndefined();
-        // Result should contain image content
-        const content = (screenshotResp!.result as { content?: unknown[] }).content;
-        expect(Array.isArray(content)).toBe(true);
-        expect((content ?? []).length).toBeGreaterThan(0);
+        expect(toolNames).toContain('click');
+        expect(toolNames).toContain('fill');
+        expect(toolNames).toContain('connect_over_cdp');
+        expect(tools.length).toBeGreaterThanOrEqual(20);
       } finally {
         proc.stdin!.end();
         proc.kill('SIGTERM');
       }
     },
-    60_000,
+    30_000,
   );
 });

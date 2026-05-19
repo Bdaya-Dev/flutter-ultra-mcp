@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.4.0...v1.5.0) (2026-05-19)
+
+
+### Features
+
+* **ci:** E2E test infrastructure for all platforms ([#59](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/59), [#70](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/70)) ([4e1dca4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/4e1dca4fb36d7888b2bbaf3a3c66a9ee6f8330a1))
+
 # [1.4.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.3.2...v1.4.0) (2026-05-19)
 
 

@@ -68,15 +68,25 @@ export interface PatrolServerHandle {
   server: Server;
   ctx: ToolContext;
   logger: Logger;
+  /** Resolves once persisted jobs have been recovered from disk. */
+  recovered: Promise<void>;
 }
 
 export function createPatrolServer(opts: CreatePatrolServerOptions = {}): PatrolServerHandle {
   const env = opts.env ?? readEnv();
   const logger = opts.logger ?? createLogger({ server: SERVER_NAME, minLevel: env.logLevel });
-  const jobs = opts.jobs ?? new JobStore();
+  const jobs =
+    opts.jobs ??
+    new JobStore({ stateDir: env.stateDir !== '' ? env.stateDir : undefined });
   const develop = opts.develop ?? new DevelopSessionManager();
   const now = opts.now ?? Date.now.bind(Date);
   const ctx: ToolContext = { env, jobs, develop, now };
+
+  const recovered = jobs.recover().then((recs) => {
+    if (recs.length > 0) {
+      logger.info('recovered jobs from disk', { count: recs.length });
+    }
+  });
 
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -117,7 +127,7 @@ export function createPatrolServer(opts: CreatePatrolServerOptions = {}): Patrol
     }
   });
 
-  return { server, ctx, logger };
+  return { server, ctx, logger, recovered };
 }
 
 function toMcpTool(t: PatrolTool<ZodTypeAny>): McpTool {

@@ -15,7 +15,8 @@ export { JobStore } from './runtime/job-store.js';
 export { DevelopSessionManager } from './runtime/develop-session.js';
 
 async function main(): Promise<void> {
-  const { server, logger } = createPatrolServer();
+  const { server, logger, recovered } = createPatrolServer();
+  await recovered;
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info('flutter-ultra-patrol ready');

@@ -3,11 +3,11 @@
 // Plan §17.2 split-tool pattern: long-running ops (start_patrol_test,
 // start_patrol_develop) MUST return immediately with a taskId; the agent
 // polls via poll_patrol_job and finalizes via get_patrol_result. Job state
-// lives in-memory per server process — losing it on restart is acceptable
-// because the caller can re-issue, and on-disk would complicate cleanup
-// of orphaned child processes.
+// persisted to {stateDir}/jobs/{id}.json so results survive server restarts.
 
 import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 
 export type JobKind = 'test' | 'develop';
@@ -55,19 +55,73 @@ export interface PatrolJobRecord {
   child: ChildProcess | null;
 }
 
+/** Subset of PatrolJobRecord that is persisted to disk. */
+interface PersistedJobRecord {
+  id: string;
+  kind: JobKind;
+  status: JobStatus;
+  command: string;
+  args: string[];
+  cwd: string;
+  wrapperScript: string | null;
+  envSnapshot: Record<string, string>;
+  startedAt: number;
+  endedAt: number | null;
+  exitCode: number | null;
+  errorMessage: string | null;
+}
+
+const TERMINAL_STATUSES = new Set<JobStatus>(['completed', 'failed', 'cancelled', 'crashed']);
+
 const DEFAULT_LOG_TAIL_LIMIT = 500;
 
 export interface JobStoreOptions {
   /** Per-job log line ring buffer size. */
   logTailLimit?: number;
+  /** Directory under which jobs/{id}.json are written. Omit to disable persistence. */
+  stateDir?: string;
 }
 
 export class JobStore {
   private readonly jobs = new Map<string, PatrolJobRecord>();
   private readonly logTailLimit: number;
+  private readonly stateDir: string | undefined;
 
   constructor(opts: JobStoreOptions = {}) {
     this.logTailLimit = opts.logTailLimit ?? DEFAULT_LOG_TAIL_LIMIT;
+    this.stateDir = opts.stateDir;
+  }
+
+  private jobsDir(): string {
+    return join(this.stateDir!, 'jobs');
+  }
+
+  private jobFilePath(id: string): string {
+    return join(this.jobsDir(), `${id}.json`);
+  }
+
+  private async persistJob(rec: PatrolJobRecord): Promise<void> {
+    if (!this.stateDir) return;
+    const dir = this.jobsDir();
+    await mkdir(dir, { recursive: true });
+    const persisted: PersistedJobRecord = {
+      id: rec.id,
+      kind: rec.kind,
+      status: rec.status,
+      command: rec.command,
+      args: rec.args,
+      cwd: rec.cwd,
+      wrapperScript: rec.wrapperScript,
+      envSnapshot: rec.envSnapshot,
+      startedAt: rec.startedAt,
+      endedAt: rec.endedAt,
+      exitCode: rec.exitCode,
+      errorMessage: rec.errorMessage,
+    };
+    const path = this.jobFilePath(rec.id);
+    const tmp = `${path}.tmp.${process.pid}.${Date.now()}`;
+    await writeFile(tmp, JSON.stringify(persisted, null, 2), 'utf8');
+    await rename(tmp, path);
   }
 
   /**
@@ -102,6 +156,8 @@ export class JobStore {
       child: null,
     };
     this.jobs.set(record.id, record);
+    // Fire-and-forget; write errors are non-fatal.
+    void this.persistJob(record).catch(() => undefined);
     return record;
   }
 
@@ -136,10 +192,12 @@ export class JobStore {
       rec.child = null;
       if (rec.status === 'cancelled') {
         rec.exitCode = code ?? -1;
+        void this.persistJob(rec).catch(() => undefined);
         return;
       }
       rec.exitCode = code ?? (signal != null ? -1 : 0);
       rec.status = code === 0 ? 'completed' : 'failed';
+      void this.persistJob(rec).catch(() => undefined);
     });
     child.on('error', (err) => {
       rec.endedAt = Date.now();
@@ -147,6 +205,7 @@ export class JobStore {
       rec.status = 'crashed';
       rec.errorMessage = err.message;
       rec.child = null;
+      void this.persistJob(rec).catch(() => undefined);
     });
   }
 
@@ -193,8 +252,76 @@ export class JobStore {
       if (rec.endedAt !== null && rec.endedAt < cutoffMs) {
         this.jobs.delete(id);
         dropped += 1;
+        if (this.stateDir) {
+          void rm(this.jobFilePath(id), { force: true }).catch(() => undefined);
+        }
       }
     }
     return dropped;
+  }
+
+  /**
+   * Scan {stateDir}/jobs/*.json and load persisted records into the in-memory
+   * map. Non-terminal jobs are marked 'crashed' (the process is gone).
+   * Call once at server startup before accepting requests.
+   */
+  async recover(): Promise<PatrolJobRecord[]> {
+    if (!this.stateDir) return [];
+    const dir = this.jobsDir();
+    let files: string[];
+    try {
+      files = await readdir(dir);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw err;
+    }
+
+    const recovered: PatrolJobRecord[] = [];
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      const path = join(dir, file);
+      let raw: string;
+      try {
+        raw = await readFile(path, 'utf8');
+      } catch {
+        continue;
+      }
+      let persisted: PersistedJobRecord;
+      try {
+        persisted = JSON.parse(raw) as PersistedJobRecord;
+      } catch {
+        continue;
+      }
+      // Skip if already in memory (shouldn't happen on startup, but be safe).
+      if (this.jobs.has(persisted.id)) continue;
+
+      const wasRunning = !TERMINAL_STATUSES.has(persisted.status);
+      const rec: PatrolJobRecord = {
+        id: persisted.id,
+        kind: persisted.kind,
+        status: wasRunning ? 'crashed' : persisted.status,
+        command: persisted.command,
+        args: persisted.args,
+        cwd: persisted.cwd,
+        wrapperScript: persisted.wrapperScript,
+        envSnapshot: persisted.envSnapshot,
+        startedAt: persisted.startedAt,
+        endedAt: wasRunning ? Date.now() : persisted.endedAt,
+        exitCode: wasRunning ? -1 : persisted.exitCode,
+        errorMessage: wasRunning
+          ? 'Server restarted while job was running'
+          : persisted.errorMessage,
+        logTail: [],
+        logTotal: 0,
+        child: null,
+      };
+      this.jobs.set(rec.id, rec);
+      // Persist the updated (crashed) status back to disk.
+      if (wasRunning) {
+        void this.persistJob(rec).catch(() => undefined);
+      }
+      recovered.push(rec);
+    }
+    return recovered;
   }
 }

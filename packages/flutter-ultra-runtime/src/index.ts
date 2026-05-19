@@ -76,3 +76,4 @@ export { createLaunchService } from './launchApp.js';
 export { createHttpCaptureService } from './httpCapture.js';
 export { discover, httpToWs } from './discovery.js';
 export { fetchSummaryTree, findInTree, matchesFinder, walkTree } from './widgetTree.js';
+export { freePort, findListenersOnPort, killPid } from './portCleanup.js';

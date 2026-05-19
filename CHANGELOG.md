@@ -1,3 +1,10 @@
+## [1.9.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.2...v1.9.3) (2026-05-19)
+
+
+### Bug Fixes
+
+* **browser:** install playwright-core to CLAUDE_PLUGIN_DATA (persistent) ([#86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/86)) ([4d4025e](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/4d4025e0a4c72f7ea02f8065dc1c95d200466068))
+
 ## [1.9.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.1...v1.9.2) (2026-05-19)
 
 

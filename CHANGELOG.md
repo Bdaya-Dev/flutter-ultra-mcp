@@ -1,3 +1,10 @@
+## [1.5.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.3...v1.5.4) (2026-05-19)
+
+
+### Bug Fixes
+
+* **ci:** WSL test on CI + mobile E2E workspace path resolution ([a5f7628](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/a5f7628d48fcbab43f52ae8825f633c0a016707e))
+
 ## [1.5.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.5.2...v1.5.3) (2026-05-19)
 
 

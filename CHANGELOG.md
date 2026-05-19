@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.7.0...v1.8.0) (2026-05-19)
+
+
+### Features
+
+* **patrol:** wire 9 CLI flags + run_patrol_doctor + inline base64 screenshots ([#83](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/83)) ([10b59ec](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/10b59ec907d518a336f2d7916cf7d3cf1af14be5))
+
 # [1.7.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.6.0...v1.7.0) (2026-05-19)
 
 

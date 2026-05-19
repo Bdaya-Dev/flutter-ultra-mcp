@@ -87,7 +87,10 @@ export const startPatrolTestTool = defineTool({
       ...(input.useRawCli !== undefined ? { useRawCli: input.useRawCli } : {}),
     });
 
-    const env = mergedChildEnv(ctx.env.webBrowserArgs);
+    const mergedBrowserArgsList = input.web
+      ? mergeBrowserArgs(ctx.env.webBrowserArgs, input.web.browserArgs ?? [])
+      : [];
+    const env = mergedChildEnv(ctx.env.webBrowserArgs, mergedBrowserArgsList);
     const record = ctx.jobs.create({
       kind: 'test',
       command: invocation.command,
@@ -121,6 +124,7 @@ export const startPatrolTestTool = defineTool({
 export function buildPatrolTestArgs(
   input: z.infer<typeof startPatrolTestTool.inputSchema>,
   envBrowserArgs: string,
+  platform: NodeJS.Platform = process.platform,
 ): string[] {
   const args: string[] = ['test'];
   if (input.target) args.push('--target', input.target);
@@ -152,7 +156,7 @@ export function buildPatrolTestArgs(
       args.push('--web-server-timeout', String(w.serverTimeoutMs));
     }
     const browserArgs = mergeBrowserArgs(envBrowserArgs, w.browserArgs ?? []);
-    if (browserArgs.length > 0) {
+    if (browserArgs.length > 0 && platform !== 'win32') {
       args.push('--web-browser-args', browserArgs.join(','));
     }
   }
@@ -161,12 +165,23 @@ export function buildPatrolTestArgs(
   return args;
 }
 
-function mergedChildEnv(envBrowserArgs: string): NodeJS.ProcessEnv {
+function mergedChildEnv(
+  envBrowserArgs: string,
+  mergedBrowserArgsList?: string[],
+): NodeJS.ProcessEnv {
   // Preserve every parent env var; explicitly set PATROL_WEB_BROWSER_ARGS
   // if .mcp.json provided one, so wrapper scripts and project hooks read
   // the same value the user configured globally.
   const env: NodeJS.ProcessEnv = { ...process.env };
-  if (envBrowserArgs) env.PATROL_WEB_BROWSER_ARGS = envBrowserArgs;
+  // cli_completion reads HOME; on Windows only USERPROFILE is set by default.
+  if (process.platform === 'win32' && !env.HOME && env.USERPROFILE) {
+    env.HOME = env.USERPROFILE;
+  }
+  if (mergedBrowserArgsList && mergedBrowserArgsList.length > 0) {
+    env.PATROL_WEB_BROWSER_ARGS = mergedBrowserArgsList.join(',');
+  } else if (envBrowserArgs) {
+    env.PATROL_WEB_BROWSER_ARGS = envBrowserArgs;
+  }
   return env;
 }
 

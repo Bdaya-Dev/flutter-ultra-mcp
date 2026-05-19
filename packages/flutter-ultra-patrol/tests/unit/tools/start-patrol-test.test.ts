@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
   buildPatrolTestArgs,
   mergeBrowserArgs,
@@ -93,6 +93,7 @@ describe('buildPatrolTestArgs', () => {
         web: { browserArgs: ['--lang=en-US'] },
       },
       '--enable-features=Vulkan',
+      'linux',
     );
     const flagIdx = args.indexOf('--web-browser-args');
     expect(flagIdx).toBeGreaterThan(-1);
@@ -130,5 +131,30 @@ describe('mergeBrowserArgs', () => {
     const got = mergeBrowserArgs(',,--xx', []);
     expect(got.filter((f) => f === '')).toEqual([]);
     expect(got).toContain('--xx');
+  });
+});
+
+describe('buildPatrolTestArgs — platform-specific browser args (#75)', () => {
+  it('emits --web-browser-args on non-Windows platforms', () => {
+    const args = buildPatrolTestArgs(
+      { projectRoot: '/x', web: { browserArgs: ['--lang=en'] } },
+      '',
+      'linux',
+    );
+    expect(args).toContain('--web-browser-args');
+  });
+
+  it('omits --web-browser-args on win32 to avoid PowerShell quote stripping', () => {
+    const args = buildPatrolTestArgs(
+      { projectRoot: '/x', web: { browserArgs: ['--lang=en'] } },
+      '',
+      'win32',
+    );
+    expect(args).not.toContain('--web-browser-args');
+  });
+
+  it('still emits web init timeout on win32 even without browser args flag', () => {
+    const args = buildPatrolTestArgs({ projectRoot: '/x', web: {} }, '', 'win32');
+    expect(args).toContain('--web-init-timeout');
   });
 });

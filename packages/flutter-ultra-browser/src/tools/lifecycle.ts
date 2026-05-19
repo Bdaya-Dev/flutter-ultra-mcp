@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import { browserManager } from '../browserManager.js';
 import type {
   launchBrowserSchema,
+  connectOverCdpSchema,
   closeBrowserSchema,
   newContextSchema,
   closeContextSchema,
@@ -35,6 +36,34 @@ export async function launchBrowser(
       `launch_browser failed: ${message}`,
       hint ||
         'Verify Playwright browsers installed: run `npx playwright install chromium` once after npm install.',
+    );
+  }
+}
+
+export async function connectOverCdp(
+  args: z.infer<typeof connectOverCdpSchema>,
+): Promise<ToolReturn> {
+  try {
+    const { browserRecord, contexts, pages } = await browserManager.connectOverCDP({
+      endpointURL: args.endpointURL,
+      timeoutMs: args.timeoutMs,
+    });
+    return ok({
+      browserId: browserRecord.browserId,
+      type: browserRecord.type,
+      startedAt: browserRecord.startedAt,
+      contexts: contexts.map((c) => ({
+        contextId: c.contextId,
+        pages: pages
+          .filter((p) => p.contextId === c.contextId)
+          .map((p) => ({ pageId: p.pageId, url: p.page.url() })),
+      })),
+    });
+  } catch (err) {
+    const { message, hint } = tryFormatError(err);
+    return fail(
+      `connect_over_cdp failed: ${message}`,
+      hint || 'Verify the CDP endpoint is reachable and Chrome was launched with --remote-debugging-port.',
     );
   }
 }

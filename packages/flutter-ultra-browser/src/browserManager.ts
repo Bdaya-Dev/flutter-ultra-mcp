@@ -155,6 +155,52 @@ export class BrowserManager {
     return record;
   }
 
+  async connectOverCDP(args: {
+    endpointURL: string;
+    timeoutMs?: number;
+  }): Promise<{ browserRecord: BrowserRecord; contexts: ContextRecord[]; pages: PageRecord[] }> {
+    const pw = await this.getPlaywright();
+    const browser = await pw.chromium.connectOverCDP(args.endpointURL, {
+      timeout: args.timeoutMs ?? 30_000,
+    });
+
+    const browserId = shortId('br');
+    const record: BrowserRecord = {
+      browserId,
+      type: 'chromium',
+      browser,
+      persistent: false,
+      startedAt: new Date().toISOString(),
+    };
+    this.browsers.set(browserId, record);
+
+    browser.on('disconnected', () => {
+      log.info('browser_disconnected', { browserId });
+      this.browsers.delete(browserId);
+    });
+
+    const discoveredContexts: ContextRecord[] = [];
+    const discoveredPages: PageRecord[] = [];
+
+    for (const ctx of browser.contexts()) {
+      const ctxRec = this.registerContext(browserId, ctx);
+      discoveredContexts.push(ctxRec);
+      for (const page of ctx.pages()) {
+        const pageRec = this.registerPage(ctxRec.contextId, page);
+        discoveredPages.push(pageRec);
+      }
+    }
+
+    await this.projectBrowsersState();
+    log.info('browser_connected_cdp', {
+      browserId,
+      endpointURL: args.endpointURL,
+      contexts: discoveredContexts.length,
+      pages: discoveredPages.length,
+    });
+    return { browserRecord: record, contexts: discoveredContexts, pages: discoveredPages };
+  }
+
   async closeBrowser(browserId: string): Promise<void> {
     const rec = this.browsers.get(browserId);
     if (!rec) throw new Error(`Browser ${browserId} not found`);

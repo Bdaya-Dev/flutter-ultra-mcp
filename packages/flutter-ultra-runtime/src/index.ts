@@ -8,6 +8,7 @@ import { DeviceRouter } from '@flutter-ultra/device-router';
 import { createHttpCaptureService } from './httpCapture.js';
 import { createLaunchService } from './launchApp.js';
 import { createSessionRegistry } from './sessions.js';
+import { registerDesignAuditTools } from './tools/designAudit.js';
 import { registerDeviceTools } from './tools/devices.js';
 import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
@@ -53,6 +54,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
   registerInspectTools({ server, sessions });
   registerLogsAndHttpTools({ server, sessions, http: httpCapture });
   registerPerformanceTools({ server, sessions });
+  registerDesignAuditTools({ server, sessions });
 
   return {
     server,

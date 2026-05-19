@@ -92,7 +92,9 @@ export class ContractRegistry {
     const valid = validator(data);
     const errors = valid
       ? []
-      : (validator.errors ?? []).map((e: { instancePath?: string; message?: string }) => `${e.instancePath} ${e.message}`);
+      : (validator.errors ?? []).map(
+          (e: { instancePath?: string; message?: string }) => `${e.instancePath} ${e.message}`,
+        );
     return { valid: valid as boolean, errors };
   }
 

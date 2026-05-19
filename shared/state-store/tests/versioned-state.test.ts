@@ -51,12 +51,7 @@ describe('readVersionedState', () => {
   });
 
   it('returns defaultData for missing file', async () => {
-    const result = await readVersionedState(
-      join(dir, 'missing.json'),
-      2,
-      migrations,
-      defaultData,
-    );
+    const result = await readVersionedState(join(dir, 'missing.json'), 2, migrations, defaultData);
     expect(result).toEqual({ schemaVersion: 2, data: defaultData });
   });
 

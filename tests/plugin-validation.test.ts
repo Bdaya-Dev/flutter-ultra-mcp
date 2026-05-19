@@ -171,7 +171,10 @@ describe('SKILL.md files', () => {
 
       it('body has substantive content (not a stub)', () => {
         const lineCount = parsed.body.split('\n').length;
-        expect(lineCount, `skills/${skillName}/SKILL.md is only ${lineCount} lines — likely a stub`).toBeGreaterThan(20);
+        expect(
+          lineCount,
+          `skills/${skillName}/SKILL.md is only ${lineCount} lines — likely a stub`,
+        ).toBeGreaterThan(20);
       });
 
       it('body contains at least one MCP tool reference or heading', () => {

@@ -20,12 +20,12 @@ User must explicitly trigger this skill with `/flutter:scaffold`. It is not auto
 
 Determine which mode to use from the user's request:
 
-| User asks | Mode |
-|-----------|------|
-| "create a new Flutter app", "new project" | Project mode |
-| "add a feature", "new screen", "scaffold [X] page/module" | Feature mode |
-| "set up BLoC / Riverpod / Provider" | State management mode |
-| "add a new route / page" | Screen mode (subset of feature mode) |
+| User asks                                                 | Mode                                 |
+| --------------------------------------------------------- | ------------------------------------ |
+| "create a new Flutter app", "new project"                 | Project mode                         |
+| "add a feature", "new screen", "scaffold [X] page/module" | Feature mode                         |
+| "set up BLoC / Riverpod / Provider"                       | State management mode                |
+| "add a new route / page"                                  | Screen mode (subset of feature mode) |
 
 ---
 
@@ -45,23 +45,24 @@ Determine which mode to use from the user's request:
 ## Feature mode — detect existing conventions first
 
 Before creating any files, call `mcp__plugin_flutter_flutter-ultra-build__project_info` on the target project to read:
+
 - Project root and `lib/` structure
 - Existing dependencies (from `pubspec.yaml`)
 
 Then detect the project's conventions by reading `pubspec.yaml` dependencies:
 
-| Detected dep | State management pattern |
-|---|---|
-| `flutter_bloc` / `bloc` | BLoC pattern |
-| `riverpod` / `flutter_riverpod` | Riverpod |
-| `provider` | Provider |
-| None of the above | Ask the user which to use |
+| Detected dep                    | State management pattern  |
+| ------------------------------- | ------------------------- |
+| `flutter_bloc` / `bloc`         | BLoC pattern              |
+| `riverpod` / `flutter_riverpod` | Riverpod                  |
+| `provider`                      | Provider                  |
+| None of the above               | Ask the user which to use |
 
-| Detected dep | Routing pattern |
-|---|---|
-| `go_router` | GoRouter |
-| `auto_route` | AutoRoute |
-| None | Navigator 1.0 (push/pop) |
+| Detected dep | Routing pattern          |
+| ------------ | ------------------------ |
+| `go_router`  | GoRouter                 |
+| `auto_route` | AutoRoute                |
+| None         | Navigator 1.0 (push/pop) |
 
 Announce detected conventions to the user before scaffolding.
 
@@ -72,6 +73,7 @@ Announce detected conventions to the user before scaffolding.
 For each new screen, create the following files following the detected pattern:
 
 ### File structure (BLoC + GoRouter example for `InvoiceList`):
+
 ```
 lib/
   features/
@@ -97,6 +99,7 @@ For **Provider**: replace `bloc/` with `provider/` containing a `ChangeNotifier`
 ### Route registration (GoRouter):
 
 Add the new route to the router config file (detect by searching for `GoRouter(` in `lib/`):
+
 ```dart
 GoRoute(
   path: '/invoice-list',
@@ -118,17 +121,20 @@ GoRoute(
 When the project has no state management and the user wants to add one:
 
 **BLoC:**
+
 1. Call `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `flutter_bloc bloc equatable`.
 2. Call `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 3. Scaffold the first BLoC as described in the screen section above.
 
 **Riverpod:**
+
 1. Call `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `flutter_riverpod riverpod_annotation` and dev deps `riverpod_generator build_runner`.
 2. Call `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 3. Wrap `main.dart`'s `runApp` with `ProviderScope`.
 4. Call `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build` → `poll_build_runner_job` → `get_build_runner_result` to generate initial code.
 
 **Provider:**
+
 1. Call `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `provider`.
 2. Call `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 
@@ -137,6 +143,7 @@ When the project has no state management and the user wants to add one:
 ## Localization scaffolding
 
 When the user asks to add l10n:
+
 1. Call `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `flutter_localizations` (SDK package).
 2. Create `lib/l10n/app_en.arb` with a minimal key set.
 3. Add `generate: true` to `pubspec.yaml` under `flutter:`.

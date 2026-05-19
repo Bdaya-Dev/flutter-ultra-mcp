@@ -216,7 +216,9 @@ export function createLaunchService(opts: {
     else if (vscodeCfg?.flavor) args.push('--flavor', vscodeCfg.flavor);
 
     const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
-    process.stderr.write(`[flutter-ultra-runtime] buildCliArgs: device=${input.device} isWebDevice=${isWebDevice} headless=${input.headless}\n`);
+    process.stderr.write(
+      `[flutter-ultra-runtime] buildCliArgs: device=${input.device} isWebDevice=${isWebDevice} headless=${input.headless}\n`,
+    );
     if (input.webRenderer) args.push(`--web-renderer=${input.webRenderer}`);
     if (input.webPort !== undefined) args.push(`--web-port=${input.webPort}`);
     if (input.webHostname) args.push(`--web-hostname=${input.webHostname}`);
@@ -267,7 +269,10 @@ export function createLaunchService(opts: {
     if (isWebDevice && input.webPort !== undefined) {
       const freed = await freePort(input.webPort, (msg) => logger.info(msg));
       if (freed.length > 0) {
-        await appendLog(jobId, `[port-cleanup] killed ${freed.length} orphan(s) on port ${input.webPort}: PIDs ${freed.join(', ')}`);
+        await appendLog(
+          jobId,
+          `[port-cleanup] killed ${freed.length} orphan(s) on port ${input.webPort}: PIDs ${freed.join(', ')}`,
+        );
       }
     }
 
@@ -496,7 +501,9 @@ function setupStdoutParser(
   let attached = false;
 
   async function completeAttach(uri?: string): Promise<void> {
-    process.stderr.write(`[flutter-ultra-runtime] completeAttach called: attached=${attached} isWebTarget=${isWebTarget} uri=${uri ?? 'none'}\n`);
+    process.stderr.write(
+      `[flutter-ultra-runtime] completeAttach called: attached=${attached} isWebTarget=${isWebTarget} uri=${uri ?? 'none'}\n`,
+    );
     if (attached) return;
     attached = true;
     await patchJob(jobId, {
@@ -555,7 +562,9 @@ function setupStdoutParser(
         const uri = pickString(parsed.params, ['vmServiceUri', 'wsUri', 'observatoryUri']);
         const parsedAppId = pickString(parsed.params, ['appId']);
         if (parsedAppId) handle.appId ??= parsedAppId;
-        process.stderr.write(`[flutter-ultra-runtime] app.started: uri=${uri ?? 'none'} isWebTarget=${isWebTarget} appId=${handle.appId}\n`);
+        process.stderr.write(
+          `[flutter-ultra-runtime] app.started: uri=${uri ?? 'none'} isWebTarget=${isWebTarget} appId=${handle.appId}\n`,
+        );
         if (uri) {
           await completeAttach(uri);
         } else if (isWebTarget) {

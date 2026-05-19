@@ -79,7 +79,9 @@ describe('resolveCeiling', () => {
   });
 
   it('returns the explicit ceilingMs when no env vars are set', () => {
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 
   it('falls back to DEFAULT_CEILINGS_MS when ceilingMs is omitted', () => {
@@ -90,42 +92,58 @@ describe('resolveCeiling', () => {
 
   it('applies FLUTTER_ULTRA_TIMEOUT_MULTIPLIER to the base ceiling', () => {
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = '2';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(20_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      20_000,
+    );
   });
 
   it('applies fractional multiplier and rounds the result', () => {
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = '1.5';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_001 })).toBe(15_002);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_001 })).toBe(
+      15_002,
+    );
   });
 
   it('per-tool env override takes precedence over multiplier', () => {
     process.env['FLUTTER_ULTRA_TOOL_TIMEOUT_MY_TOOL'] = '99000';
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = '100';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(99_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      99_000,
+    );
   });
 
   it('ignores invalid (non-numeric) FLUTTER_ULTRA_TIMEOUT_MULTIPLIER', () => {
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = 'bad';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 
   it('ignores zero FLUTTER_ULTRA_TIMEOUT_MULTIPLIER', () => {
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = '0';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 
   it('ignores negative FLUTTER_ULTRA_TIMEOUT_MULTIPLIER', () => {
     process.env['FLUTTER_ULTRA_TIMEOUT_MULTIPLIER'] = '-2';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 
   it('ignores invalid (non-numeric) per-tool env override and falls back to base ceiling', () => {
     process.env['FLUTTER_ULTRA_TOOL_TIMEOUT_MY_TOOL'] = 'not_a_number';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 
   it('ignores zero per-tool env override and falls back to base ceiling', () => {
     process.env['FLUTTER_ULTRA_TOOL_TIMEOUT_MY_TOOL'] = '0';
-    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(10_000);
+    expect(resolveCeiling({ name: 'my_tool', timeoutClass: 'quick', ceilingMs: 10_000 })).toBe(
+      10_000,
+    );
   });
 });

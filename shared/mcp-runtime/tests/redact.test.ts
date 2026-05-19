@@ -9,9 +9,7 @@ describe('redactVmServiceToken', () => {
   });
 
   it('redacts a wss:// token segment', () => {
-    expect(redactVmServiceToken('wss://host:9999/token123/ws')).toBe(
-      'wss://host:9999/***/ws',
-    );
+    expect(redactVmServiceToken('wss://host:9999/token123/ws')).toBe('wss://host:9999/***/ws');
   });
 
   it('leaves non-VM URIs unchanged', () => {
@@ -20,8 +18,7 @@ describe('redactVmServiceToken', () => {
   });
 
   it('redacts multiple URIs in one string', () => {
-    const input =
-      'first=ws://127.0.0.1:1111/TokenA=/ws second=wss://host:2222/TokenB/ws';
+    const input = 'first=ws://127.0.0.1:1111/TokenA=/ws second=wss://host:2222/TokenB/ws';
     expect(redactVmServiceToken(input)).toBe(
       'first=ws://127.0.0.1:1111/***/ws second=wss://host:2222/***/ws',
     );

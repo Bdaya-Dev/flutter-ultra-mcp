@@ -23,29 +23,38 @@ const inputSchema = z.object({
     .describe(
       'Extract frame at this % of duration (0=start, 100=end). Mutually exclusive with timestampMs.',
     ),
-  outputPath: z
-    .string()
-    .optional()
-    .describe('Output PNG path. Defaults to <videoPath>.frame.png.'),
+  outputPath: z.string().optional().describe('Output PNG path. Defaults to <videoPath>.frame.png.'),
 });
 
-function runCommand(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
+function runCommand(
+  cmd: string,
+  args: string[],
+): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve) => {
     const proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
-    proc.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
-    proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+    proc.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString();
+    });
+    proc.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString();
+    });
     proc.on('close', (code) => resolve({ stdout, stderr, code: code ?? 1 }));
-    proc.on('error', () => resolve({ stdout, stderr: stderr + `spawn failed for ${cmd}`, code: 127 }));
+    proc.on('error', () =>
+      resolve({ stdout, stderr: stderr + `spawn failed for ${cmd}`, code: 127 }),
+    );
   });
 }
 
 async function probeDurationSeconds(videoPath: string): Promise<number | null> {
   const result = await runCommand('ffprobe', [
-    '-v', 'error',
-    '-show_entries', 'format=duration',
-    '-of', 'csv=p=0',
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'csv=p=0',
     videoPath,
   ]);
   if (result.code !== 0) return null;
@@ -63,7 +72,10 @@ export const extractVideoFrameTool = defineTool({
 
     // Mutual-exclusion guard (can't use .refine() — it wraps ZodObject in ZodEffects).
     if (input.timestampMs !== undefined && input.percent !== undefined) {
-      return { ok: false, error: 'timestampMs and percent are mutually exclusive — provide at most one.' };
+      return {
+        ok: false,
+        error: 'timestampMs and percent are mutually exclusive — provide at most one.',
+      };
     }
 
     // Verify ffmpeg is available.
@@ -79,9 +91,12 @@ export const extractVideoFrameTool = defineTool({
     } else if (input.percent !== undefined) {
       const duration = await probeDurationSeconds(input.videoPath);
       if (duration === null) {
-        return { ok: false, error: 'ffprobe failed to read video duration — check videoPath and ffprobe availability' };
+        return {
+          ok: false,
+          error: 'ffprobe failed to read video duration — check videoPath and ffprobe availability',
+        };
       }
-      seekSeconds = duration * input.percent / 100;
+      seekSeconds = (duration * input.percent) / 100;
     }
     // Neither specified → seek near end.
 

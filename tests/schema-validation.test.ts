@@ -24,9 +24,7 @@ interface NormalisedTool {
 
 function assertTools(label: string, tools: NormalisedTool[]): void {
   for (const tool of tools) {
-    expect(tool.name, `${label}: name must match [a-z][a-z0-9_]*`).toMatch(
-      /^[a-z][a-z0-9_]*$/,
-    );
+    expect(tool.name, `${label}: name must match [a-z][a-z0-9_]*`).toMatch(/^[a-z][a-z0-9_]*$/);
     expect(
       tool.description.length,
       `${label}: tool "${tool.name}" has empty description`,

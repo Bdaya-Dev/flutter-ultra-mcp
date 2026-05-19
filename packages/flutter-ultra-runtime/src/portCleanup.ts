@@ -31,9 +31,7 @@ function findListenersWindows(port: number): Promise<PortHolder[]> {
       const seen = new Set<number>();
       for (const line of stdout.split('\n')) {
         // Match lines like: TCP  0.0.0.0:4200  0.0.0.0:0  LISTENING  12345
-        const m = line.match(
-          /^\s*TCP\s+\S+:(\d+)\s+\S+\s+LISTENING\s+(\d+)/i,
-        );
+        const m = line.match(/^\s*TCP\s+\S+:(\d+)\s+\S+\s+LISTENING\s+(\d+)/i);
         if (m && parseInt(m[1]!, 10) === port) {
           const pid = parseInt(m[2]!, 10);
           if (pid > 0 && !seen.has(pid)) {
@@ -87,10 +85,7 @@ export function killPid(pid: number): Promise<boolean> {
  * Find and kill all processes listening on a TCP port.
  * Returns the list of PIDs that were signalled.
  */
-export async function freePort(
-  port: number,
-  log?: (msg: string) => void,
-): Promise<number[]> {
+export async function freePort(port: number, log?: (msg: string) => void): Promise<number[]> {
   const holders = await findListenersOnPort(port);
   if (holders.length === 0) return [];
 

@@ -158,11 +158,7 @@ describe('cleanupStaleState', () => {
 
   it('handles missing jobs/ directory gracefully', async () => {
     const sessionsFile = join(stateDir, 'sessions.json');
-    await writeFile(
-      sessionsFile,
-      JSON.stringify({ schemaVersion: 1, sessions: [] }),
-      'utf8',
-    );
+    await writeFile(sessionsFile, JSON.stringify({ schemaVersion: 1, sessions: [] }), 'utf8');
     const report = await cleanupStaleState({ stateDir });
     expect(report.jobFilesRemoved).toBe(0);
   });

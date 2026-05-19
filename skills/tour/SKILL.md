@@ -34,10 +34,12 @@ Use this skill when the user asks to visually document the app, capture all scre
 
 3. **For each route** (iterate in order):
    a. Navigate via evaluate:
-      ```dart
-      context.go('/your-route');
-      ```
-      Or for named routes: `context.goNamed('routeName')`.
+
+   ```dart
+   context.go('/your-route');
+   ```
+
+   Or for named routes: `context.goNamed('routeName')`.
    b. Wait for the UI to settle — call `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` with `SchedulerBinding.instance.endOfFrame` to await the next frame.
    c. Take a screenshot: `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` — save path as `.omc/research/tour-<YYYY-MM-DD>/<route-slug>.png` where `route-slug` replaces `/` with `-` and strips leading `-`.
    d. For **web targets**: also call `mcp__plugin_flutter_flutter-ultra-browser__screenshot` for a pixel-perfect browser-rendered capture alongside the VM-service capture.
@@ -51,9 +53,9 @@ Use this skill when the user asks to visually document the app, capture all scre
 5. **Compile the report**
    - Write `.omc/research/tour-<date>/tour-report.md` with a markdown table:
      ```markdown
-     | Route | Screenshot | Notes |
-     |-------|-----------|-------|
-     | /home | [home.png](./home.png) | |
+     | Route | Screenshot             | Notes |
+     | ----- | ---------------------- | ----- |
+     | /home | [home.png](./home.png) |       |
      ```
    - List any routes that could not be captured and the reason (auth wall, crash, async timeout).
 
@@ -68,6 +70,7 @@ Use this skill when the user asks to visually document the app, capture all scre
 ## Output format
 
 At the end of the tour, produce:
+
 1. A summary message listing how many routes were captured successfully vs. skipped.
 2. The path to `tour-report.md`.
 3. Inline markdown image links for any screenshots already visible in context (first 3 max to avoid flooding).

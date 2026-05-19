@@ -63,7 +63,8 @@ export async function connectOverCdp(
     const { message, hint } = tryFormatError(err);
     return fail(
       `connect_over_cdp failed: ${message}`,
-      hint || 'Verify the CDP endpoint is reachable and Chrome was launched with --remote-debugging-port.',
+      hint ||
+        'Verify the CDP endpoint is reachable and Chrome was launched with --remote-debugging-port.',
     );
   }
 }

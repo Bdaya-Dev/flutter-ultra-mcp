@@ -131,7 +131,13 @@ export const getPatrolResultTool = defineTool({
       });
       result.failed = 1;
       const crashedScreenshotHint = buildScreenshotHint(isWebTest, isHeadless, true);
-      const diagnosticHints = buildDiagnosticHints(isWebTest, isHeadless, true, false, debuggerPort);
+      const diagnosticHints = buildDiagnosticHints(
+        isWebTest,
+        isHeadless,
+        true,
+        false,
+        debuggerPort,
+      );
       return {
         found: true,
         ready: true,

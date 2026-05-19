@@ -58,8 +58,7 @@ export async function readVersionedState<T>(
   }
 
   const record = parsed as Record<string, unknown>;
-  const onDiskVersion =
-    typeof record['schemaVersion'] === 'number' ? record['schemaVersion'] : 0;
+  const onDiskVersion = typeof record['schemaVersion'] === 'number' ? record['schemaVersion'] : 0;
 
   // Downgrade: file is from a future version we don't know about.
   if (onDiskVersion > currentVersion) {

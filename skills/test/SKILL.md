@@ -30,12 +30,14 @@ Use this skill when the user asks to run tests, validate that a fix works, check
 ### 2. Static analysis first (fail fast)
 
 Before running any tests, call `mcp__plugin_flutter_flutter-ultra-build__analyze` on the project.
+
 - If analysis returns errors (not warnings): report them and stop — tests will fail to compile anyway.
 - If analysis returns only warnings: continue but include the warning count in the final report.
 
 ### 3. Unit and widget tests
 
 **Start the test run:**
+
 - Unit tests: `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests`
   - Pass `testNamePattern` to scope to a specific test file or test name regex (e.g. `invoice_bloc_test`, `.*BlocTest.*`).
   - Pass `coverage: true` when the user requests coverage.
@@ -43,10 +45,12 @@ Before running any tests, call `mcp__plugin_flutter_flutter-ultra-build__analyze
   - Same pattern filtering applies.
 
 **Poll until complete:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests` (or `poll_run_widget_tests`) in a loop until status is `completed` or `failed`.
 - Poll interval: respect the tool's natural response time; do not sleep artificially.
 
 **Get results:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result` (or `get_run_widget_tests_result`).
 - Parse: total tests, passed, failed, skipped, duration.
 - For each failure: extract test name, file path, line number, and failure message.
@@ -56,19 +60,23 @@ Before running any tests, call `mcp__plugin_flutter_flutter-ultra-build__analyze
 ### 4. Patrol E2E tests
 
 **Discover available tests:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-patrol__list_tests` to enumerate test files and individual test names in `integration_test/`.
 
 **Start a patrol run:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test` with:
   - `testFilePath` or `testName` to scope the run.
   - `device` for the target (web, emulator ID, or physical device ID from `mcp__plugin_flutter_flutter-ultra-runtime__list_devices`).
   - `flavor` if the project uses flavors.
 
 **Poll until complete:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job` in a loop until done.
 - While polling, optionally call `mcp__plugin_flutter_flutter-ultra-patrol__take_patrol_screenshot` at key intervals to capture mid-test state.
 
 **Get enriched results:**
+
 - Call `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`.
 - The result includes:
   - Pass/fail per test step
@@ -83,6 +91,7 @@ Before running any tests, call `mcp__plugin_flutter_flutter-ultra-build__analyze
 ### 5. Coverage report (when requested)
 
 After unit tests complete with `coverage: true`:
+
 - The build server writes `coverage/lcov.info` relative to the project root.
 - Call `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result` — the result includes the coverage file path.
 - Report the top-level line coverage percentage if parseable.
@@ -92,6 +101,7 @@ After unit tests complete with `coverage: true`:
 ### 6. Golden test handling
 
 When the user asks to update or validate golden screenshots:
+
 - **Validate**: `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests` → `poll_run_golden_tests` → `get_run_golden_tests_result`.
 - **Update**: `mcp__plugin_flutter_flutter-ultra-build__start_update_goldens` → `poll_update_goldens` → `get_update_goldens_result`.
 - After updating, note that the changed `.png` files in `test/goldens/` must be committed.

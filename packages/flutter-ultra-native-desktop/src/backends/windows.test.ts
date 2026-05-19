@@ -13,6 +13,7 @@ import { WindowsDesktopBackend, describeWindowsError } from './windows.js';
 import { resolveWinHelperPath } from '../sidecar/sidecarPaths.js';
 import { JsonRpcError } from '../rpc/jsonRpcClient.js';
 import type { Logger } from '@flutter-ultra/mcp-runtime';
+import { LogBuffer } from '@flutter-ultra/mcp-runtime';
 
 const silentLogger: Logger = {
   debug: () => {},
@@ -20,6 +21,7 @@ const silentLogger: Logger = {
   warn: () => {},
   error: () => {},
   child: () => silentLogger,
+  buffer: new LogBuffer(),
 };
 
 const helperPath = resolveWinHelperPath();

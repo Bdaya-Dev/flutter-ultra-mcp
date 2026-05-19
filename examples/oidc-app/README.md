@@ -19,11 +19,13 @@ interception and CCT (Custom Chrome Tab) OAuth solver on mobile.
 ## Running
 
 1. Start the mock OIDC server:
+
    ```bash
    dart run lib/mock_oidc_server.dart
    ```
 
 2. Run the Flutter app:
+
    ```bash
    flutter run -d chrome
    ```
@@ -32,14 +34,14 @@ interception and CCT (Custom Chrome Tab) OAuth solver on mobile.
 
 ## Widget Keys
 
-| Key | Widget | Purpose |
-|-----|--------|---------|
-| `login_button` | FilledButton | Initiates OIDC flow |
-| `logout_button` | FilledButton.tonal | Clears token |
-| `auth_status` | Text | Shows "Authenticated" or "Not authenticated" |
-| `token_preview` | SelectableText | Truncated token display |
-| `loading_indicator` | CircularProgressIndicator | During OAuth exchange |
-| `error_text` | Text | Error message |
+| Key                 | Widget                    | Purpose                                      |
+| ------------------- | ------------------------- | -------------------------------------------- |
+| `login_button`      | FilledButton              | Initiates OIDC flow                          |
+| `logout_button`     | FilledButton.tonal        | Clears token                                 |
+| `auth_status`       | Text                      | Shows "Authenticated" or "Not authenticated" |
+| `token_preview`     | SelectableText            | Truncated token display                      |
+| `loading_indicator` | CircularProgressIndicator | During OAuth exchange                        |
+| `error_text`        | Text                      | Error message                                |
 
 ## CI Usage
 

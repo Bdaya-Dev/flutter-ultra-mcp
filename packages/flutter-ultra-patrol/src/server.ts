@@ -77,9 +77,7 @@ export interface PatrolServerHandle {
 export function createPatrolServer(opts: CreatePatrolServerOptions = {}): PatrolServerHandle {
   const env = opts.env ?? readEnv();
   const logger = opts.logger ?? createLogger({ server: SERVER_NAME, minLevel: env.logLevel });
-  const jobs =
-    opts.jobs ??
-    new JobStore({ stateDir: env.stateDir !== '' ? env.stateDir : undefined });
+  const jobs = opts.jobs ?? new JobStore(env.stateDir ? { stateDir: env.stateDir } : {});
   const develop = opts.develop ?? new DevelopSessionManager();
   const now = opts.now ?? Date.now.bind(Date);
   const ctx: ToolContext = { env, jobs, develop, now };

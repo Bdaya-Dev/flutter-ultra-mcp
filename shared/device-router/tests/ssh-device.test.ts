@@ -9,12 +9,16 @@ describe('SshDevice unit', () => {
     expect(device.kind).toBe('ssh');
   });
 
-  it.skipIf(!!process.env.CI)('probe returns reachable=false for unreachable host', async () => {
-    const device = new SshDevice({ host: '192.0.2.1', user: 'test' });
-    const probe = await device.probe();
-    expect(probe.reachable).toBe(false);
-    expect(probe.errors.length).toBeGreaterThan(0);
-  }, 60_000);
+  it.skipIf(!!process.env.CI)(
+    'probe returns reachable=false for unreachable host',
+    async () => {
+      const device = new SshDevice({ host: '192.0.2.1', user: 'test' });
+      const probe = await device.probe();
+      expect(probe.reachable).toBe(false);
+      expect(probe.errors.length).toBeGreaterThan(0);
+    },
+    60_000,
+  );
 
   it('close is safe to call without connect', async () => {
     const device = new SshDevice({ host: 'example.com', user: 'test' });

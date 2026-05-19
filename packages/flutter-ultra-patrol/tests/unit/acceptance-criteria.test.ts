@@ -11,11 +11,7 @@ import type { JobLogLine } from '../../src/runtime/job-store.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function logLine(
-  text: string,
-  stream: 'stdout' | 'stderr' = 'stdout',
-  ts = 0,
-): JobLogLine {
+function logLine(text: string, stream: 'stdout' | 'stderr' = 'stdout', ts = 0): JobLogLine {
   return { ts, stream, text };
 }
 
@@ -142,9 +138,7 @@ describe('AC-P2: Structured pass/fail result with screenshots and browser errors
   });
 
   it('passes array is populated with file and test name', () => {
-    const tail: JobLogLine[] = [
-      logLine('PASS  integration_test/ok_test.dart -- logs in (2.0s)'),
-    ];
+    const tail: JobLogLine[] = [logLine('PASS  integration_test/ok_test.dart -- logs in (2.0s)')];
     const result = parseTestResults(tail, 3_000);
     expect(result.passes).toHaveLength(1);
     expect(result.passes[0]!.file).toBe('integration_test/ok_test.dart');
@@ -168,7 +162,10 @@ describe('AC-P3: patrol_develop mode — three tools exist', () => {
   it('start_patrol_develop accepts projectRoot + target', () => {
     const tool = TOOLS.find((t) => t.name === 'start_patrol_develop')!;
     expect(
-      tool.inputSchema.safeParse({ projectRoot: '/abs/path', target: 'integration_test/app_test.dart' }).success,
+      tool.inputSchema.safeParse({
+        projectRoot: '/abs/path',
+        target: 'integration_test/app_test.dart',
+      }).success,
     ).toBe(true);
   });
 
@@ -235,19 +232,19 @@ describe('AC-P5: Windows HOME env workaround — implementation verified in sour
   // confirms the public contract that surrounds the workaround is exercisable.
 
   it('buildPatrolTestArgs accepts win32 as platform without throwing', () => {
-    expect(() =>
-      buildPatrolTestArgs({ projectRoot: '/x' }, '', 'win32'),
-    ).not.toThrow();
+    expect(() => buildPatrolTestArgs({ projectRoot: '/x' }, '', 'win32')).not.toThrow();
   });
 
   it('buildPatrolTestArgs accepts linux as platform without throwing', () => {
-    expect(() =>
-      buildPatrolTestArgs({ projectRoot: '/x' }, '', 'linux'),
-    ).not.toThrow();
+    expect(() => buildPatrolTestArgs({ projectRoot: '/x' }, '', 'linux')).not.toThrow();
   });
 
   it('web init timeout is included on win32 (web block processed despite browser-arg suppression)', () => {
-    const args = buildPatrolTestArgs({ projectRoot: '/x', web: { initTimeoutMs: 60_000 } }, '', 'win32');
+    const args = buildPatrolTestArgs(
+      { projectRoot: '/x', web: { initTimeoutMs: 60_000 } },
+      '',
+      'win32',
+    );
     const idx = args.indexOf('--web-init-timeout');
     expect(idx).toBeGreaterThan(-1);
     expect(args[idx + 1]).toBe('60000');

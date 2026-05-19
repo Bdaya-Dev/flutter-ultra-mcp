@@ -190,7 +190,7 @@ export class PanelServer {
 
       if (msg.type === 'command' && this.commandWaiters.length > 0) {
         const cmd: PanelCommand = {
-          type: msg.payload?.['command'] as string ?? 'unknown',
+          type: (msg.payload?.['command'] as string) ?? 'unknown',
           payload: msg.payload ?? {},
           viewerId: viewer.id,
           timestamp: new Date().toISOString(),

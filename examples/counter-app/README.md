@@ -17,8 +17,8 @@ In debug mode the `UltraFlutterBinding` is automatically initialized, exposing
 
 ## Widget Keys
 
-| Key | Widget | Purpose |
-|-----|--------|---------|
-| `counter_value` | Text | Displays current count |
-| `increment` | FAB | Increments counter |
-| `decrement` | FAB | Decrements counter |
+| Key             | Widget | Purpose                |
+| --------------- | ------ | ---------------------- |
+| `counter_value` | Text   | Displays current count |
+| `increment`     | FAB    | Increments counter     |
+| `decrement`     | FAB    | Decrements counter     |

@@ -61,8 +61,7 @@ server.defineTool(
 server.defineTool(
   {
     name: 'panel_status',
-    description:
-      'Check whether the panel WS server is running and how many viewers are connected.',
+    description: 'Check whether the panel WS server is running and how many viewers are connected.',
     timeoutClass: 'instant',
     ceilingMs: 5_000,
     annotations: {
@@ -82,7 +81,15 @@ server.defineTool(
       'Push a structured event to all connected DevTools panels. Used internally by other servers via the shared devtools-bus, or manually by the agent for custom notifications.',
     inputShape: {
       type: z
-        .enum(['tool_call', 'tool_result', 'session_change', 'log', 'screenshot', 'error', 'custom'])
+        .enum([
+          'tool_call',
+          'tool_result',
+          'session_change',
+          'log',
+          'screenshot',
+          'error',
+          'custom',
+        ])
         .describe('Event type category'),
       server: z.string().optional().describe('Originating server name'),
       tool: z.string().optional().describe('Tool name (for tool_call/tool_result events)'),

@@ -81,12 +81,14 @@ Run these in order — do not skip even if pubspec.yaml looks unchanged (lockfil
 #### 4c. Run the oracle
 
 **Unit/widget oracle:**
+
 - Start: `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests` with `testNamePattern` (or `start_run_widget_tests`).
 - Poll: `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests` (or `poll_run_widget_tests`).
 - Result: `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result` (or `get_run_widget_tests_result`).
 - If all targeted tests pass → **good**. If any fail → **bad**.
 
 **Patrol oracle:**
+
 - Start: `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test` with `testFilePath` and `device`.
 - Poll: `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`.
 - Result: `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`.
@@ -131,15 +133,15 @@ git -C <project-root> stash pop
 
 ## Edge cases
 
-| Situation | Handling |
-|-----------|----------|
-| **Merge commits on the walk** | `--first-parent` avoids them; if user omits it intentionally (to bisect a merged branch), remove the flag and warn that step count increases. |
-| **Uncommitted changes** | Auto-stash in step 2; restore in step 7. If stash pop fails (conflict), warn the user and leave the stash intact — do not discard it. |
-| **Submodule repo** | `git bisect` operates on the outer repo. If the Flutter project is a submodule, confirm the user wants to bisect the outer aggregate, not the inner submodule. Pass the correct `-C <path>` to all git commands. |
-| **Flutter SDK version change** | If a commit changes the Flutter SDK constraint (`.tool-versions`, `fvm` config, `flutter.constraints`), call `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` before pub get to clear the compiled kernel cache. |
-| **pub get resolves a different lockfile** | Expected — this is exactly what the skill needs. Never pin the lockfile artificially during bisect. |
-| **Oracle is flaky** | If the oracle fails on a commit that visually looks clean, re-run it once. If it fails again, mark bad. Do not retry more than once per commit — flakiness analysis is out of scope here; use `flutter-debug` after bisect completes. |
-| **All commits bad (misconfigured good ref)** | If `git bisect start` immediately shows 0 steps or git says the good commit is not an ancestor, stop and ask the user to verify the good commit reference. |
+| Situation                                    | Handling                                                                                                                                                                                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Merge commits on the walk**                | `--first-parent` avoids them; if user omits it intentionally (to bisect a merged branch), remove the flag and warn that step count increases.                                                                                         |
+| **Uncommitted changes**                      | Auto-stash in step 2; restore in step 7. If stash pop fails (conflict), warn the user and leave the stash intact — do not discard it.                                                                                                 |
+| **Submodule repo**                           | `git bisect` operates on the outer repo. If the Flutter project is a submodule, confirm the user wants to bisect the outer aggregate, not the inner submodule. Pass the correct `-C <path>` to all git commands.                      |
+| **Flutter SDK version change**               | If a commit changes the Flutter SDK constraint (`.tool-versions`, `fvm` config, `flutter.constraints`), call `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` before pub get to clear the compiled kernel cache.              |
+| **pub get resolves a different lockfile**    | Expected — this is exactly what the skill needs. Never pin the lockfile artificially during bisect.                                                                                                                                   |
+| **Oracle is flaky**                          | If the oracle fails on a commit that visually looks clean, re-run it once. If it fails again, mark bad. Do not retry more than once per commit — flakiness analysis is out of scope here; use `flutter-debug` after bisect completes. |
+| **All commits bad (misconfigured good ref)** | If `git bisect start` immediately shows 0 steps or git says the good commit is not an ancestor, stop and ask the user to verify the good commit reference.                                                                            |
 
 ## Output format
 

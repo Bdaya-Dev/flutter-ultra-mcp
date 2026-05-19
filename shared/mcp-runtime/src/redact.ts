@@ -10,7 +10,8 @@
 const VM_URI_TOKEN = /(wss?:\/\/[^/]+\/)([A-Za-z0-9_+=]+)(\/ws\b)?(?=\s|"|'|,|}|$)/g;
 
 export function redactVmServiceToken(text: string): string {
-  return text.replace(VM_URI_TOKEN, (_, prefix: string, _token: string, wsSuffix?: string) =>
-    `${prefix}***${wsSuffix ?? ''}`,
+  return text.replace(
+    VM_URI_TOKEN,
+    (_, prefix: string, _token: string, wsSuffix?: string) => `${prefix}***${wsSuffix ?? ''}`,
   );
 }

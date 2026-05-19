@@ -45,14 +45,7 @@ describe('buildPatrolInvocation', () => {
     expect(got.kind).toBe('wrapper-script');
     if (got.kind !== 'wrapper-script') throw new Error('narrow');
     expect(got.command).toBe('pwsh');
-    expect(got.args).toEqual([
-      '-NoLogo',
-      '-NoProfile',
-      '-File',
-      wrapper,
-      '--web-port',
-      '4206',
-    ]);
+    expect(got.args).toEqual(['-NoLogo', '-NoProfile', '-File', wrapper, '--web-port', '4206']);
     expect(got.scriptPath).toBe(wrapper);
   });
 

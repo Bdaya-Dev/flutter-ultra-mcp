@@ -124,10 +124,10 @@ describe('poll_patrol_job', () => {
       rec.logTail.push({ ts: i, stream: 'stdout', text: `line${i}` });
     }
     rec.logTotal = 5;
-    const got = pollPatrolJobTool.handler(
-      { taskId: rec.id, logLines: 3, cursor: 0 },
-      ctx,
-    ) as { logTail: { text: string }[]; logTotal: number };
+    const got = pollPatrolJobTool.handler({ taskId: rec.id, logLines: 3, cursor: 0 }, ctx) as {
+      logTail: { text: string }[];
+      logTotal: number;
+    };
     expect(got.logTail.map((l) => l.text)).toEqual(['line3', 'line4', 'line5']);
     expect(got.logTotal).toBe(5);
   });
@@ -148,10 +148,10 @@ describe('poll_patrol_job', () => {
     rec.logTotal = 4;
 
     // First poll: no cursor — gets last 2 lines
-    const first = pollPatrolJobTool.handler(
-      { taskId: rec.id, logLines: 2 },
-      ctx,
-    ) as { logTail: { text: string }[]; logTotal: number };
+    const first = pollPatrolJobTool.handler({ taskId: rec.id, logLines: 2 }, ctx) as {
+      logTail: { text: string }[];
+      logTotal: number;
+    };
     expect(first.logTail.map((l) => l.text)).toEqual(['line3', 'line4']);
 
     // Two more lines arrive
@@ -160,10 +160,10 @@ describe('poll_patrol_job', () => {
     rec.logTotal = 6;
 
     // Second poll: cursor = first.logTotal (4) → only lines5 and line6
-    const second = pollPatrolJobTool.handler(
-      { taskId: rec.id, cursor: first.logTotal },
-      ctx,
-    ) as { logTail: { text: string }[]; logTotal: number };
+    const second = pollPatrolJobTool.handler({ taskId: rec.id, cursor: first.logTotal }, ctx) as {
+      logTail: { text: string }[];
+      logTotal: number;
+    };
     expect(second.logTail.map((l) => l.text)).toEqual(['line5', 'line6']);
     expect(second.logTotal).toBe(6);
   });
@@ -188,8 +188,14 @@ describe('poll_patrol_job', () => {
       steps: { file: string; status: string }[];
     };
     expect(got.steps).toHaveLength(2);
-    expect(got.steps[0]).toMatchObject({ file: 'integration_test/login_test.dart', status: 'passed' });
-    expect(got.steps[1]).toMatchObject({ file: 'integration_test/cart_test.dart', status: 'running' });
+    expect(got.steps[0]).toMatchObject({
+      file: 'integration_test/login_test.dart',
+      status: 'passed',
+    });
+    expect(got.steps[1]).toMatchObject({
+      file: 'integration_test/cart_test.dart',
+      status: 'running',
+    });
   });
 });
 
@@ -200,8 +206,16 @@ describe('extractSteps', () => {
 
   it('tracks running → passed transition', () => {
     const log = [
-      { ts: 10, stream: 'stdout' as const, text: 'Running: integration_test/foo_test.dart -- my test' },
-      { ts: 20, stream: 'stdout' as const, text: 'PASS  integration_test/foo_test.dart -- my test' },
+      {
+        ts: 10,
+        stream: 'stdout' as const,
+        text: 'Running: integration_test/foo_test.dart -- my test',
+      },
+      {
+        ts: 20,
+        stream: 'stdout' as const,
+        text: 'PASS  integration_test/foo_test.dart -- my test',
+      },
     ];
     const steps = extractSteps(log);
     expect(steps).toHaveLength(1);
@@ -225,11 +239,19 @@ describe('extractSteps', () => {
 
   it('creates step from PASS line alone (no Running: prefix)', () => {
     const log = [
-      { ts: 1, stream: 'stdout' as const, text: 'PASS  integration_test/a_test.dart -- test name (1.5s)' },
+      {
+        ts: 1,
+        stream: 'stdout' as const,
+        text: 'PASS  integration_test/a_test.dart -- test name (1.5s)',
+      },
     ];
     const steps = extractSteps(log);
     expect(steps).toHaveLength(1);
-    expect(steps[0]).toMatchObject({ status: 'passed', file: 'integration_test/a_test.dart', test: 'test name' });
+    expect(steps[0]).toMatchObject({
+      status: 'passed',
+      file: 'integration_test/a_test.dart',
+      test: 'test name',
+    });
   });
 
   it('handles multiple independent tests', () => {
@@ -374,7 +396,11 @@ describe('get_patrol_result', () => {
     rec.exitCode = 0;
     rec.logTail.push({ ts: 0, stream: 'stdout', text: 'PASS  integration_test/a_test.dart' });
     const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
-      diagnosticHints: { screenshot: string | null; widgetTree: string | null; browserErrors: string | null };
+      diagnosticHints: {
+        screenshot: string | null;
+        widgetTree: string | null;
+        browserErrors: string | null;
+      };
     };
     expect(got.diagnosticHints.screenshot).toBeNull();
     expect(got.diagnosticHints.widgetTree).toBeNull();
@@ -401,7 +427,11 @@ describe('get_patrol_result', () => {
     );
     rec.logTotal = 3;
     const got = getPatrolResultTool.handler({ taskId: rec.id }, ctx) as {
-      diagnosticHints: { screenshot: string | null; widgetTree: string | null; browserErrors: string | null };
+      diagnosticHints: {
+        screenshot: string | null;
+        widgetTree: string | null;
+        browserErrors: string | null;
+      };
     };
     expect(got.diagnosticHints.screenshot).toContain('take_patrol_screenshot');
     expect(got.diagnosticHints.screenshot).toContain('Headless CDP');

@@ -88,12 +88,14 @@ Run these together immediately after attach:
 ### 5. Deeper render inspection
 
 If layout is the issue and the widget tree alone is not enough:
+
 - Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — this shows sizes, constraints, and positions for every render object.
 - Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_layer_tree` for compositing and repaint boundary issues (useful for performance jank or incorrect clipping).
 
 ### 6. Evaluate in-app expressions
 
 Use `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` freely to inspect live objects:
+
 - Check if a future completed: `myCompleter.isCompleted`
 - Read a stream's last value: `myStreamController.stream` (wrap in a Future)
 - Confirm a service is initialized: `MyService.instance != null`
@@ -101,6 +103,7 @@ Use `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` freely to inspect live
 ### 7. Test the fix
 
 Once the root cause is identified and a code fix is proposed (or applied at user request):
+
 - Call `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload` to apply changes without losing app state.
 - Repeat step 3 (appropriate branch) to confirm the error is gone.
 - Call `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` for a before/after comparison.
@@ -108,19 +111,20 @@ Once the root cause is identified and a code fix is proposed (or applied at user
 
 ## Common patterns and their diagnosis
 
-| Symptom | First tool | What to look for |
-|---------|-----------|------------------|
-| `Null check operator used on a null value` | `get_runtime_errors` + `evaluate` | Null state before async load completes; missing null guard |
-| `RenderFlex overflowed by N pixels` | `dump_render_tree` + `toggle_debug_paint` | Column/Row child without `Expanded`; fixed height container |
-| Blank white screen | `get_widget_tree` + `evaluate` (route) | `ErrorWidget` at root; redirect loop; unhandled exception in build |
-| `setState called after dispose` | `get_runtime_errors` + `get_logs` | Async callback holding stale `BuildContext`; missing `mounted` check |
-| Navigation not working | `evaluate` (GoRouter path) + `get_logs` | Route guard redirecting; wrong named route; deep link not registered |
-| Infinite loading spinner | `evaluate` (state) + `get_logs` | Future never completing; stream not emitting; provider not notifying |
-| Wrong data displayed | `evaluate` (BLoC/provider state) | Stale state; `context.watch` vs `context.read` misuse |
+| Symptom                                    | First tool                                | What to look for                                                     |
+| ------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------- |
+| `Null check operator used on a null value` | `get_runtime_errors` + `evaluate`         | Null state before async load completes; missing null guard           |
+| `RenderFlex overflowed by N pixels`        | `dump_render_tree` + `toggle_debug_paint` | Column/Row child without `Expanded`; fixed height container          |
+| Blank white screen                         | `get_widget_tree` + `evaluate` (route)    | `ErrorWidget` at root; redirect loop; unhandled exception in build   |
+| `setState called after dispose`            | `get_runtime_errors` + `get_logs`         | Async callback holding stale `BuildContext`; missing `mounted` check |
+| Navigation not working                     | `evaluate` (GoRouter path) + `get_logs`   | Route guard redirecting; wrong named route; deep link not registered |
+| Infinite loading spinner                   | `evaluate` (state) + `get_logs`           | Future never completing; stream not emitting; provider not notifying |
+| Wrong data displayed                       | `evaluate` (BLoC/provider state)          | Stale state; `context.watch` vs `context.read` misuse                |
 
 ## Output format
 
 After triage, produce:
+
 1. **Root cause**: one sentence identifying the exact problem.
 2. **Evidence**: which tool output revealed it (stack trace line, widget tree excerpt, render tree constraint).
 3. **Proposed fix**: specific code change with file and line reference (do not edit unless asked).

@@ -22,12 +22,12 @@ MCP server orchestrating **Patrol E2E tests** across web, Android, iOS, and desk
 
 ## Environment contract (from plugin `.mcp.json`)
 
-| Var                         | Used for                                                                                                                                                                                                    |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FLUTTER_ULTRA_PATROL_FORK` | Absolute path to `vendor/patrol/`.                                                                                                                                                                          |
-| `FLUTTER_ULTRA_STATE_DIR`   | Future on-disk job persistence (in-memory in v1.0).                                                                                                                                                         |
+| Var                         | Used for                                                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FLUTTER_ULTRA_PATROL_FORK` | Absolute path to `vendor/patrol/`.                                                                                                                                                    |
+| `FLUTTER_ULTRA_STATE_DIR`   | Future on-disk job persistence (in-memory in v1.0).                                                                                                                                   |
 | `PATROL_WEB_BROWSER_ARGS`   | Comma-separated Chromium flags merged into every `--web-browser-args`. Default: `--enable-unsafe-swiftshader,--disable-renderer-backgrounding,--disable-background-timer-throttling`. |
-| `FLUTTER_ULTRA_LOG_LEVEL`   | `debug`/`info`/`warn`/`error`. Default `info`.                                                                                                                                                              |
+| `FLUTTER_ULTRA_LOG_LEVEL`   | `debug`/`info`/`warn`/`error`. Default `info`.                                                                                                                                        |
 
 ## Invocation strategy
 

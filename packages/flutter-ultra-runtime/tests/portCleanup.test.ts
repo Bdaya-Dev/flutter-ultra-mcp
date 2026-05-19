@@ -2,7 +2,10 @@ import { createServer, type AddressInfo } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import { findListenersOnPort, freePort } from '../src/portCleanup.js';
 
-function listenOnEphemeralPort(): Promise<{ server: ReturnType<typeof createServer>; port: number }> {
+function listenOnEphemeralPort(): Promise<{
+  server: ReturnType<typeof createServer>;
+  port: number;
+}> {
   return new Promise((resolve, reject) => {
     const server = createServer();
     server.listen(0, '127.0.0.1', () => {

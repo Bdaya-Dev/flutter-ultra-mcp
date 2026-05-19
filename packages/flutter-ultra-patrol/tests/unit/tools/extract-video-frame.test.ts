@@ -41,15 +41,11 @@ describe('extract_video_frame — schema validation', () => {
   });
 
   it('rejects empty videoPath', () => {
-    expect(
-      extractVideoFrameTool.inputSchema.safeParse({ videoPath: '' }).success,
-    ).toBe(false);
+    expect(extractVideoFrameTool.inputSchema.safeParse({ videoPath: '' }).success).toBe(false);
   });
 
   it('rejects missing videoPath', () => {
-    expect(
-      extractVideoFrameTool.inputSchema.safeParse({}).success,
-    ).toBe(false);
+    expect(extractVideoFrameTool.inputSchema.safeParse({}).success).toBe(false);
   });
 
   it('rejects negative timestampMs', () => {
@@ -96,7 +92,8 @@ describe('extract_video_frame — schema validation', () => {
       extractVideoFrameTool.inputSchema.safeParse({ videoPath: '/tmp/t.webm', percent: 0 }).success,
     ).toBe(true);
     expect(
-      extractVideoFrameTool.inputSchema.safeParse({ videoPath: '/tmp/t.webm', percent: 100 }).success,
+      extractVideoFrameTool.inputSchema.safeParse({ videoPath: '/tmp/t.webm', percent: 100 })
+        .success,
     ).toBe(true);
   });
 

@@ -142,9 +142,7 @@ describe('EventBus', () => {
       success: true,
     });
 
-    expect(event.id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    );
+    expect(event.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(event.type).toBe('tool_call');
     expect(event.server).toBe('flutter-ultra-runtime');
     expect(event.tool).toBe('hot_reload');

@@ -68,7 +68,8 @@ export function withWatchdog<Args, Result extends ToolReturn>(
 ): (args: Args, ctx?: Partial<ToolContext>) => Promise<Result> {
   return async (args, ctx) => {
     const perToolOverride = envOverrideMs(meta.name);
-    const ceilingMs = perToolOverride !== undefined ? perToolOverride : applyMultiplier(meta.ceilingMs);
+    const ceilingMs =
+      perToolOverride !== undefined ? perToolOverride : applyMultiplier(meta.ceilingMs);
 
     const controller = new AbortController();
     const upstream = ctx?.signal;

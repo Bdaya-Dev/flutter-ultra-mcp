@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 3 * * *'  # Nightly 03:00 UTC (10x cost — not on every PR)
+    - cron: '0 3 * * *' # Nightly 03:00 UTC (10x cost — not on every PR)
   workflow_dispatch:
 
 concurrency:

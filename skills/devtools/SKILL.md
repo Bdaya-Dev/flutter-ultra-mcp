@@ -8,6 +8,7 @@ description: Wiring up and using the flutter-ultra DevTools panel to inspect liv
 ## When to use
 
 Use this skill when the user wants to:
+
 - See live MCP tool call activity inside Flutter DevTools while the agent is running.
 - Pause or resume an automated agent flow from a panel button (human-in-the-loop).
 - Stream screenshots or session events to the DevTools view during a tour or drive flow.

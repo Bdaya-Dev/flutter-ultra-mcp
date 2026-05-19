@@ -542,7 +542,7 @@ mixin UltraFlutterBinding on WidgetsBinding {
 class _UltraFlutterDefaultBinding extends WidgetsFlutterBinding
     with UltraFlutterBinding {
   static WidgetsBinding ensureInitialized() {
-    if (WidgetsBinding.instance is! _UltraFlutterDefaultBinding) {
+    if (UltraFlutterBinding._instance == null) {
       _UltraFlutterDefaultBinding();
     }
     return WidgetsBinding.instance;

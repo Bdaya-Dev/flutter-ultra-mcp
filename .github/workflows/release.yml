@@ -49,6 +49,9 @@ jobs:
       # The prepareCmd in .releaserc.json force-stages the bundled .cjs
       # files so @semantic-release/git can commit them alongside
       # package.json and CHANGELOG.md.
+      # npm publish uses id-token:write permission (Trusted Publishing / OIDC)
+      # which satisfies SLSA Level 2: provenance is attested via GitHub's
+      # Sigstore-backed publish attestation — no manual token needed.
       - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

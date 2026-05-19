@@ -1,45 +1,30 @@
 ---
 name: flutter-setup
-description: One-command setup of the flutter-ultra-mcp plugin in an existing Flutter codebase. Use when the user wants to enable flutter-ultra for the first time, or when re-running after a clean install. Idempotent — safe to run again if a previous attempt was partial.
+description: One-command setup of the flutter-ultra-mcp plugin in an existing Flutter codebase. Use when the user wants to enable flutter-ultra for the first time, re-run after a clean install, or verify an existing setup is complete and working. Idempotent and safe to re-run.
 ---
 
-# flutter-setup — One-Command Plugin Setup
+# Plugin Setup
 
-## When to use
-
-Use this skill when the user wants to wire up the flutter-ultra-mcp plugin into a Flutter project for the first time, or when verifying that a previously attempted setup is complete and working. The expected end state is: `UltraFlutterBinding` initialized in the app entry point, `ultra_flutter` in `dev_dependencies`, patrol fork overridden in `pubspec_overrides.yaml`, and a smoke launch confirming the VM Service attaches correctly.
-
-## Prerequisites
-
-- Flutter SDK installed and on PATH (`flutter --version` must succeed).
-- Node.js ≥ 18 installed (required for the MCP servers).
-- The target project has a `pubspec.yaml` (i.e., it is a Flutter app, not a pure Dart package).
-- The user is working from the project root (or has provided an absolute path to it).
+Expected end state: `UltraFlutterBinding` initialized in the app entry point, `ultra_flutter` in `dev_dependencies`, patrol fork overridden if needed, and a smoke launch confirming the VM Service attaches correctly.
 
 ## Workflow
 
 ### 1. Verify the environment
 
-- Call `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` with the project root.
-  - If any `[✗]` entries appear for Flutter SDK, connected devices, or Dart, stop and surface the doctor output to the user. Do not continue until the environment is healthy.
-- Call `mcp__plugin_flutter_flutter-ultra-build__project_info` with the project root.
-  - Note: `entryPoints` (usually `lib/main.dart` or `lib/bootstrap.dart`), `hasSentry` (affects binding pattern), `hasPatrol` (determines whether to configure the patrol fork override).
+- `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` — stop if Flutter SDK, devices, or Dart show `[x]`.
+- `mcp__plugin_flutter_flutter-ultra-build__project_info` — note entry points, `hasSentry`, `hasPatrol`, `hasUltraBinding`.
+- `mcp__plugin_flutter_flutter-ultra-runtime__list_devices` — verify at least one target device is available.
+- `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` — discover required dart-defines for launch.
+- `mcp__plugin_flutter_flutter-ultra-build__list_flavors` — check for flavor configuration.
 
 ### 2. Add `ultra_flutter` to dev_dependencies
 
-- Call `mcp__plugin_flutter_flutter-ultra-build__pub_add` with:
-  - `package`: `ultra_flutter`
-  - `dev`: `true`
-- If `pub_add` fails because `ultra_flutter` is not on pub.dev (it is a local plugin bundled with the MCP server), use `pubspec_overrides_set` to point to the bundled path instead:
-  - Call `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` with `package: ultra_flutter` and `path` set to the absolute path of the bundled package (ask the user or read from plugin config if available).
-  - Then add the dependency manually by editing `pubspec.yaml`: add `ultra_flutter: any` under `dev_dependencies`.
-  - Call `mcp__plugin_flutter_flutter-ultra-build__pub_get` to resolve.
+- `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `package: ultra_flutter`, `dev: true`.
+- If it fails (not on pub.dev), use `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` to point to the bundled path, add `ultra_flutter: any` under `dev_dependencies` manually, then `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 
 ### 3. Patch the app entry point
 
-Read the primary entry point file identified in step 1. Apply the following pattern:
-
-**Without Sentry** — wrap the existing `runApp` call:
+**Without Sentry:**
 
 ```dart
 import 'package:flutter/foundation.dart';
@@ -53,98 +38,110 @@ void main() {
 }
 ```
 
-**With Sentry** (when `hasSentry: true`) — Sentry installs its own binding; use the direct mixin pattern:
+**With Sentry** (custom binding mixin):
 
 ```dart
-import 'package:flutter/foundation.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
-// In your custom binding class:
 class AppBinding extends WidgetsFlutterBinding with UltraFlutterBindingMixin {
   static AppBinding ensureInitialized() =>
       WidgetsFlutterBinding.ensureInitialized() as AppBinding;
 }
-
-void main() {
-  AppBinding.ensureInitialized();
-  // ... Sentry.init wrapping runApp as before
-}
 ```
 
-Edit the file with the appropriate pattern. Only add the import and the `ensureInitialized` call — do not reorganize the existing code.
+Skip if `project_info` reported `hasUltraBinding: true`.
 
-### 4. Configure the patrol fork override (if patrol detected)
+### 4. Configure patrol fork override (if patrol detected)
 
-When `project_info` reported `hasPatrol: true`:
+- `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` — check if `patrol` override exists.
+- If not: `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` with `package: patrol` and the vendored fork path.
+- `mcp__plugin_flutter_flutter-ultra-build__pub_get` to resolve.
 
-- Call `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` to check if a `patrol` override already exists.
-- If not present, call `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` with:
-  - `package`: `patrol`
-  - `path`: the vendored patrol fork path bundled with flutter-ultra-mcp (located at `<plugin-root>/packages/flutter-ultra-patrol/vendor/patrol` — ask the user for `<plugin-root>` if not available in context).
-- Call `mcp__plugin_flutter_flutter-ultra-build__pub_get` to resolve the override.
+### 5. Static analysis
 
-### 5. Run static analysis to verify the setup
-
-- Call `mcp__plugin_flutter_flutter-ultra-build__pub_get` (ensure lock file is current after all edits).
-- Call `mcp__plugin_flutter_flutter-ultra-build__analyze` with the project root.
-  - If any errors reference `ultra_flutter` or `UltraFlutterBinding`, the import or mixin was not applied correctly — re-read the entry point and fix.
-  - Warnings about `// ignore: implementation_imports` on the Sentry path are expected; surface them to the user as informational only.
+- `mcp__plugin_flutter_flutter-ultra-build__pub_get` — ensure lock file is current.
+- `mcp__plugin_flutter_flutter-ultra-build__analyze` — fix any errors referencing `ultra_flutter` or `UltraFlutterBinding`.
+- If analysis finds other pre-existing issues: `mcp__plugin_flutter_flutter-ultra-build__fix` to auto-apply safe lint fixes.
 
 ### 6. Smoke test: launch, attach, screenshot
 
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__launch_app` with the project root and target device (default: `chrome` for web projects, `linux`/`macos`/`windows` for desktop, first connected device for mobile).
-  - Poll `mcp__plugin_flutter_flutter-ultra-runtime__poll_launch_app` until status is `ready` or `error`.
-  - If `error`, surface the launch log to the user and stop.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__attach` with the returned `sessionId`.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` — save to `.omc/research/setup-smoke-<YYYY-MM-DD>.png`.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__detach`.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__stop_app` with the `sessionId`.
+- `mcp__plugin_flutter_flutter-ultra-runtime__launch_app` with the project root and target device (default: `chrome` for web, platform default for desktop, first connected device for mobile).
+  - Pass `importLaunchJsonConfig` if `.vscode/launch.json` has dart-defines.
+- `mcp__plugin_flutter_flutter-ultra-runtime__poll_launch_app` until status is `attached` or `failed`.
+- `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` to capture the running app.
+- `mcp__plugin_flutter_flutter-ultra-runtime__detach`.
+- `mcp__plugin_flutter_flutter-ultra-runtime__stop_app`.
 
-If screenshot succeeds and the image is not blank, the setup is confirmed working.
+If screenshot succeeds and is not blank, setup is confirmed working.
 
-## Handling edge cases
+### 7. Build verification (optional, when requested)
 
-- **`UltraFlutterBinding.ensureInitialized()` already present**: `project_info` reports `hasUltraBinding: true`. Skip step 3 but still run steps 5–6 to confirm working state.
-- **Multiple entry points** (e.g. `main_dev.dart`, `main_prod.dart`): patch all of them with the same binding initialization. Confirm with the user if the list is longer than 3 files before editing.
-- **Monorepo / workspace**: `pubspec_overrides.yaml` must exist in each app package that needs ultra. Run steps 2–6 for each app package separately.
-- **pub_get fails after overrides**: common cause is a mismatched `patrol` version in `pubspec.yaml` vs. the fork. Call `mcp__plugin_flutter_flutter-ultra-build__pub_outdated` to inspect version constraints, then relax the constraint in `pubspec.yaml` to `any` for the overridden package.
-- **analyze reports `ultra_flutter` not found**: the `pubspec_overrides.yaml` path is wrong. Call `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` to verify the resolved path, then correct it.
-- **launch_app times out**: the app may require dart-defines (e.g. OIDC client IDs). Call `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` to discover required defines, then relaunch with them.
+Verify the app builds for all target platforms using the build server's platform-specific start/poll/get/cancel tool sets. Each platform follows the same pattern: `start_build_{platform}` -> `poll_build_{platform}_job` -> `get_build_{platform}_result`. Supported platforms: apk, appbundle, ipa (macOS only), web, windows, macos, linux.
+
+## Edge cases
+
+- **`UltraFlutterBinding.ensureInitialized()` already present**: skip step 3, run steps 5-6 to confirm.
+- **Multiple entry points** (`main_dev.dart`, `main_prod.dart`): patch all of them. Confirm with the user if more than 3 files.
+- **Monorepo / workspace**: run steps 2-6 for each app package separately.
+- **pub_get fails after overrides**: `mcp__plugin_flutter_flutter-ultra-build__pub_outdated` to inspect version constraints, then relax to `any`.
+- **analyze reports `ultra_flutter` not found**: `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` to verify the resolved path.
+- **launch_app times out**: check `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` for required defines, relaunch with them.
+- **Pub cache corruption**: `mcp__plugin_flutter_flutter-ultra-build__pub_cache_repair` to rebuild the cache, then retry pub_get.
+- **Stale build artifacts**: `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` to clear, then rebuild.
+
+## Tool reference
+
+| Action | Tool |
+|--------|------|
+| Flutter doctor | `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` |
+| Project info | `mcp__plugin_flutter_flutter-ultra-build__project_info` |
+| List devices | `mcp__plugin_flutter_flutter-ultra-runtime__list_devices` |
+| List dart defines | `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` |
+| List flavors | `mcp__plugin_flutter_flutter-ultra-build__list_flavors` |
+| Add dependency | `mcp__plugin_flutter_flutter-ultra-build__pub_add` |
+| Resolve deps | `mcp__plugin_flutter_flutter-ultra-build__pub_get` |
+| Overrides set | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` |
+| Overrides list | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` |
+| Analyze | `mcp__plugin_flutter_flutter-ultra-build__analyze` |
+| Auto-fix | `mcp__plugin_flutter_flutter-ultra-build__fix` |
+| Flutter clean | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` |
+| Pub cache repair | `mcp__plugin_flutter_flutter-ultra-build__pub_cache_repair` |
+| Pub outdated | `mcp__plugin_flutter_flutter-ultra-build__pub_outdated` |
+| Launch app | `mcp__plugin_flutter_flutter-ultra-runtime__launch_app` |
+| Poll launch | `mcp__plugin_flutter_flutter-ultra-runtime__poll_launch_app` |
+| Attach | `mcp__plugin_flutter_flutter-ultra-runtime__attach` |
+| Screenshot | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` |
+| Detach | `mcp__plugin_flutter_flutter-ultra-runtime__detach` |
+| Stop app | `mcp__plugin_flutter_flutter-ultra-runtime__stop_app` |
+| Build (any platform) | `start_build_{platform}` via the build server |
 
 ## Output format
 
-After the workflow completes, produce:
-
 1. **Status**: `setup complete` or `setup failed at step N`.
-2. **Changes made**: bullet list of files edited (entry points, `pubspec.yaml`, `pubspec_overrides.yaml`).
-3. **Smoke test result**: path to the saved screenshot, or the error message if launch failed.
-4. **Next steps**: suggest running `/flutter-tour` to capture a visual baseline, or `/flutter-debug` if the smoke test revealed a runtime error.
+2. **Changes made**: bullet list of files edited.
+3. **Smoke test result**: screenshot path or error message.
+4. **Next steps**: suggest `/flutter:tour` for a visual baseline or `/flutter:debug` if the smoke test failed.
 
 ## Example
 
 ```
-User: "Set up flutter-ultra on the Invora Flutter app."
+User: "Set up flutter-ultra on my app."
 
-1. flutter_doctor → all checks pass
-2. project_info → entryPoints: ["lib/bootstrap.dart"], hasSentry: true, hasPatrol: true
-3. pub_add ultra_flutter dev:true → added to pubspec.yaml
-4. Edit lib/bootstrap.dart — add UltraFlutterBindingMixin to AppBinding class
-5. pubspec_overrides_set patrol → path: /home/user/.claude/plugins/flutter-ultra-mcp/vendor/patrol
-6. pub_get → resolved
-7. analyze → 0 errors, 1 warning (ignore: implementation_imports — expected)
-8. launch_app device:chrome → sessionId: "flutter-1"
-9. attach(sessionId: "flutter-1")
-10. screenshot → .omc/research/setup-smoke-2026-05-19.png (dashboard visible)
-11. detach + stop_app
-
-Setup complete. 3 files changed. Smoke screenshot saved.
-Next: run /flutter-tour to capture a full visual baseline.
+1. flutter_doctor -> all checks pass
+2. project_info -> entryPoints: ["lib/main.dart"], hasSentry: false, hasPatrol: false
+3. list_devices -> chrome, windows
+4. pub_add ultra_flutter dev:true -> added
+5. Edit lib/main.dart -> add UltraFlutterBinding.ensureInitialized()
+6. pub_get -> resolved
+7. analyze -> 0 errors
+8. launch_app(device: "chrome") -> poll -> attached
+9. screenshot -> app visible
+10. detach + stop_app
+-> "Setup complete. 2 files changed. Smoke screenshot saved."
 ```
 
 ## See also
 
-- Sibling skill: `flutter-tour` — visual screenshot tour after setup
-- Sibling skill: `flutter-debug` — triage if the smoke launch reveals a runtime error
-- `mcp__plugin_flutter_flutter-ultra-build__project_info` — entry point and feature detection
-- `mcp__plugin_flutter_flutter-ultra-runtime__launch_app` — launch app for smoke test
-- `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` — configure patrol fork override
+- `flutter-tour` — visual screenshot tour after setup
+- `flutter-debug` — triage if the smoke launch reveals a runtime error
+- `flutter-devtools` — wire up the DevTools panel for live inspection

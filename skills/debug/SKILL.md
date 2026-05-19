@@ -1,156 +1,155 @@
 ---
 name: flutter-debug
-description: Attaching to a running Flutter app and triaging an error from the stack trace, widget tree, render tree, and recent screenshot. Use when the user reports a runtime exception, layout overflow, or unexpected behaviour and you need to inspect live state.
+description: Attaches to a running Flutter app and triages an error from the stack trace, widget tree, render tree, network traffic, and screenshots. Use when the user reports a runtime exception, layout overflow, blank screen, unexpected behaviour, performance jank, or network failure and you need to inspect live state.
 ---
 
-# flutter-debug — Attach, Inspect, and Triage
+# Attach, Inspect, and Triage
 
-## When to use
-
-Use this skill when the user reports a runtime exception, a layout overflow, a blank screen, unexpected navigation, or any "it's broken" situation in a running Flutter app. The goal is to collect enough live evidence to diagnose the root cause without guessing. Propose code fixes only after inspecting live state — never before.
-
-## Prerequisites
-
-- A Flutter app is running in debug mode (VM Service available).
-- The user has described the symptom: exception message, screen name, reproduction steps, or "just broke".
-- Do **not** modify any source files during this skill unless the user explicitly asks for a fix.
+Collect live evidence before diagnosing. Propose code fixes only after inspecting live state.
 
 ## Workflow
 
-Follow the triage ladder in order — stop at the level where the root cause becomes clear.
-
 ### 1. Attach to the session
 
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__discover_sessions` — list all active sessions.
-- Pick the session matching the reported app (by name or port).
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__attach` with `sessionId`.
+- `mcp__plugin_flutter_flutter-ultra-runtime__discover_sessions` to find active sessions.
+- `mcp__plugin_flutter_flutter-ultra-runtime__attach` with the matching session.
 
-### 2. Capture initial state
+### 2. Capture initial state (run together)
 
-Run these together immediately after attach:
-
-- `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` — visual snapshot of the current screen.
-- `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors` — all unhandled exceptions since last clear.
-- `mcp__plugin_flutter_flutter-ultra-runtime__get_logs` — recent `debugPrint` / `print` / framework log output.
+- `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` — visual snapshot.
+- `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors` — unhandled exceptions.
+- `mcp__plugin_flutter_flutter-ultra-runtime__get_logs` — recent framework/app log output.
+- `mcp__plugin_flutter_flutter-ultra-runtime__log_buffer_stats` — check if logs were truncated.
 
 ### 3. Triage by error type
 
 #### 3a. Runtime exception (stack trace present)
 
-1. Read the stack trace from `get_runtime_errors` — identify the throwing file and line.
-2. Call `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` to inspect the problematic object:
+1. Read the stack trace from `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` to inspect the problematic object:
    ```dart
-   // Example: check if a value is null
    MyWidget.of(context)?.someField?.toString() ?? 'NULL'
    ```
-3. Call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` focused on the widget subtree around the reported location — pass `widgetId` if known from the stack frame.
-4. Look for: null state, missing providers, incorrect key types, uninitialized controllers.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` around the error location.
+4. `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_details` on a specific widget for full properties.
 
-#### 3b. Layout overflow (RenderFlex / RenderBox overflow)
+#### 3b. Layout overflow (RenderFlex / RenderBox)
 
-1. Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — search the output for `OVERFLOWED` or constraint violations.
-2. Call `mcp__plugin_flutter_flutter-ultra-runtime__toggle_debug_paint` to enable visual constraint overlays; take another `screenshot`.
-3. Identify the overflowing `RenderFlex` or `RenderConstrainedBox` and trace it back to the widget via `get_widget_tree`.
-4. Common causes: missing `Expanded`/`Flexible`, fixed height in a `Column` inside a scrollable, `Text` without `overflow: TextOverflow.ellipsis`.
+1. `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — search for `OVERFLOWED`.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__toggle_debug_paint` to enable visual overlays.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` — capture the debug paint view.
+4. Trace the overflowing render object back to its widget via `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree`.
 
 #### 3c. Blank screen / wrong route
 
-1. Call `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`:
+1. `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`:
    ```dart
    GoRouter.of(context).routerDelegate.currentConfiguration.fullPath
    ```
-   to confirm the actual current route.
-2. Call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` from root — look for `ErrorWidget`, empty `SizedBox`, or a redirect loop (same route repeated in the navigator stack).
-3. Check `get_logs` for GoRouter redirect events or `debugPrint` from route guards.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` — look for `ErrorWidget` or empty `SizedBox`.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__get_logs` for redirect events.
 
-#### 3d. State / data issue (wrong data shown, stale UI)
+#### 3d. State / data issue
 
-1. Call `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` to read the current BLoC/Riverpod/Provider state:
-   ```dart
-   context.read<MyBloc>().state.toString()
-   // or for Riverpod:
-   ProviderScope.containerOf(context).read(myProvider).toString()
-   ```
-2. Compare against expected values from the user's description.
-3. Call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` to verify the widget rebuilds are reaching the right subtree.
+1. `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` to read BLoC/Riverpod/Provider state.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` to verify rebuild propagation.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__find_widget` to locate specific widgets showing wrong data.
 
-#### 3e. Accessibility / semantics issue
+#### 3e. Network / API failure
 
-1. Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_semantics_tree` — look for missing labels, incorrect roles, or hidden interactive elements.
-2. Check for `excludeFromSemantics: true` incorrectly applied to interactive widgets.
+1. `mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture` to begin recording.
+2. Reproduce the action that triggers the API call.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__get_http_events` to inspect requests/responses.
+4. `mcp__plugin_flutter_flutter-ultra-runtime__decode_grpc_message` for gRPC payloads.
+5. `mcp__plugin_flutter_flutter-ultra-runtime__stop_http_capture` when done.
+6. For web targets, also check `mcp__plugin_flutter_flutter-ultra-browser__console_logs` and `mcp__plugin_flutter_flutter-ultra-browser__network_requests` for CORS or fetch errors.
 
-### 4. Inspect the widget tree around the problem
+#### 3f. Performance jank
 
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` with the suspected parent widget key or type as anchor.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_details` on a specific widget ID to get its full properties (constraints, size, key, state).
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__find_widget` to locate a specific widget by key or text when the tree is large.
+1. `mcp__plugin_flutter_flutter-ultra-runtime__toggle_perf_overlay` to enable the performance overlay.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` to capture the overlay.
+3. `mcp__plugin_flutter_flutter-ultra-runtime__start_frame_tracking` to begin frame timing capture.
+4. Reproduce the janky interaction.
+5. `mcp__plugin_flutter_flutter-ultra-runtime__get_frame_timing` to read build/raster times.
+6. `mcp__plugin_flutter_flutter-ultra-runtime__stop_frame_tracking`.
+7. `mcp__plugin_flutter_flutter-ultra-runtime__start_rebuild_tracking` to find excessive rebuilds.
+8. `mcp__plugin_flutter_flutter-ultra-runtime__get_rebuild_stats` to identify hot widgets.
+9. `mcp__plugin_flutter_flutter-ultra-runtime__stop_rebuild_tracking`.
+10. `mcp__plugin_flutter_flutter-ultra-runtime__get_memory_usage` and `mcp__plugin_flutter_flutter-ultra-runtime__get_allocation_profile` for memory pressure issues.
 
-### 5. Deeper render inspection
+#### 3g. Accessibility / semantics issue
 
-If layout is the issue and the widget tree alone is not enough:
+1. `mcp__plugin_flutter_flutter-ultra-runtime__dump_semantics_tree` — check for missing labels or roles.
+2. For mobile, `mcp__plugin_flutter_flutter-ultra-native-mobile__dump_a11y_tree` for the OS-level accessibility tree.
 
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — this shows sizes, constraints, and positions for every render object.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__dump_layer_tree` for compositing and repaint boundary issues (useful for performance jank or incorrect clipping).
+#### 3h. Mobile-specific issues
 
-### 6. Evaluate in-app expressions
+1. `mcp__plugin_flutter_flutter-ultra-native-mobile__start_device_logs` to capture platform-level logs.
+2. `mcp__plugin_flutter_flutter-ultra-native-mobile__poll_device_logs` to read logcat/syslog.
+3. `mcp__plugin_flutter_flutter-ultra-native-mobile__stop_device_logs` when done.
 
-Use `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` freely to inspect live objects:
+### 4. Deeper inspection
 
-- Check if a future completed: `myCompleter.isCompleted`
-- Read a stream's last value: `myStreamController.stream` (wrap in a Future)
-- Confirm a service is initialized: `MyService.instance != null`
+- `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — sizes, constraints, positions.
+- `mcp__plugin_flutter_flutter-ultra-runtime__dump_layer_tree` — compositing, repaint boundaries.
+- `mcp__plugin_flutter_flutter-ultra-runtime__find_widget` to locate a specific widget by key or text.
+- `mcp__plugin_flutter_flutter-ultra-runtime__count_widget_tree_nodes` to gauge tree complexity.
+- `mcp__plugin_flutter_flutter-ultra-runtime__start_tail_logs` + `mcp__plugin_flutter_flutter-ultra-runtime__poll_tail_logs` for live log streaming during reproduction.
 
-### 7. Test the fix
+### 5. Evaluate in-app expressions
 
-Once the root cause is identified and a code fix is proposed (or applied at user request):
+`mcp__plugin_flutter_flutter-ultra-runtime__evaluate` freely to inspect live objects:
 
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload` to apply changes without losing app state.
-- Repeat step 3 (appropriate branch) to confirm the error is gone.
-- Call `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` for a before/after comparison.
-- If hot reload is not sufficient (e.g. `initState` changed), call `mcp__plugin_flutter_flutter-ultra-runtime__hot_restart`.
+- `myCompleter.isCompleted`
+- `context.read<MyBloc>().state.toString()`
+- `ProviderScope.containerOf(context).read(myProvider).toString()`
 
-## Common patterns and their diagnosis
+### 6. Test the fix
 
-| Symptom                                    | First tool                                | What to look for                                                     |
-| ------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------- |
-| `Null check operator used on a null value` | `get_runtime_errors` + `evaluate`         | Null state before async load completes; missing null guard           |
-| `RenderFlex overflowed by N pixels`        | `dump_render_tree` + `toggle_debug_paint` | Column/Row child without `Expanded`; fixed height container          |
-| Blank white screen                         | `get_widget_tree` + `evaluate` (route)    | `ErrorWidget` at root; redirect loop; unhandled exception in build   |
-| `setState called after dispose`            | `get_runtime_errors` + `get_logs`         | Async callback holding stale `BuildContext`; missing `mounted` check |
-| Navigation not working                     | `evaluate` (GoRouter path) + `get_logs`   | Route guard redirecting; wrong named route; deep link not registered |
-| Infinite loading spinner                   | `evaluate` (state) + `get_logs`           | Future never completing; stream not emitting; provider not notifying |
-| Wrong data displayed                       | `evaluate` (BLoC/provider state)          | Stale state; `context.watch` vs `context.read` misuse                |
+1. Apply the code change.
+2. `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload` (or `mcp__plugin_flutter_flutter-ultra-runtime__hot_restart` if `initState` changed).
+3. Re-run the appropriate triage step to confirm the error is gone.
+4. `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` for before/after comparison.
+
+## Common patterns
+
+| Symptom | First tool | What to look for |
+|---------|-----------|-----------------|
+| `Null check operator used on null value` | `get_runtime_errors` + `evaluate` | Null state before async load completes |
+| `RenderFlex overflowed by N pixels` | `dump_render_tree` + `toggle_debug_paint` | Missing `Expanded`/`Flexible` |
+| Blank white screen | `get_widget_tree` + `evaluate` (route) | `ErrorWidget` at root; redirect loop |
+| `setState called after dispose` | `get_runtime_errors` + `get_logs` | Async callback with stale `BuildContext` |
+| Navigation not working | `evaluate` (GoRouter path) + `get_logs` | Route guard redirecting |
+| Infinite loading spinner | `evaluate` (state) + `get_logs` | Future never completing |
+| Wrong data displayed | `evaluate` (BLoC/provider state) | Stale state; `watch` vs `read` misuse |
+| API returning errors | `start_http_capture` + `get_http_events` | 401/403/500 responses; CORS blocks |
+| UI jank during scrolling | `start_frame_tracking` + `get_frame_timing` | Frames exceeding 16ms budget |
+| Memory growing unbounded | `get_memory_usage` + `get_allocation_profile` | Leaked listeners or controllers |
 
 ## Output format
 
-After triage, produce:
-
 1. **Root cause**: one sentence identifying the exact problem.
-2. **Evidence**: which tool output revealed it (stack trace line, widget tree excerpt, render tree constraint).
-3. **Proposed fix**: specific code change with file and line reference (do not edit unless asked).
-4. **Screenshots**: before state screenshot path; after-fix screenshot path if hot_reload was applied.
+2. **Evidence**: which tool output revealed it.
+3. **Proposed fix**: specific code change with file:line reference (do not edit unless asked).
+4. **Screenshots**: before/after paths.
 
 ## Example
 
 ```
-User: "The invoices list is showing a blank white screen after I merged the new filter PR."
+User: "The invoices list shows a blank white screen after merging the filter PR."
 
-1. discover_sessions → attach(sessionId: "flutter-1")
-2. screenshot → blank screen confirmed
-3. get_runtime_errors → "Null check operator used on null value at invoice_list_bloc.dart:47"
-4. evaluate: context.read<InvoiceListBloc>().state.toString() → "InvoiceListInitial"
-   (bloc never emitted data — the filter query returned null instead of empty list)
-5. get_widget_tree → root is ErrorWidget wrapping the list scaffold
-6. Root cause: InvoiceListBloc.mapEventToState at line 47 calls `event.filter!` but
-   filter is null on first load after the PR introduced a nullable field.
-7. Proposed fix: change `event.filter!` to `event.filter ?? const InvoiceFilter()` at
-   invoice_list_bloc.dart:47.
-8. hot_reload → screenshot → list loads correctly.
+1. discover_sessions -> attach(sessionId: "flutter-1")
+2. screenshot -> blank screen confirmed
+3. get_runtime_errors -> "Null check operator on null value at invoice_list_bloc.dart:47"
+4. evaluate: context.read<InvoiceListBloc>().state -> "InvoiceListInitial"
+5. get_widget_tree -> root is ErrorWidget wrapping the list scaffold
+6. start_http_capture -> get_http_events -> GET /api/invoices returned 200 with empty filter
+7. Root cause: line 47 calls `event.filter!` but filter is null on first load
+8. Proposed fix: `event.filter ?? const InvoiceFilter()` at line 47
+9. hot_reload -> screenshot -> list loads correctly
 ```
 
 ## See also
 
-- Sibling skill: `flutter-drive` for driving interactive flows before/after a fix
-- `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors` — unhandled exception log
-- `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree` — full render object tree with constraints
-- `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` — arbitrary Dart expression in live app context
+- `flutter-drive` — drive interactive flows to reproduce the bug
+- `flutter-test` — run the test suite after applying a fix

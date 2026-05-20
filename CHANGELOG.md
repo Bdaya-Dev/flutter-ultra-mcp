@@ -1,3 +1,17 @@
+# [1.10.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.4...v1.10.0) (2026-05-20)
+
+
+### Bug Fixes
+
+* **browser:** use script file for playwright-core SessionStart hook ([#86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/86)) ([7d9d331](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/7d9d331312936071e6bafef27254ac2b7500bbe5))
+* **docs:** correct binding initialization examples ([57dd74d](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/57dd74d6f3284ab75a9f3fc48cbf87b91f06056e))
+* **runtime:** fallback to ultra.* extensions on web when inspector fails ([#86](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/86)) ([87f3e82](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/87f3e82fd75b94a793122edd16038e2e6d525ff5))
+
+
+### Features
+
+* **runtime:** auto-allocate CDP port for web targets in launch_app ([4ece896](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/4ece896ae9921357bbf1eebafac83131adc3ed4a))
+
 ## [1.9.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.3...v1.9.4) (2026-05-20)
 
 

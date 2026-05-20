@@ -32,6 +32,7 @@ export async function getWebPerfMetrics(
       const navEntries = await rec.page.evaluate(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const entries = (performance as any).getEntriesByType('navigation') as any[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return entries.map((nav: any) => ({
           name: nav.name,
           startTime: nav.startTime,

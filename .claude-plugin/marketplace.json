@@ -10,7 +10,7 @@
     {
       "name": "flutter",
       "description": "Durable cross-platform Flutter automation via 8 specialized MCP servers, in-app mixin binding, and an optional DevTools panel. Replaces marionette_mcp and the official dart mcp-server for Claude Code.",
-      "version": "1.10.5",
+      "version": "1.10.6",
       "author": {
         "name": "Bdaya-Dev",
         "url": "https://github.com/Bdaya-Dev"
@@ -23,5 +23,5 @@
       "tags": ["flutter", "dart", "mcp", "testing", "automation", "patrol", "cross-platform"]
     }
   ],
-  "version": "1.10.5"
+  "version": "1.10.6"
 }

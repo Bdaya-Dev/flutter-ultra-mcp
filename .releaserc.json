@@ -12,7 +12,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && node -e \"for(const f of ['.claude-plugin/plugin.json','.claude-plugin/marketplace.json']){const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='${nextRelease.version}';if(j.plugins)j.plugins.forEach(p=>p.version='${nextRelease.version}');require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\\n')}\" && npx prettier --write .claude-plugin/plugin.json .claude-plugin/marketplace.json && git add -f packages/*/dist/bin.cjs",
+        "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version --allow-same-version && node -e \"for(const f of ['.claude-plugin/plugin.json','.claude-plugin/marketplace.json']){const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='${nextRelease.version}';if(j.plugins)j.plugins.forEach(p=>p.version='${nextRelease.version}');require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\\n')};for(const f of ['dart/ultra_flutter/pubspec.yaml','dart/ultra_flutter_devtools/pubspec.yaml']){let y=require('fs').readFileSync(f,'utf8');y=y.replace(/^version:\\s*.+$/m,'version: ${nextRelease.version}');require('fs').writeFileSync(f,y)}\" && npx prettier --write .claude-plugin/plugin.json .claude-plugin/marketplace.json && git add -f packages/*/dist/bin.cjs",
         "publishCmd": "npm publish --access public"
       }
     ],
@@ -24,7 +24,9 @@
           "CHANGELOG.md",
           "packages/*/dist/bin.cjs",
           ".claude-plugin/plugin.json",
-          ".claude-plugin/marketplace.json"
+          ".claude-plugin/marketplace.json",
+          "dart/ultra_flutter/pubspec.yaml",
+          "dart/ultra_flutter_devtools/pubspec.yaml"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

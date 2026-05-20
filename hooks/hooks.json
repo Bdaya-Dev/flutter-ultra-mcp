@@ -7,11 +7,11 @@
             "type": "command",
             "command": "node",
             "args": [
-              "-e",
-              "const{existsSync:e,mkdirSync:m,copyFileSync:c}=require('fs'),{execSync:x}=require('child_process'),r=process.env.CLAUDE_PLUGIN_ROOT,d=process.env.CLAUDE_PLUGIN_DATA;if(!r||!d)process.exit(0);const s=r+'/package.json',t=d+'/package.json';try{require.resolve('playwright-core',{paths:[d+'/node_modules']})}catch{if(!e(d))m(d,{recursive:true});c(s,t);x('npm install --no-save --ignore-scripts playwright-core',{cwd:d,stdio:'inherit'})}"
+              "${CLAUDE_PLUGIN_ROOT}/scripts/ensure-playwright.js",
+              "${CLAUDE_PLUGIN_DATA}"
             ],
             "timeout": 120,
-            "statusMessage": "Installing playwright-core..."
+            "statusMessage": "Checking playwright-core..."
           }
         ]
       }

@@ -1,3 +1,10 @@
+## [1.11.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.2...v1.11.3) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ci:** add defensive checks in ensure-playwright e2e for CI timing ([47668f0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/47668f043d78e2b06961de5e5599f2eff134b318))
+
 ## [1.11.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.1...v1.11.2) (2026-05-20)
 
 

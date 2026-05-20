@@ -38,6 +38,8 @@ jobs:
         working-directory: packages/flutter-ultra-native-desktop/sidecars/macos-swift
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Show Swift toolchain
         run: |

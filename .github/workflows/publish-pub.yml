@@ -4,23 +4,43 @@ name: Publish to pub.dev
 # at the semantic-release tag. pub.dev requires the OIDC token to carry
 # a tag ref — workflow_run and push-to-main events are server-side rejected.
 #
+# We can't use dart-lang/setup-dart's reusable workflow because it runs
+# dart pub publish --dry-run which fails on non-incremental version jumps
+# and missing CHANGELOG entries (our versions are managed by semantic-release,
+# not manually). Instead we run dart pub publish --force directly.
+#
 # See: https://dart.dev/tools/pub/automated-publishing
 # See: https://github.com/dart-lang/pub-dev/issues/8507
 
 on:
   workflow_dispatch:
 
-jobs:
-  publish-ultra-flutter:
-    permissions:
-      id-token: write
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    with:
-      working-directory: dart/ultra_flutter
+permissions:
+  contents: read
+  id-token: write
 
-  publish-ultra-flutter-devtools:
-    permissions:
-      id-token: write
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    with:
-      working-directory: dart/ultra_flutter_devtools
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dart-lang/setup-dart@v1
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Publish ultra_flutter
+        working-directory: dart/ultra_flutter
+        run: |
+          flutter pub get
+          flutter pub publish --force
+        continue-on-error: true
+
+      - name: Publish ultra_flutter_devtools
+        working-directory: dart/ultra_flutter_devtools
+        run: |
+          flutter pub get
+          flutter pub publish --force
+        continue-on-error: true

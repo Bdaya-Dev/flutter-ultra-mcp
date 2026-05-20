@@ -48,6 +48,7 @@ export const LaunchJobSchema = z
     stage: LaunchStageSchema,
     vmServiceUri: z.string().optional(),
     appId: z.string().optional(),
+    chromeCdpPort: z.number().int().optional(),
     startedAt: z.number().int(),
     updatedAt: z.number().int(),
     exitCode: z.number().int().optional(),
@@ -251,12 +252,34 @@ export function createLaunchService(opts: {
       : null;
     const args = buildCliArgs(input, vscodeCfg);
 
+    // For web targets, allocate a fixed CDP port so Playwright can attach
+    // via connect_over_cdp without manual port discovery.
+    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
+    let chromeCdpPort: number | undefined;
+    if (isWebDevice) {
+      const hasDebugPort = args.some((a) => /remote-debugging-port/i.test(a));
+      if (!hasDebugPort) {
+        const { createServer } = await import('node:net');
+        chromeCdpPort = await new Promise<number>((res, rej) => {
+          const srv = createServer();
+          srv.listen(0, '127.0.0.1', () => {
+            const addr = srv.address();
+            const port = typeof addr === 'object' && addr ? addr.port : 0;
+            srv.close(() => res(port));
+          });
+          srv.on('error', rej);
+        });
+        args.push(`--web-browser-flag=--remote-debugging-port=${chromeCdpPort}`);
+      }
+    }
+
     const initial: LaunchJob = {
       schemaVersion: 1,
       jobId,
       target: input.target,
       device: input.device,
       ...(input.flavor !== undefined ? { flavor: input.flavor } : {}),
+      ...(chromeCdpPort !== undefined ? { chromeCdpPort } : {}),
       stage: 'pending',
       startedAt: Date.now(),
       updatedAt: Date.now(),
@@ -265,7 +288,6 @@ export function createLaunchService(opts: {
     await writeJob(initial);
 
     // Pre-launch: free the web port if an orphan process holds it (#74).
-    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
     if (isWebDevice && input.webPort !== undefined) {
       const freed = await freePort(input.webPort, (msg) => logger.info(msg));
       if (freed.length > 0) {

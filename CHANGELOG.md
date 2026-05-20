@@ -1,3 +1,10 @@
+## [1.11.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.3...v1.11.4) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ultra_flutter:** change binding guard from kDebugMode to !kReleaseMode ([3a020d3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/3a020d388690d88dcbb8c5762ef136b667a27784)), closes [flutter/flutter#176532](https://github.com/flutter/flutter/issues/176532)
+
 ## [1.11.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.2...v1.11.3) (2026-05-20)
 
 

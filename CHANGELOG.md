@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.0...v1.11.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* **runtime:** stop injecting --remote-debugging-port to avoid Chrome port mismatch ([02b8e11](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/02b8e11c1bf1fcbc55ccfc57bab13b1746edbfb6))
+
 # [1.11.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.9...v1.11.0) (2026-05-20)
 
 

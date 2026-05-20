@@ -1,3 +1,10 @@
+## [1.10.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.6...v1.10.7) (2026-05-20)
+
+
+### Bug Fixes
+
+* **release:** replace reusable workflow with direct flutter pub publish ([0751b73](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/0751b736253a0120ceae17d48d81f19a2a7c1548))
+
 ## [1.10.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.5...v1.10.6) (2026-05-20)
 
 

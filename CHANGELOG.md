@@ -1,3 +1,10 @@
+## [1.10.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.3...v1.10.4) (2026-05-20)
+
+
+### Bug Fixes
+
+* **release:** bump pubspec.yaml versions in semantic-release prepareCmd ([25b8b89](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/25b8b89bfe601830f7b6f4be292e8fe4ac238501))
+
 ## [1.10.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.2...v1.10.3) (2026-05-20)
 
 

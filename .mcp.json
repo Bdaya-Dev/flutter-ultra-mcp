@@ -27,7 +27,8 @@
       "args": ["${CLAUDE_PLUGIN_ROOT}/packages/flutter-ultra-browser/dist/bin.cjs"],
       "env": {
         "PLAYWRIGHT_BROWSERS_PATH": "${CLAUDE_PLUGIN_DATA}/browsers",
-        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state"
+        "FLUTTER_ULTRA_STATE_DIR": "${CLAUDE_PLUGIN_DATA}/state",
+        "NODE_PATH": "${CLAUDE_PLUGIN_DATA}/node_modules"
       }
     },
     "flutter-ultra-native-mobile": {

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "flutter",
-  "version": "1.10.4",
+  "version": "1.10.5",
   "description": "Durable cross-platform Flutter automation via 8 specialized MCP servers, in-app mixin binding, and an optional DevTools panel. Replaces marionette_mcp and the official dart mcp-server for Claude Code.",
   "author": {
     "name": "Bdaya-Dev",

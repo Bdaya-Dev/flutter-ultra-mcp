@@ -1,3 +1,10 @@
+## [1.10.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.4...v1.10.5) (2026-05-20)
+
+
+### Bug Fixes
+
+* **release:** pub.dev publish via workflow_dispatch with tag ref ([5eba165](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/5eba165e16e9b58ce243d7dc4d834050d335f991)), closes [dart-lang/pub-dev#8507](https://github.com/dart-lang/pub-dev/issues/8507)
+
 ## [1.10.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.3...v1.10.4) (2026-05-20)
 
 

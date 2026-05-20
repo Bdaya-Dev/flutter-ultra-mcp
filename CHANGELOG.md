@@ -1,3 +1,10 @@
+## [1.11.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.5...v1.11.6) (2026-05-20)
+
+
+### Bug Fixes
+
+* **runtime:** three real-world painpoints from production Flutter web usage ([bb65f9e](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/bb65f9e17348ab4d955edf86fc5145975df1a65d))
+
 ## [1.11.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.4...v1.11.5) (2026-05-20)
 
 

@@ -15,6 +15,32 @@ import { fetchSummaryTree, findInTree, summarizeNode, walkTree } from '../widget
 
 const GROUP_NAME = 'flutter-ultra-runtime';
 
+/**
+ * Try an inspector extension, fall back to an ultra.* extension on failure
+ * (typically on web where DWDS may not proxy inspector extensions).
+ */
+async function withUltraFallback<T>(
+  inspectorCall: () => Promise<T>,
+  ultraFallback?: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await inspectorCall();
+  } catch (err) {
+    if (ultraFallback) {
+      return await ultraFallback();
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/method not found|not available|unimplemented/i.test(msg)) {
+      throw new InvalidToolInputError(
+        `Inspector extension failed (common on web/DWDS targets). ` +
+          `Try using call_service_extension with an ext.flutter.ultra.* extension instead. ` +
+          `Original error: ${msg}`,
+      );
+    }
+    throw err;
+  }
+}
+
 export function registerInspectTools(opts: {
   server: FlutterUltraServer;
   sessions: SessionRegistry;
@@ -56,11 +82,28 @@ export function registerInspectTools(opts: {
     async (args) => {
       const { isolateId, client, release } = await resolveIsolate(args.sessionId);
       try {
-        const tree = await client.callServiceExtension('ext.flutter.inspector.getRootWidgetTree', {
-          isolateId,
-          args: { groupName: args.groupName },
-        });
-        return { tree };
+        return await withUltraFallback(
+          async () => {
+            const tree = await client.callServiceExtension(
+              'ext.flutter.inspector.getRootWidgetTree',
+              { isolateId, args: { groupName: args.groupName } },
+            );
+            return { tree };
+          },
+          async () => {
+            const result = await client.callServiceExtension(
+              'ext.flutter.ultra.interactiveElements',
+              { isolateId, args: {} },
+            );
+            return {
+              tree: result,
+              _fallback: 'ultra.interactiveElements',
+              _note:
+                'Inspector widget tree unavailable on this target (web/DWDS). ' +
+                'Returning interactive elements instead. For full tree, use a native target.',
+            };
+          },
+        );
       } finally {
         await release();
       }
@@ -237,28 +280,40 @@ export function registerInspectTools(opts: {
     async (args) => {
       const { isolateId, client, release } = await resolveIsolate(args.sessionId);
       try {
-        // The inspector's screenshot extension targets the inspector's
-        // currently selected widget; pass `id: null` (the empty string) to
-        // capture the root.
-        const root = await fetchSummaryTree(client, isolateId);
-        const rootId = root?.valueId ?? '';
-        const result = await client.callServiceExtension('ext.flutter.inspector.screenshot', {
-          isolateId,
-          args: {
-            id: rootId,
-            width: String(args.width),
-            height: String(args.height),
-            margin: String(args.margin),
-            maxPixelRatio: String(args.maxPixelRatio),
-            debugPaint: 'false',
+        const b64 = await withUltraFallback(
+          async () => {
+            const root = await fetchSummaryTree(client, isolateId);
+            const rootId = root?.valueId ?? '';
+            const result = await client.callServiceExtension('ext.flutter.inspector.screenshot', {
+              isolateId,
+              args: {
+                id: rootId,
+                width: String(args.width),
+                height: String(args.height),
+                margin: String(args.margin),
+                maxPixelRatio: String(args.maxPixelRatio),
+                debugPaint: 'false',
+              },
+            });
+            const data = extractScreenshotB64(result);
+            if (!data || data.length < 200) {
+              throw new Error(`Inspector returned empty screenshot (${data?.length ?? 0} bytes)`);
+            }
+            return data;
           },
-        });
-        const b64 = extractScreenshotB64(result);
-        if (!b64 || b64.length < 200) {
-          throw new InvalidToolInputError(
-            `Inspector returned an empty / too-small screenshot (got ${b64?.length ?? 0} bytes). Is the app on a visible frame?`,
-          );
-        }
+          async () => {
+            const result = await client.callServiceExtension('ext.flutter.ultra.takeScreenshots', {
+              isolateId,
+              args: {},
+            });
+            const screenshots = (result as { screenshots?: Array<{ png?: string }> }).screenshots;
+            const data = screenshots?.[0]?.png;
+            if (!data || data.length < 200) {
+              throw new InvalidToolInputError('ultra.takeScreenshots returned empty result.');
+            }
+            return data;
+          },
+        );
         return {
           content: [{ type: 'image', data: b64, mimeType: 'image/png' }],
           structuredContent: { sizeBytes: Buffer.from(b64, 'base64').length },

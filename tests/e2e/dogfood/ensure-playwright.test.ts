@@ -136,7 +136,7 @@ describe('ensure-playwright.js + browser server', () => {
       expect(initResp!.id).toBe(1);
       expect(initResp!.error).toBeUndefined();
 
-      // Send initialized notification
+      // Send initialized notification then wait briefly for server to process
       proc.stdin!.write(
         JSON.stringify({
           jsonrpc: '2.0',
@@ -144,6 +144,7 @@ describe('ensure-playwright.js + browser server', () => {
           params: {},
         }) + '\n',
       );
+      await new Promise((r) => setTimeout(r, 500));
 
       // List tools — should include browser tools that require playwright-core
       proc.stdin!.write(
@@ -158,8 +159,11 @@ describe('ensure-playwright.js + browser server', () => {
       const [listResp] = await collectResponses(proc, 1, 10_000);
       expect(listResp!.error).toBeUndefined();
 
-      const tools = (listResp!.result as { tools: Array<{ name: string }> }).tools;
-      const names = tools.map((t) => t.name);
+      const result = listResp!.result as { tools?: Array<{ name: string }> } | undefined;
+      const tools = result?.tools;
+      expect(tools).toBeDefined();
+      expect(Array.isArray(tools)).toBe(true);
+      const names = tools!.map((t) => t.name);
       expect(names).toContain('launch_browser');
       expect(names).toContain('screenshot');
       expect(names).toContain('connect_over_cdp');

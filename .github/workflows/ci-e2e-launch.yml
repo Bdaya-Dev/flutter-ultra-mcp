@@ -1,0 +1,49 @@
+name: E2E Launch Lifecycle
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-launch-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  launch-lifecycle:
+    name: launch_app lifecycle (web-server + chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Flutter pub get (counter-app)
+        working-directory: examples/counter-app
+        run: flutter pub get
+
+      - name: Run launch lifecycle E2E tests
+        run: npx vitest run tests/e2e/launch/launch-lifecycle.test.ts --reporter=verbose
+        env:
+          CI: 'true'
+        timeout-minutes: 10

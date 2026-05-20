@@ -1,3 +1,10 @@
+## [1.10.8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.7...v1.10.8) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ci:** apply audit findings — timeouts, permissions, caching, persist-credentials ([26f8c3a](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/26f8c3a8f05cfe8fe9c3a510938ec75755ffcd02))
+
 ## [1.10.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.6...v1.10.7) (2026-05-20)
 
 

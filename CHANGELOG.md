@@ -1,3 +1,10 @@
+## [1.10.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.5...v1.10.6) (2026-05-20)
+
+
+### Bug Fixes
+
+* **release:** add actions:write permission for workflow_dispatch trigger ([eb1f8a1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/eb1f8a130fd23998ed12a48157e293bd8e8b5603))
+
 ## [1.10.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.4...v1.10.5) (2026-05-20)
 
 

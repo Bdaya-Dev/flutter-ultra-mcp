@@ -77,7 +77,6 @@ export function registerLifecycleTools(opts: {
       let uri = args.uri;
       let rawVmUri: string | undefined;
       if (!/^wss?:\/\//.test(uri)) {
-        // Allow http:// raw VM URLs; convert + probe DDS redirect first.
         const found = await discover({ logger: server.logger });
         const match = found.find((s) => s.rawVmUri === args.uri || s.uri === args.uri);
         if (match) {
@@ -97,7 +96,42 @@ export function registerLifecycleTools(opts: {
         ...(args.device !== undefined ? { device: args.device } : {}),
         ...(args.appName !== undefined ? { appName: args.appName } : {}),
       });
-      return { sessionId: session.id, session };
+
+      let ultraBinding: { detected: boolean; version?: string; message?: string } = {
+        detected: false,
+        message:
+          'UltraFlutterBinding not detected. Some tools (screenshot fallback, interactiveElements) ' +
+          'may not work on web. See the setup skill for binding configuration.',
+      };
+      try {
+        const { client, release } = await sessions.acquireClient(session.id);
+        try {
+          const vm = await client.getVM();
+          const isolateId = vm.isolates[0]?.id;
+          if (isolateId) {
+            const versionResult = await Promise.race([
+              client.callServiceExtension('ext.flutter.ultra.getVersion', {
+                isolateId,
+                args: {},
+              }),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+            ]);
+            if (versionResult && typeof versionResult === 'object') {
+              const ver = (versionResult as Record<string, unknown>)['version'];
+              ultraBinding = {
+                detected: true,
+                ...(typeof ver === 'string' ? { version: ver } : {}),
+              };
+            }
+          }
+        } finally {
+          await release();
+        }
+      } catch {
+        // Probe failure is non-fatal — keep the default "not detected" response.
+      }
+
+      return { sessionId: session.id, session, ultraBinding };
     },
   );
 

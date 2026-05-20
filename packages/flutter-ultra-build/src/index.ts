@@ -44,6 +44,7 @@ import { register as registerL10n } from './tools/l10n.js';
 import { register as registerAssets } from './tools/assets.js';
 import { register as registerWebValidators } from './tools/webValidators.js';
 import { register as registerRecording } from './tools/recording.js';
+import { register as registerPackages } from './tools/packages.js';
 
 export { SERVER_NAME, SERVER_VERSION };
 
@@ -69,6 +70,7 @@ export function createServer(): McpServer {
   registerAssets(server);
   registerWebValidators(server);
   registerRecording(server);
+  registerPackages(server);
 
   return server;
 }

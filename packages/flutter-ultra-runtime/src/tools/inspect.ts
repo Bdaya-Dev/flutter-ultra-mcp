@@ -265,13 +265,23 @@ export function registerInspectTools(opts: {
     {
       name: 'screenshot',
       description:
-        'Capture a PNG of the current frame via ext.flutter.inspector.screenshot. Returns the image as base64 + an MCP image content block.',
+        'Capture a PNG of the current frame. Tries ext.flutter.inspector.screenshot first, ' +
+        'falls back to ext.flutter.ultra.takeScreenshots, then to CDP Page.captureScreenshot on web. ' +
+        'Returns the image as base64 + an MCP image content block.',
       inputShape: {
         sessionId: SessionIdSchema,
         width: z.number().int().positive().default(800),
         height: z.number().int().positive().default(600),
         margin: z.number().nonnegative().default(0),
         maxPixelRatio: z.number().positive().default(2),
+        chromeCdpPort: z
+          .number()
+          .int()
+          .optional()
+          .describe(
+            'Chrome DevTools Protocol port for CDP screenshot fallback on web. ' +
+            'Auto-populated from launch_app jobs; pass manually for externally-launched Chrome.',
+          ),
       },
       timeoutClass: 'instant',
       ceilingMs: 10_000,
@@ -316,8 +326,30 @@ export function registerInspectTools(opts: {
         );
         return {
           content: [{ type: 'image', data: b64, mimeType: 'image/png' }],
-          structuredContent: { sizeBytes: Buffer.from(b64, 'base64').length },
+          structuredContent: { sizeBytes: Buffer.from(b64, 'base64').length, source: 'vm-service' },
         };
+      } catch (vmErr) {
+        // VM-service screenshot failed — try CDP fallback if port is available.
+        if (args.chromeCdpPort) {
+          try {
+            const cdpB64 = await cdpScreenshot(args.chromeCdpPort);
+            return {
+              content: [{ type: 'image', data: cdpB64, mimeType: 'image/png' }],
+              structuredContent: {
+                sizeBytes: Buffer.from(cdpB64, 'base64').length,
+                source: 'cdp',
+                _note: 'Captured via CDP Page.captureScreenshot (inspector extensions unavailable on this target).',
+              },
+            };
+          } catch (cdpErr) {
+            throw new InvalidToolInputError(
+              `All screenshot methods failed.\n` +
+              `VM service: ${vmErr instanceof Error ? vmErr.message : String(vmErr)}\n` +
+              `CDP: ${cdpErr instanceof Error ? cdpErr.message : String(cdpErr)}`,
+            );
+          }
+        }
+        throw vmErr;
       } finally {
         await release();
       }
@@ -506,6 +538,70 @@ export function registerInspectTools(opts: {
       }
     },
   );
+}
+
+async function cdpScreenshot(port: number): Promise<string> {
+  const listResp = await fetch(`http://127.0.0.1:${port}/json`);
+  const targets = (await listResp.json()) as Array<{
+    type: string;
+    webSocketDebuggerUrl?: string;
+  }>;
+  const page = targets.find((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+  if (!page?.webSocketDebuggerUrl) {
+    throw new Error(`No CDP page target found on port ${port}`);
+  }
+
+  const { WebSocket } = await import('ws');
+  return new Promise<string>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      ws.close();
+      reject(new Error('CDP screenshot timed out after 5s'));
+    }, 5_000);
+
+    const ws = new WebSocket(page.webSocketDebuggerUrl!);
+
+    ws.on('error', (err: Error) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+
+    ws.on('open', () => {
+      ws.send(
+        JSON.stringify({
+          id: 1,
+          method: 'Page.captureScreenshot',
+          params: { format: 'png' },
+        }),
+      );
+    });
+
+    ws.on('message', (data: Buffer | string) => {
+      clearTimeout(timer);
+      try {
+        const msg = JSON.parse(data.toString()) as {
+          id?: number;
+          result?: { data?: string };
+          error?: { message?: string };
+        };
+        if (msg.error) {
+          ws.close();
+          reject(new Error(msg.error.message ?? 'CDP screenshot failed'));
+          return;
+        }
+        const b64 = msg.result?.data;
+        if (!b64 || b64.length < 200) {
+          ws.close();
+          reject(new Error('CDP returned empty screenshot'));
+          return;
+        }
+        ws.close();
+        resolve(b64);
+      } catch (err) {
+        ws.close();
+        reject(err);
+      }
+    });
+  });
 }
 
 function extractScreenshotB64(result: unknown): string | undefined {

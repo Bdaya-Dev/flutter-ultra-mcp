@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     testTimeout: 10_000,
+    pool: 'threads',
     reporters: ['default'],
     coverage: {
       include: ['src/**/*.ts'],

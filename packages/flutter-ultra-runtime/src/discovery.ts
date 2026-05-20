@@ -27,6 +27,8 @@ export interface DiscoveredSession {
   pid?: number;
   device?: string;
   chromeCdpPort?: number;
+  livenessChecked?: boolean;
+  isolateCount?: number;
 }
 
 export interface DiscoveryOptions {
@@ -74,10 +76,19 @@ export async function discover(options: DiscoveryOptions): Promise<DiscoveredSes
         if (!resolved) continue;
         if (seen.has(resolved.wsUri)) continue;
         seen.add(resolved.wsUri);
+
+        const liveness = await probeVmLiveness(resolved.wsUri, probeTimeout);
+        if (!liveness.alive) {
+          log.debug('candidate failed liveness probe', { url: resolved.wsUri });
+          continue;
+        }
+
         const session: DiscoveredSession = {
           uri: resolved.wsUri,
           source: 'process-scan',
           pid: proc.pid,
+          livenessChecked: true,
+          isolateCount: liveness.isolateCount,
           ...(cand.url !== resolved.wsUri ? { rawVmUri: cand.url } : {}),
         };
         const chromeCdp = findChromeCdpPort(procs);
@@ -165,6 +176,52 @@ async function tryDdsRedirect(url: string, timeoutMs: number): Promise<string | 
   } finally {
     clearTimeout(timer);
   }
+}
+
+interface LivenessResult {
+  alive: boolean;
+  isolateCount: number;
+}
+
+async function probeVmLiveness(wsUri: string, timeoutMs: number): Promise<LivenessResult> {
+  const { WebSocket } = await import('ws');
+  return new Promise<LivenessResult>((resolve) => {
+    const timer = setTimeout(() => {
+      ws.close();
+      resolve({ alive: false, isolateCount: 0 });
+    }, timeoutMs);
+
+    const ws = new WebSocket(wsUri);
+
+    ws.on('error', () => {
+      clearTimeout(timer);
+      ws.close();
+      resolve({ alive: false, isolateCount: 0 });
+    });
+
+    ws.on('open', () => {
+      ws.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getVM', params: {} }));
+    });
+
+    ws.on('message', (data: Buffer | string) => {
+      clearTimeout(timer);
+      try {
+        const msg = JSON.parse(data.toString()) as {
+          result?: { isolates?: Array<{ id: string }> };
+        };
+        const isolates = msg.result?.isolates ?? [];
+        ws.close();
+        resolve({ alive: isolates.length > 0, isolateCount: isolates.length });
+      } catch {
+        ws.close();
+        resolve({ alive: false, isolateCount: 0 });
+      }
+    });
+
+    ws.on('close', () => {
+      clearTimeout(timer);
+    });
+  });
 }
 
 export function httpToWs(httpUri: string): string {

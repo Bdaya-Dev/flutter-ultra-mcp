@@ -36,7 +36,7 @@ export function register(server: McpServer): void {
         .optional()
         .describe('Relative paths within the project to analyze. Default: project root.'),
     },
-    watchdog: { name: 'analyze', ceilingMs: 5 * 60_000, toolClass: 'long' },
+    watchdog: { name: 'analyze', ceilingMs: 10 * 60_000, toolClass: 'long' },
     handler: async ({ root, targets }, ctx) => {
       try {
         const proj = loadProject(root);
@@ -47,7 +47,7 @@ export function register(server: McpServer): void {
           cmd: cli,
           args,
           cwd: proj.root,
-          timeoutMs: 5 * 60_000,
+          timeoutMs: 10 * 60_000,
           signal: ctx.signal,
           onStdoutLine: () => {
             filesSeen++;
@@ -91,7 +91,7 @@ export function register(server: McpServer): void {
         .default(false)
         .describe('Pass --set-exit-if-changed; useful for CI parity checks.'),
     },
-    watchdog: { name: 'format', ceilingMs: 5 * 60_000, toolClass: 'long' },
+    watchdog: { name: 'format', ceilingMs: 10 * 60_000, toolClass: 'long' },
     handler: async ({ root, targets, setExitIfChanged }, ctx) => {
       try {
         const proj = loadProject(root);
@@ -107,7 +107,7 @@ export function register(server: McpServer): void {
           cmd: cli,
           args,
           cwd: proj.root,
-          timeoutMs: 5 * 60_000,
+          timeoutMs: 10 * 60_000,
           signal: ctx.signal,
         });
         // `dart format --output show` prints a summary line like `Formatted 24 files (3 changed) in N.Ns.`

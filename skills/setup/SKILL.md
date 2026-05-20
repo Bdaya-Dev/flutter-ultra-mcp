@@ -156,6 +156,34 @@ User: "Set up flutter-ultra on my app."
 -> "Setup complete. 2 files changed. Smoke screenshot saved."
 ```
 
+## Known issues
+
+### Sentry zone mismatch warning on web
+
+When using the composed binding pattern with Sentry (`SentryWidgetsBindingMixin` + `UltraFlutterBinding`), Flutter may emit a "Zone mismatch" assertion warning on web. This happens because Sentry wraps `appRunner` in `runZonedGuarded`, and the binding is created in a different zone than where `runApp` executes.
+
+**This warning is non-fatal** — the app works correctly. To minimize it, create the binding inside Sentry's zone guard:
+
+```dart
+Future<void> main() async {
+  await SentryFlutter.init(
+    (options) { options.dsn = '...'; },
+    appRunner: () {
+      if (kDebugMode) {
+        AppBinding();
+      } else {
+        WidgetsFlutterBinding.ensureInitialized();
+      }
+      runApp(const MyApp());
+    },
+  );
+}
+```
+
+### Inspector extensions unavailable on web (DWDS)
+
+`ext.flutter.inspector.screenshot` and `ext.flutter.inspector.getRootWidgetSummaryTree` fail on web targets with `(-32000) Server error`. This is a known Flutter DWDS limitation ([flutter/flutter#97898](https://github.com/flutter/flutter/issues/97898)). The runtime server automatically falls back to `ext.flutter.ultra.*` extensions when the inspector fails, and then to CDP `Page.captureScreenshot` for screenshots on web.
+
 ## See also
 
 - `flutter-tour` — visual screenshot tour after setup

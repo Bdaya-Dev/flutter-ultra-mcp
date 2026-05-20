@@ -1,3 +1,11 @@
+## [1.10.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.0...v1.10.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ci:** format all source files for CI green ([5b082b3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/5b082b3709d95f31cd5c61625ce96fcf49ad4147))
+* **release:** use dart-lang/setup-dart reusable workflow for pub.dev OIDC ([4069211](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/40692113d27e5fe975f47fe33b55dd560c804565))
+
 # [1.10.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.4...v1.10.0) (2026-05-20)
 
 

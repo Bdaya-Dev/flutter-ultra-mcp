@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.9...v1.11.0) (2026-05-20)
+
+
+### Features
+
+* **runtime:** add web-server launch mode for fast parallel web automation ([e6372f3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/e6372f3147fdad0e52fa2a90d75f6e23c938a406)), closes [#91](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/91)
+
 ## [1.10.9](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.8...v1.10.9) (2026-05-20)
 
 

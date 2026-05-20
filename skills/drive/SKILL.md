@@ -103,15 +103,16 @@ Produce a numbered summary: steps taken, pass/fail status per step, screenshot p
 
 When launching a Flutter web app, choose the mode based on what the flow needs:
 
-| Mode | Command | VM Service | Hot Reload | Startup | Best for |
-|------|---------|-----------|-----------|---------|----------|
-| `chrome` (default) | `-d chrome --headless=new` | Yes (DWDS) | Yes | 60-90s | Debugging, widget inspection, evaluate, state reading |
-| `chrome-headed` | `-d chrome` (visible) | Yes (DWDS) | Yes | 60-90s | Local development, watching the agent work |
-| `web-server` | `-d web-server` | No | No | 5-10s | Visual tours, screenshots, parallel subagent runs |
+| Mode               | Command                    | VM Service | Hot Reload | Startup | Best for                                              |
+| ------------------ | -------------------------- | ---------- | ---------- | ------- | ----------------------------------------------------- |
+| `chrome` (default) | `-d chrome --headless=new` | Yes (DWDS) | Yes        | 60-90s  | Debugging, widget inspection, evaluate, state reading |
+| `chrome-headed`    | `-d chrome` (visible)      | Yes (DWDS) | Yes        | 60-90s  | Local development, watching the agent work            |
+| `web-server`       | `-d web-server`            | No         | No         | 5-10s   | Visual tours, screenshots, parallel subagent runs     |
 
 ### When to use each mode
 
 **Use `chrome` (default)** when the flow needs:
+
 - Widget tree inspection (`get_widget_tree`, `find_widget`)
 - Expression evaluation (`evaluate`)
 - Hot reload after code changes
@@ -119,10 +120,12 @@ When launching a Flutter web app, choose the mode based on what the flow needs:
 - Gesture tools via VM Service (`tap`, `enter_text`, `scroll_to`)
 
 **Use `chrome-headed`** when:
+
 - You want to visually watch the agent drive the app
 - Debugging a flow that doesn't work headless (rare)
 
 **Use `web-server`** when:
+
 - The flow only needs screenshots and Playwright navigation
 - Running multiple parallel app instances for subagent tours
 - Fast iteration without waiting for DWDS connection
@@ -142,6 +145,7 @@ launch_app(projectDir, target, device: "chrome", webLaunchMode: "web-server", we
 ```
 
 For web-server mode, after `poll_launch_app` shows `attached`, use browser server tools:
+
 - `mcp__plugin_flutter_flutter-ultra-browser__launch_browser` → navigate to `webServerUrl`
 - `mcp__plugin_flutter_flutter-ultra-browser__screenshot` for captures
 - `mcp__plugin_flutter_flutter-ultra-browser__click` / `fill` for interaction

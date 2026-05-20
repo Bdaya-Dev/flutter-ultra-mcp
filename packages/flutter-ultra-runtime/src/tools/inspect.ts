@@ -280,7 +280,7 @@ export function registerInspectTools(opts: {
           .optional()
           .describe(
             'Chrome DevTools Protocol port for CDP screenshot fallback on web. ' +
-            'Auto-populated from launch_app jobs; pass manually for externally-launched Chrome.',
+              'Auto-populated from launch_app jobs; pass manually for externally-launched Chrome.',
           ),
       },
       timeoutClass: 'instant',
@@ -338,14 +338,15 @@ export function registerInspectTools(opts: {
               structuredContent: {
                 sizeBytes: Buffer.from(cdpB64, 'base64').length,
                 source: 'cdp',
-                _note: 'Captured via CDP Page.captureScreenshot (inspector extensions unavailable on this target).',
+                _note:
+                  'Captured via CDP Page.captureScreenshot (inspector extensions unavailable on this target).',
               },
             };
           } catch (cdpErr) {
             throw new InvalidToolInputError(
               `All screenshot methods failed.\n` +
-              `VM service: ${vmErr instanceof Error ? vmErr.message : String(vmErr)}\n` +
-              `CDP: ${cdpErr instanceof Error ? cdpErr.message : String(cdpErr)}`,
+                `VM service: ${vmErr instanceof Error ? vmErr.message : String(vmErr)}\n` +
+                `CDP: ${cdpErr instanceof Error ? cdpErr.message : String(cdpErr)}`,
             );
           }
         }

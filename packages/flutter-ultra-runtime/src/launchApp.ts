@@ -572,7 +572,11 @@ function setupStdoutParser(
     });
     process.stderr.write(`[flutter-ultra-runtime] patchJob(attached) done for ${jobId}\n`);
     if (isWebTarget) {
-      logger.info('web target attached via stdin proxy', { jobId, uri, cdpPort: discoveredCdpPort });
+      logger.info('web target attached via stdin proxy', {
+        jobId,
+        uri,
+        cdpPort: discoveredCdpPort,
+      });
       return;
     }
     if (!uri) return;
@@ -633,16 +637,28 @@ function setupStdoutParser(
       } else if (parsed?.event === 'app.webLaunchUrl' && parsed.params) {
         isWebTarget = true;
         const webUrl = pickString(parsed.params, ['url']);
-        process.stderr.write(`[flutter-ultra-runtime] app.webLaunchUrl → isWebTarget=true url=${webUrl}\n`);
+        process.stderr.write(
+          `[flutter-ultra-runtime] app.webLaunchUrl → isWebTarget=true url=${webUrl}\n`,
+        );
         logger.info('web launch URL', { jobId, url: webUrl });
         if (webUrl) {
           await patchJob(jobId, { webServerUrl: webUrl });
         }
         // web-server mode: no DWDS attach will happen, transition immediately.
-        const currentJob = await stateRead(jobFilePath(jobId), {
-          schemaVersion: 1, jobId, target: '', device: '', stage: 'pending',
-          startedAt: 0, updatedAt: 0, recentLog: [],
-        } as LaunchJob, LaunchJobSchema);
+        const currentJob = await stateRead(
+          jobFilePath(jobId),
+          {
+            schemaVersion: 1,
+            jobId,
+            target: '',
+            device: '',
+            stage: 'pending',
+            startedAt: 0,
+            updatedAt: 0,
+            recentLog: [],
+          } as LaunchJob,
+          LaunchJobSchema,
+        );
         if (currentJob.webLaunchMode === 'web-server') {
           await completeAttach();
         }

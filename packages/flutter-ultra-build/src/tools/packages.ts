@@ -16,10 +16,7 @@ import { okJson, err, errFromException } from '../runtime/result.js';
 import { spawnCapture } from '../runtime/spawn.js';
 import { loadProject } from '../util/project.js';
 
-const rootArg = z
-  .string()
-  .min(1)
-  .describe('Absolute path to a Flutter/Dart project root.');
+const rootArg = z.string().min(1).describe('Absolute path to a Flutter/Dart project root.');
 
 interface PackageConfig {
   configVersion: number;
@@ -62,9 +59,7 @@ function resolvePackageUri(
     pkgRoot = resolve(configDir, pkg.rootUri);
   }
 
-  const libDir = pkg.packageUri
-    ? resolve(pkgRoot, pkg.packageUri)
-    : resolve(pkgRoot, 'lib');
+  const libDir = pkg.packageUri ? resolve(pkgRoot, pkg.packageUri) : resolve(pkgRoot, 'lib');
 
   return { packageName, filePath: resolve(libDir, relPath) };
 }
@@ -111,7 +106,11 @@ export function register(server: McpServer): void {
         for (const uri of uris) {
           const resolved = resolvePackageUri(config, proj.root, uri);
           if (!resolved) {
-            results.push({ uri, resolved: false, error: `Package not found in package_config.json` });
+            results.push({
+              uri,
+              resolved: false,
+              error: `Package not found in package_config.json`,
+            });
             continue;
           }
           try {
@@ -224,8 +223,10 @@ export function register(server: McpServer): void {
             args: [
               '--no-heading',
               '--line-number',
-              '--max-count', String(remaining),
-              '--type', 'dart',
+              '--max-count',
+              String(remaining),
+              '--type',
+              'dart',
               pattern,
               dir,
             ],

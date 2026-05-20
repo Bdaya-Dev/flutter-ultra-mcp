@@ -1,3 +1,10 @@
+## [1.10.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.2...v1.10.3) (2026-05-20)
+
+
+### Bug Fixes
+
+* **release:** trigger pub.dev publish via workflow_run, not tag push ([6587a45](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/6587a45f338de3b91eda8718c4b5733f5f226099))
+
 ## [1.10.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.1...v1.10.2) (2026-05-20)
 
 

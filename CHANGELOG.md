@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.1...v1.10.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* **browser:** eslint no-explicit-any on webPerf.ts ([37e1f2a](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/37e1f2a5c288768f37310ccd9409cb1553fa6fa7))
+
 ## [1.10.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.0...v1.10.1) (2026-05-20)
 
 

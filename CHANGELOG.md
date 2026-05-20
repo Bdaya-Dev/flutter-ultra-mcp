@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.1...v1.11.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* CI failures — prettier formatting + launch test init order + soft assertions ([a75e76e](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/a75e76e489cd770345f9d7145d63a03007611638))
+
 ## [1.11.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.0...v1.11.1) (2026-05-20)
 
 

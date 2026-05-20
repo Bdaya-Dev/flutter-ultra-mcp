@@ -24,6 +24,7 @@ import { z } from 'zod';
 import type { Logger } from '@flutter-ultra/mcp-runtime';
 import { jobFilePath, stateRead, stateUpdate } from '@flutter-ultra/state-store';
 import { freePort } from './portCleanup.js';
+import { enumerateProcesses, findChromeCdpPort } from './discovery.js';
 
 export const LaunchStageSchema = z.enum([
   'pending',
@@ -264,29 +265,29 @@ export function createLaunchService(opts: {
       : null;
     const args = buildCliArgs(input, vscodeCfg);
 
-    // For chrome modes, allocate a fixed CDP port so Playwright can attach
-    // via connect_over_cdp without manual port discovery.
-    // web-server mode doesn't launch Chrome — no CDP port needed.
+    // CDP port discovery for web targets.
+    //
+    // IMPORTANT: Do NOT pre-allocate a port and inject --remote-debugging-port
+    // via --web-browser-flag. Flutter's ChromiumLauncher sets its OWN
+    // --remote-debugging-port flag internally and reads the actual port from
+    // Chrome's DevToolsActivePort file. Injecting a second flag causes Chrome
+    // to bind our port but Flutter to poll its own → ECONNREFUSED.
+    //
+    // Instead: let Flutter manage the port, then discover it from Chrome's
+    // process command line via findChromeCdpPort() after launch.
     const effectiveMode = input.webLaunchMode ?? 'chrome';
     const isWebDevice = /^(chrome|edge|web-server)$/i.test(
       effectiveMode === 'web-server' ? 'web-server' : input.device,
     );
     let chromeCdpPort: number | undefined;
+    // Only pre-set CDP port if the USER explicitly passed --remote-debugging-port.
     if (isWebDevice && effectiveMode !== 'web-server') {
-      const hasDebugPort = args.some((a) => /remote-debugging-port/i.test(a));
-      if (!hasDebugPort) {
-        const { createServer } = await import('node:net');
-        chromeCdpPort = await new Promise<number>((res, rej) => {
-          const srv = createServer();
-          srv.listen(0, '127.0.0.1', () => {
-            const addr = srv.address();
-            const port = typeof addr === 'object' && addr ? addr.port : 0;
-            srv.close(() => res(port));
-          });
-          srv.on('error', rej);
-        });
-        args.push(`--web-browser-flag=--remote-debugging-port=${chromeCdpPort}`);
+      const userDebugPort = args.find((a) => /remote-debugging-port=(\d+)/i.test(a));
+      if (userDebugPort) {
+        const m = userDebugPort.match(/remote-debugging-port=(\d+)/i);
+        if (m?.[1]) chromeCdpPort = Number(m[1]);
       }
+      // Otherwise: discovered post-launch via findChromeCdpPort() in discovery.ts
     }
 
     const initial: LaunchJob = {
@@ -545,13 +546,33 @@ function setupStdoutParser(
     );
     if (attached) return;
     attached = true;
+
+    // Discover Chrome's actual CDP port from its process command line.
+    // Flutter's ChromiumLauncher allocates its own --remote-debugging-port;
+    // we must NOT inject our own (causes port mismatch → ECONNREFUSED).
+    let discoveredCdpPort: number | undefined;
+    if (isWebTarget) {
+      try {
+        const procs = await enumerateProcesses(logger);
+        discoveredCdpPort = findChromeCdpPort(procs);
+        if (discoveredCdpPort) {
+          process.stderr.write(
+            `[flutter-ultra-runtime] discovered Chrome CDP port ${discoveredCdpPort}\n`,
+          );
+        }
+      } catch (err) {
+        logger.debug('CDP port discovery failed', { err: String(err) });
+      }
+    }
+
     await patchJob(jobId, {
       stage: 'attached',
       ...(uri ? { vmServiceUri: uri } : {}),
+      ...(discoveredCdpPort ? { chromeCdpPort: discoveredCdpPort } : {}),
     });
     process.stderr.write(`[flutter-ultra-runtime] patchJob(attached) done for ${jobId}\n`);
     if (isWebTarget) {
-      logger.info('web target attached via stdin proxy', { jobId, uri });
+      logger.info('web target attached via stdin proxy', { jobId, uri, cdpPort: discoveredCdpPort });
       return;
     }
     if (!uri) return;

@@ -233,7 +233,7 @@ export function httpToWs(httpUri: string): string {
   return s;
 }
 
-function findChromeCdpPort(procs: ProcessInfo[]): number | undefined {
+export function findChromeCdpPort(procs: ProcessInfo[]): number | undefined {
   for (const p of procs) {
     if (!/chrome(\.exe)?$/i.test(p.name)) continue;
     if (!/flutter_tools_chrome_device/.test(p.cmdline)) continue;
@@ -246,7 +246,7 @@ function findChromeCdpPort(procs: ProcessInfo[]): number | undefined {
   return undefined;
 }
 
-async function enumerateProcesses(log: Logger): Promise<ProcessInfo[]> {
+export async function enumerateProcesses(log: Logger): Promise<ProcessInfo[]> {
   if (process.platform === 'win32') {
     return enumerateWindows(log);
   }

@@ -2,6 +2,8 @@
 // evaluate, toggle_debug_paint, toggle_perf_overlay, set_time_dilation,
 // set_platform_override, get_selected_widget, set_selected_widget.
 
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import {
   FinderSchema,
@@ -10,6 +12,7 @@ import {
   type FlutterUltraServer,
 } from '@flutter-ultra/mcp-runtime';
 import type { VmServiceClient } from '@flutter-ultra/vm-service-client';
+import { jobsDir } from '@flutter-ultra/state-store';
 import type { SessionRegistry } from '../sessions.js';
 import { fetchSummaryTree, findInTree, summarizeNode, walkTree } from '../widgetTree.js';
 
@@ -329,10 +332,12 @@ export function registerInspectTools(opts: {
           structuredContent: { sizeBytes: Buffer.from(b64, 'base64').length, source: 'vm-service' },
         };
       } catch (vmErr) {
-        // VM-service screenshot failed — try CDP fallback if port is available.
-        if (args.chromeCdpPort) {
+        // VM-service screenshot failed — try CDP fallback.
+        // Auto-discover CDP port from the session's launch job if not explicit.
+        const cdpPort = args.chromeCdpPort ?? (await findCdpPortForSession(args.sessionId));
+        if (cdpPort) {
           try {
-            const cdpB64 = await cdpScreenshot(args.chromeCdpPort);
+            const cdpB64 = await cdpScreenshot(cdpPort);
             return {
               content: [{ type: 'image', data: cdpB64, mimeType: 'image/png' }],
               structuredContent: {
@@ -539,6 +544,31 @@ export function registerInspectTools(opts: {
       }
     },
   );
+}
+
+async function findCdpPortForSession(sessionId: string): Promise<number | undefined> {
+  try {
+    const dir = jobsDir();
+    const files = await readdir(dir).catch(() => [] as string[]);
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const raw = await readFile(join(dir, file), 'utf8');
+        const job = JSON.parse(raw) as {
+          sessionId?: string;
+          chromeCdpPort?: number;
+        };
+        if (job.sessionId === sessionId && job.chromeCdpPort) {
+          return job.chromeCdpPort;
+        }
+      } catch {
+        // corrupt job file — skip
+      }
+    }
+  } catch {
+    // jobs dir missing — no launched apps
+  }
+  return undefined;
 }
 
 async function cdpScreenshot(port: number): Promise<string> {

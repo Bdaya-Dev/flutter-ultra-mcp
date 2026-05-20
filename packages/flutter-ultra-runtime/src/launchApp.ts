@@ -614,7 +614,17 @@ function setupStdoutParser(
         const pending = handle.pendingRequests.get(parsed.id);
         if (pending) {
           if (parsed.error) {
-            pending.reject(new Error(parsed.error.message ?? 'daemon command failed'));
+            const parts = [`daemon command failed`];
+            if (parsed.error.message) parts.push(parsed.error.message);
+            if (parsed.error.code !== undefined) parts.push(`(code ${parsed.error.code})`);
+            if (parsed.error.data) {
+              const dataStr =
+                typeof parsed.error.data === 'string'
+                  ? parsed.error.data
+                  : JSON.stringify(parsed.error.data);
+              parts.push(`\n${dataStr}`);
+            }
+            pending.reject(new Error(parts.join(': ')));
           } else {
             pending.resolve(parsed.result);
           }
@@ -670,7 +680,11 @@ function setupStdoutParser(
         const uri = pickString(parsed.params, ['wsUri', 'baseUri']);
         if (uri) {
           await patchJob(jobId, { vmServiceUri: uri });
-          if (!isWebTarget) await completeAttach(uri);
+          // Attach for ALL targets — web included. Previously only non-web
+          // targets attached here, waiting for app.started for web. But on
+          // Windows, app.started may never fire if DWDS handshake stalls,
+          // leaving poll stuck at "booting" despite a valid debug URI.
+          await completeAttach(uri);
         }
       } else if (parsed?.event === 'app.progress' && parsed.params) {
         const msg = pickString(parsed.params, ['message']);

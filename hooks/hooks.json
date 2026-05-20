@@ -6,10 +6,7 @@
           {
             "type": "command",
             "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/ensure-playwright.js",
-              "${CLAUDE_PLUGIN_DATA}"
-            ],
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/ensure-playwright.js", "${CLAUDE_PLUGIN_DATA}"],
             "timeout": 120,
             "statusMessage": "Checking playwright-core..."
           }

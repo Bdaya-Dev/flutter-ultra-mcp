@@ -113,18 +113,18 @@ Collect live evidence before diagnosing. Propose code fixes only after inspectin
 
 ## Common patterns
 
-| Symptom | First tool | What to look for |
-|---------|-----------|-----------------|
-| `Null check operator used on null value` | `get_runtime_errors` + `evaluate` | Null state before async load completes |
-| `RenderFlex overflowed by N pixels` | `dump_render_tree` + `toggle_debug_paint` | Missing `Expanded`/`Flexible` |
-| Blank white screen | `get_widget_tree` + `evaluate` (route) | `ErrorWidget` at root; redirect loop |
-| `setState called after dispose` | `get_runtime_errors` + `get_logs` | Async callback with stale `BuildContext` |
-| Navigation not working | `evaluate` (GoRouter path) + `get_logs` | Route guard redirecting |
-| Infinite loading spinner | `evaluate` (state) + `get_logs` | Future never completing |
-| Wrong data displayed | `evaluate` (BLoC/provider state) | Stale state; `watch` vs `read` misuse |
-| API returning errors | `start_http_capture` + `get_http_events` | 401/403/500 responses; CORS blocks |
-| UI jank during scrolling | `start_frame_tracking` + `get_frame_timing` | Frames exceeding 16ms budget |
-| Memory growing unbounded | `get_memory_usage` + `get_allocation_profile` | Leaked listeners or controllers |
+| Symptom                                  | First tool                                    | What to look for                         |
+| ---------------------------------------- | --------------------------------------------- | ---------------------------------------- |
+| `Null check operator used on null value` | `get_runtime_errors` + `evaluate`             | Null state before async load completes   |
+| `RenderFlex overflowed by N pixels`      | `dump_render_tree` + `toggle_debug_paint`     | Missing `Expanded`/`Flexible`            |
+| Blank white screen                       | `get_widget_tree` + `evaluate` (route)        | `ErrorWidget` at root; redirect loop     |
+| `setState called after dispose`          | `get_runtime_errors` + `get_logs`             | Async callback with stale `BuildContext` |
+| Navigation not working                   | `evaluate` (GoRouter path) + `get_logs`       | Route guard redirecting                  |
+| Infinite loading spinner                 | `evaluate` (state) + `get_logs`               | Future never completing                  |
+| Wrong data displayed                     | `evaluate` (BLoC/provider state)              | Stale state; `watch` vs `read` misuse    |
+| API returning errors                     | `start_http_capture` + `get_http_events`      | 401/403/500 responses; CORS blocks       |
+| UI jank during scrolling                 | `start_frame_tracking` + `get_frame_timing`   | Frames exceeding 16ms budget             |
+| Memory growing unbounded                 | `get_memory_usage` + `get_allocation_profile` | Leaked listeners or controllers          |
 
 ## Output format
 

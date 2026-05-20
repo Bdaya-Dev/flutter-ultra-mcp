@@ -100,38 +100,38 @@ git stash pop  # if stash was created
 
 ## Edge cases
 
-| Situation | Handling |
-|-----------|----------|
-| **Merge commits** | `--first-parent` avoids them. Remove the flag only if the user explicitly wants to bisect a merged branch. |
-| **Uncommitted changes** | Auto-stash in step 2; restore in step 7. |
-| **Submodule repo** | Confirm the user wants to bisect the outer aggregate, not the inner submodule. |
-| **Flutter SDK version change** | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` before pub get. |
-| **Flaky oracle** | Re-run once. If it fails again, mark bad. |
-| **All commits bad** | Stop and ask the user to verify the good commit reference. |
+| Situation                      | Handling                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Merge commits**              | `--first-parent` avoids them. Remove the flag only if the user explicitly wants to bisect a merged branch. |
+| **Uncommitted changes**        | Auto-stash in step 2; restore in step 7.                                                                   |
+| **Submodule repo**             | Confirm the user wants to bisect the outer aggregate, not the inner submodule.                             |
+| **Flutter SDK version change** | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` before pub get.                                   |
+| **Flaky oracle**               | Re-run once. If it fails again, mark bad.                                                                  |
+| **All commits bad**            | Stop and ask the user to verify the good commit reference.                                                 |
 
 ## Tool reference
 
-| Action | Tool |
-|--------|------|
-| List projects | `mcp__plugin_flutter_flutter-ultra-build__list_projects` |
-| Pub get | `mcp__plugin_flutter_flutter-ultra-build__pub_get` |
-| Flutter clean | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` |
-| Build runner start | `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build` |
-| Build runner poll | `mcp__plugin_flutter_flutter-ultra-build__poll_build_runner_job` |
-| Build runner result | `mcp__plugin_flutter_flutter-ultra-build__get_build_runner_result` |
-| Start unit tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests` |
-| Poll unit tests | `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests` |
-| Get unit results | `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result` |
-| Start widget tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests` |
-| Poll widget tests | `mcp__plugin_flutter_flutter-ultra-build__poll_run_widget_tests` |
-| Get widget results | `mcp__plugin_flutter_flutter-ultra-build__get_run_widget_tests_result` |
-| Start golden tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests` |
-| Poll golden tests | `mcp__plugin_flutter_flutter-ultra-build__poll_run_golden_tests` |
-| Get golden results | `mcp__plugin_flutter_flutter-ultra-build__get_run_golden_tests_result` |
-| Start patrol test | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test` |
-| Poll patrol | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job` |
-| Get patrol result | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result` |
-| Build (any platform) | `start_build_{platform}` via the build server |
+| Action               | Tool                                                                   |
+| -------------------- | ---------------------------------------------------------------------- |
+| List projects        | `mcp__plugin_flutter_flutter-ultra-build__list_projects`               |
+| Pub get              | `mcp__plugin_flutter_flutter-ultra-build__pub_get`                     |
+| Flutter clean        | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean`               |
+| Build runner start   | `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build`    |
+| Build runner poll    | `mcp__plugin_flutter_flutter-ultra-build__poll_build_runner_job`       |
+| Build runner result  | `mcp__plugin_flutter_flutter-ultra-build__get_build_runner_result`     |
+| Start unit tests     | `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests`        |
+| Poll unit tests      | `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests`         |
+| Get unit results     | `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result`   |
+| Start widget tests   | `mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests`      |
+| Poll widget tests    | `mcp__plugin_flutter_flutter-ultra-build__poll_run_widget_tests`       |
+| Get widget results   | `mcp__plugin_flutter_flutter-ultra-build__get_run_widget_tests_result` |
+| Start golden tests   | `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests`      |
+| Poll golden tests    | `mcp__plugin_flutter_flutter-ultra-build__poll_run_golden_tests`       |
+| Get golden results   | `mcp__plugin_flutter_flutter-ultra-build__get_run_golden_tests_result` |
+| Start patrol test    | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`          |
+| Poll patrol          | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`            |
+| Get patrol result    | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`          |
+| Build (any platform) | `start_build_{platform}` via the build server                          |
 
 ## Output format
 

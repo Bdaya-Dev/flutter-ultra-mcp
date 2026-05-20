@@ -127,30 +127,30 @@ Got: InvoiceListLoaded with 0 items
 
 ## Tool reference
 
-| Action | Tool |
-|--------|------|
-| List projects | `mcp__plugin_flutter_flutter-ultra-build__list_projects` |
-| Project info | `mcp__plugin_flutter_flutter-ultra-build__project_info` |
-| Discover tests | `mcp__plugin_flutter_flutter-ultra-build__test_filter` |
-| Static analysis | `mcp__plugin_flutter_flutter-ultra-build__analyze` |
-| Start unit tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests` |
-| Poll unit tests | `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests` |
-| Get unit results | `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result` |
-| Start widget tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests` |
-| Start golden tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests` |
-| Update goldens | `mcp__plugin_flutter_flutter-ultra-build__start_update_goldens` |
-| List patrol tests | `mcp__plugin_flutter_flutter-ultra-patrol__list_tests` |
-| Start patrol test | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test` |
-| Poll patrol | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job` |
-| Get patrol result | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result` |
-| Patrol screenshot | `mcp__plugin_flutter_flutter-ultra-patrol__take_patrol_screenshot` |
-| Patrol recording | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_recording` |
-| Extract frame | `mcp__plugin_flutter_flutter-ultra-patrol__extract_video_frame` |
-| Browser errors | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_browser_errors` |
-| Web debugger port | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_web_debugger_port` |
-| Connect CDP | `mcp__plugin_flutter_flutter-ultra-browser__connect_over_cdp` |
-| HTTP capture | `mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture` |
-| VM screenshot | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` |
+| Action             | Tool                                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| List projects      | `mcp__plugin_flutter_flutter-ultra-build__list_projects`                 |
+| Project info       | `mcp__plugin_flutter_flutter-ultra-build__project_info`                  |
+| Discover tests     | `mcp__plugin_flutter_flutter-ultra-build__test_filter`                   |
+| Static analysis    | `mcp__plugin_flutter_flutter-ultra-build__analyze`                       |
+| Start unit tests   | `mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests`          |
+| Poll unit tests    | `mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests`           |
+| Get unit results   | `mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result`     |
+| Start widget tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests`        |
+| Start golden tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests`        |
+| Update goldens     | `mcp__plugin_flutter_flutter-ultra-build__start_update_goldens`          |
+| List patrol tests  | `mcp__plugin_flutter_flutter-ultra-patrol__list_tests`                   |
+| Start patrol test  | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`            |
+| Poll patrol        | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`              |
+| Get patrol result  | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`            |
+| Patrol screenshot  | `mcp__plugin_flutter_flutter-ultra-patrol__take_patrol_screenshot`       |
+| Patrol recording   | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_recording`       |
+| Extract frame      | `mcp__plugin_flutter_flutter-ultra-patrol__extract_video_frame`          |
+| Browser errors     | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_browser_errors`    |
+| Web debugger port  | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_web_debugger_port` |
+| Connect CDP        | `mcp__plugin_flutter_flutter-ultra-browser__connect_over_cdp`            |
+| HTTP capture       | `mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture`          |
+| VM screenshot      | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`                  |
 
 ## Example
 

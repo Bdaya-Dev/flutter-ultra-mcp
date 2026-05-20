@@ -39,22 +39,22 @@ void main() async {
 
 ## Registered extensions
 
-| Extension | Purpose |
-|-----------|---------|
-| `ultra.tap` | Tap element by key, text, or type |
-| `ultra.doubleTap` | Double-tap gesture |
-| `ultra.longPress` | Long-press gesture |
-| `ultra.enterText` | Enter text into a field |
-| `ultra.clearText` | Clear a text field |
-| `ultra.swipe` | Swipe/drag gesture |
-| `ultra.pinchZoom` | Pinch zoom gesture |
-| `ultra.scrollTo` | Scroll until element is visible |
-| `ultra.interactiveElements` | Discover tappable elements |
-| `ultra.takeScreenshots` | Multi-view screenshot capture |
-| `ultra.startScreencast` / `ultra.stopScreencast` | Live frame streaming |
-| `ultra.getLogs` | Structured log collection |
-| `ultra.pressBackButton` | Back navigation |
-| `ultra.getVersion` | Binding version |
+| Extension                                        | Purpose                           |
+| ------------------------------------------------ | --------------------------------- |
+| `ultra.tap`                                      | Tap element by key, text, or type |
+| `ultra.doubleTap`                                | Double-tap gesture                |
+| `ultra.longPress`                                | Long-press gesture                |
+| `ultra.enterText`                                | Enter text into a field           |
+| `ultra.clearText`                                | Clear a text field                |
+| `ultra.swipe`                                    | Swipe/drag gesture                |
+| `ultra.pinchZoom`                                | Pinch zoom gesture                |
+| `ultra.scrollTo`                                 | Scroll until element is visible   |
+| `ultra.interactiveElements`                      | Discover tappable elements        |
+| `ultra.takeScreenshots`                          | Multi-view screenshot capture     |
+| `ultra.startScreencast` / `ultra.stopScreencast` | Live frame streaming              |
+| `ultra.getLogs`                                  | Structured log collection         |
+| `ultra.pressBackButton`                          | Back navigation                   |
+| `ultra.getVersion`                               | Binding version                   |
 
 ## License
 

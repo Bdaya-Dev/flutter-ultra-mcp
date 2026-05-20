@@ -107,29 +107,29 @@ Verify the app builds for all target platforms using the build server's platform
 
 ## Tool reference
 
-| Action | Tool |
-|--------|------|
-| Flutter doctor | `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` |
-| Project info | `mcp__plugin_flutter_flutter-ultra-build__project_info` |
-| List devices | `mcp__plugin_flutter_flutter-ultra-runtime__list_devices` |
-| List dart defines | `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` |
-| List flavors | `mcp__plugin_flutter_flutter-ultra-build__list_flavors` |
-| Add dependency | `mcp__plugin_flutter_flutter-ultra-build__pub_add` |
-| Resolve deps | `mcp__plugin_flutter_flutter-ultra-build__pub_get` |
-| Overrides set | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` |
-| Overrides list | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` |
-| Analyze | `mcp__plugin_flutter_flutter-ultra-build__analyze` |
-| Auto-fix | `mcp__plugin_flutter_flutter-ultra-build__fix` |
-| Flutter clean | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean` |
-| Pub cache repair | `mcp__plugin_flutter_flutter-ultra-build__pub_cache_repair` |
-| Pub outdated | `mcp__plugin_flutter_flutter-ultra-build__pub_outdated` |
-| Launch app | `mcp__plugin_flutter_flutter-ultra-runtime__launch_app` |
-| Poll launch | `mcp__plugin_flutter_flutter-ultra-runtime__poll_launch_app` |
-| Attach | `mcp__plugin_flutter_flutter-ultra-runtime__attach` |
-| Screenshot | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` |
-| Detach | `mcp__plugin_flutter_flutter-ultra-runtime__detach` |
-| Stop app | `mcp__plugin_flutter_flutter-ultra-runtime__stop_app` |
-| Build (any platform) | `start_build_{platform}` via the build server |
+| Action               | Tool                                                              |
+| -------------------- | ----------------------------------------------------------------- |
+| Flutter doctor       | `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor`         |
+| Project info         | `mcp__plugin_flutter_flutter-ultra-build__project_info`           |
+| List devices         | `mcp__plugin_flutter_flutter-ultra-runtime__list_devices`         |
+| List dart defines    | `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines`      |
+| List flavors         | `mcp__plugin_flutter_flutter-ultra-build__list_flavors`           |
+| Add dependency       | `mcp__plugin_flutter_flutter-ultra-build__pub_add`                |
+| Resolve deps         | `mcp__plugin_flutter_flutter-ultra-build__pub_get`                |
+| Overrides set        | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set`  |
+| Overrides list       | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_list` |
+| Analyze              | `mcp__plugin_flutter_flutter-ultra-build__analyze`                |
+| Auto-fix             | `mcp__plugin_flutter_flutter-ultra-build__fix`                    |
+| Flutter clean        | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean`          |
+| Pub cache repair     | `mcp__plugin_flutter_flutter-ultra-build__pub_cache_repair`       |
+| Pub outdated         | `mcp__plugin_flutter_flutter-ultra-build__pub_outdated`           |
+| Launch app           | `mcp__plugin_flutter_flutter-ultra-runtime__launch_app`           |
+| Poll launch          | `mcp__plugin_flutter_flutter-ultra-runtime__poll_launch_app`      |
+| Attach               | `mcp__plugin_flutter_flutter-ultra-runtime__attach`               |
+| Screenshot           | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`           |
+| Detach               | `mcp__plugin_flutter_flutter-ultra-runtime__detach`               |
+| Stop app             | `mcp__plugin_flutter_flutter-ultra-runtime__stop_app`             |
+| Build (any platform) | `start_build_{platform}` via the build server                     |
 
 ## Output format
 

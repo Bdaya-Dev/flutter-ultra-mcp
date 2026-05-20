@@ -10,12 +10,12 @@ User must explicitly trigger this skill with `/flutter:scaffold`. It creates fil
 
 ## Mode detection
 
-| User asks | Mode |
-|-----------|------|
-| "create a new Flutter app" | Project mode |
-| "add a feature", "new screen" | Feature mode |
-| "set up BLoC / Riverpod" | State management mode |
-| "add localization" | L10n mode |
+| User asks                     | Mode                  |
+| ----------------------------- | --------------------- |
+| "create a new Flutter app"    | Project mode          |
+| "add a feature", "new screen" | Feature mode          |
+| "set up BLoC / Riverpod"      | State management mode |
+| "add localization"            | L10n mode             |
 
 ## Project mode
 
@@ -32,12 +32,12 @@ Call `mcp__plugin_flutter_flutter-ultra-build__project_info` to read project str
 
 Detect the project's state management from `pubspec.yaml`:
 
-| Dependency | Pattern |
-|-----------|---------|
-| `flutter_bloc` / `bloc` | BLoC |
-| `riverpod` / `flutter_riverpod` | Riverpod |
-| `provider` | Provider |
-| None | Ask the user |
+| Dependency                      | Pattern      |
+| ------------------------------- | ------------ |
+| `flutter_bloc` / `bloc`         | BLoC         |
+| `riverpod` / `flutter_riverpod` | Riverpod     |
+| `provider`                      | Provider     |
+| None                            | Ask the user |
 
 Detect routing: `go_router` = GoRouter, `auto_route` = AutoRoute, none = Navigator 1.0.
 
@@ -126,31 +126,31 @@ After scaffolding a release-ready project:
 
 ## Tool reference
 
-| Action | Tool |
-|--------|------|
-| Project info | `mcp__plugin_flutter_flutter-ultra-build__project_info` |
-| List projects | `mcp__plugin_flutter_flutter-ultra-build__list_projects` |
-| Add dependency | `mcp__plugin_flutter_flutter-ultra-build__pub_add` |
-| Remove dependency | `mcp__plugin_flutter_flutter-ultra-build__pub_remove` |
-| Resolve deps | `mcp__plugin_flutter_flutter-ultra-build__pub_get` |
-| Search pub.dev | `mcp__plugin_flutter_flutter-ultra-build__pub_dev_search` |
-| Format code | `mcp__plugin_flutter_flutter-ultra-build__format` |
-| Analyze | `mcp__plugin_flutter_flutter-ultra-build__analyze` |
-| Auto-fix | `mcp__plugin_flutter_flutter-ultra-build__fix` |
-| Preview fixes | `mcp__plugin_flutter_flutter-ultra-build__fix_preview` |
-| Build runner | `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build` |
-| Gen l10n | `mcp__plugin_flutter_flutter-ultra-build__flutter_gen_l10n` |
-| Add asset | `mcp__plugin_flutter_flutter-ultra-build__add_asset` |
-| Validate assets | `mcp__plugin_flutter_flutter-ultra-build__validate_assets` |
-| Orphan assets | `mcp__plugin_flutter_flutter-ultra-build__list_orphan_assets` |
-| Web redirect | `mcp__plugin_flutter_flutter-ultra-build__validate_web_redirect` |
-| CanvasKit check | `mcp__plugin_flutter_flutter-ultra-build__validate_canvaskit_vs_html_consistency` |
-| Flush SW | `mcp__plugin_flutter_flutter-ultra-build__flush_service_worker` |
-| Android signing | `mcp__plugin_flutter_flutter-ultra-build__verify_android_signing` |
-| iOS signing | `mcp__plugin_flutter_flutter-ultra-build__verify_ios_signing` |
-| Set bundle ID | `mcp__plugin_flutter_flutter-ultra-build__set_bundle_id` |
-| Flutter doctor | `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` |
-| Missing translations | `mcp__plugin_flutter_flutter-ultra-build__list_missing_translations` |
+| Action               | Tool                                                                              |
+| -------------------- | --------------------------------------------------------------------------------- |
+| Project info         | `mcp__plugin_flutter_flutter-ultra-build__project_info`                           |
+| List projects        | `mcp__plugin_flutter_flutter-ultra-build__list_projects`                          |
+| Add dependency       | `mcp__plugin_flutter_flutter-ultra-build__pub_add`                                |
+| Remove dependency    | `mcp__plugin_flutter_flutter-ultra-build__pub_remove`                             |
+| Resolve deps         | `mcp__plugin_flutter_flutter-ultra-build__pub_get`                                |
+| Search pub.dev       | `mcp__plugin_flutter_flutter-ultra-build__pub_dev_search`                         |
+| Format code          | `mcp__plugin_flutter_flutter-ultra-build__format`                                 |
+| Analyze              | `mcp__plugin_flutter_flutter-ultra-build__analyze`                                |
+| Auto-fix             | `mcp__plugin_flutter_flutter-ultra-build__fix`                                    |
+| Preview fixes        | `mcp__plugin_flutter_flutter-ultra-build__fix_preview`                            |
+| Build runner         | `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build`               |
+| Gen l10n             | `mcp__plugin_flutter_flutter-ultra-build__flutter_gen_l10n`                       |
+| Add asset            | `mcp__plugin_flutter_flutter-ultra-build__add_asset`                              |
+| Validate assets      | `mcp__plugin_flutter_flutter-ultra-build__validate_assets`                        |
+| Orphan assets        | `mcp__plugin_flutter_flutter-ultra-build__list_orphan_assets`                     |
+| Web redirect         | `mcp__plugin_flutter_flutter-ultra-build__validate_web_redirect`                  |
+| CanvasKit check      | `mcp__plugin_flutter_flutter-ultra-build__validate_canvaskit_vs_html_consistency` |
+| Flush SW             | `mcp__plugin_flutter_flutter-ultra-build__flush_service_worker`                   |
+| Android signing      | `mcp__plugin_flutter_flutter-ultra-build__verify_android_signing`                 |
+| iOS signing          | `mcp__plugin_flutter_flutter-ultra-build__verify_ios_signing`                     |
+| Set bundle ID        | `mcp__plugin_flutter_flutter-ultra-build__set_bundle_id`                          |
+| Flutter doctor       | `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor`                         |
+| Missing translations | `mcp__plugin_flutter_flutter-ultra-build__list_missing_translations`              |
 
 ## Example
 

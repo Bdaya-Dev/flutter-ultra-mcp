@@ -30,18 +30,18 @@ Break the user's request into discrete, verifiable steps. Announce the plan befo
 
 **Perform the action:**
 
-| Action | Tool |
-|--------|------|
-| Tap by key/text/coords | `mcp__plugin_flutter_flutter-ultra-gesture__tap` |
-| Double tap | `mcp__plugin_flutter_flutter-ultra-gesture__double_tap` |
-| Long press | `mcp__plugin_flutter_flutter-ultra-gesture__long_press` |
-| Enter text | `mcp__plugin_flutter_flutter-ultra-gesture__enter_text` |
-| Clear text field | `mcp__plugin_flutter_flutter-ultra-gesture__clear_text` |
-| Scroll to element | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_to` |
-| Scroll until visible | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_until_visible` |
-| Swipe gesture | `mcp__plugin_flutter_flutter-ultra-gesture__swipe` |
-| Pinch zoom | `mcp__plugin_flutter_flutter-ultra-gesture__pinch_zoom` |
-| Navigate programmatically | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` |
+| Action                    | Tool                                                              |
+| ------------------------- | ----------------------------------------------------------------- |
+| Tap by key/text/coords    | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                  |
+| Double tap                | `mcp__plugin_flutter_flutter-ultra-gesture__double_tap`           |
+| Long press                | `mcp__plugin_flutter_flutter-ultra-gesture__long_press`           |
+| Enter text                | `mcp__plugin_flutter_flutter-ultra-gesture__enter_text`           |
+| Clear text field          | `mcp__plugin_flutter_flutter-ultra-gesture__clear_text`           |
+| Scroll to element         | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_to`            |
+| Scroll until visible      | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_until_visible` |
+| Swipe gesture             | `mcp__plugin_flutter_flutter-ultra-gesture__swipe`                |
+| Pinch zoom                | `mcp__plugin_flutter_flutter-ultra-gesture__pinch_zoom`           |
+| Navigate programmatically | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`             |
 
 **Wait for the UI to settle:**
 

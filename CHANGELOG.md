@@ -1,3 +1,10 @@
+## [1.10.9](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.8...v1.10.9) (2026-05-20)
+
+
+### Bug Fixes
+
+* painpoint fixes — CDP screenshot fallback, liveness probes, analyze timeout, package tools ([470f5e1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/470f5e1839e3c6855614461deaec09a02fe8f70e)), closes [#87](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/87) [#88](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/88) [#89](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/89) [#90](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/90) [#93](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/93) [#92](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/92)
+
 ## [1.10.8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.10.7...v1.10.8) (2026-05-20)
 
 

@@ -5,7 +5,7 @@ description: One-command setup of the flutter-ultra-mcp plugin in an existing Fl
 
 # Plugin Setup
 
-Expected end state: `UltraFlutterBinding` initialized in the app entry point, `ultra_flutter` in `dev_dependencies`, patrol fork overridden if needed, and a smoke launch confirming the VM Service attaches correctly.
+Expected end state: `UltraFlutterBinding` initialized in the app entry point, `ultra_flutter` in `dependencies`, patrol fork overridden if needed, and a smoke launch confirming the VM Service attaches correctly.
 
 ## Workflow
 
@@ -17,10 +17,10 @@ Expected end state: `UltraFlutterBinding` initialized in the app entry point, `u
 - `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` — discover required dart-defines for launch.
 - `mcp__plugin_flutter_flutter-ultra-build__list_flavors` — check for flavor configuration.
 
-### 2. Add `ultra_flutter` to dev_dependencies
+### 2. Add `ultra_flutter` to dependencies
 
-- `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `package: ultra_flutter`, `dev: true`.
-- If it fails (not on pub.dev), use `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` to point to the bundled path, add `ultra_flutter: any` under `dev_dependencies` manually, then `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
+- `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `package: ultra_flutter` (NOT dev — it runs in the app process, guarded by `kDebugMode`).
+- If it fails (not on pub.dev), use `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` to point to the bundled path, add `ultra_flutter: any` under `dependencies` manually, then `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 
 ### 3. Patch the app entry point
 
@@ -130,7 +130,7 @@ User: "Set up flutter-ultra on my app."
 1. flutter_doctor -> all checks pass
 2. project_info -> entryPoints: ["lib/main.dart"], hasSentry: false, hasPatrol: false
 3. list_devices -> chrome, windows
-4. pub_add ultra_flutter dev:true -> added
+4. pub_add ultra_flutter -> added to dependencies
 5. Edit lib/main.dart -> add UltraFlutterBinding.ensureInitialized()
 6. pub_get -> resolved
 7. analyze -> 0 errors

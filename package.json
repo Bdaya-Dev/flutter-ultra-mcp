@@ -33,6 +33,9 @@
     "test:e2e:oidc": "vitest run tests/e2e/oidc/",
     "test:dogfood": "vitest run tests/e2e/dogfood/"
   },
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",

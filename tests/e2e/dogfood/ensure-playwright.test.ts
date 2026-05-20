@@ -1,22 +1,17 @@
-// E2E test: ensure-playwright.js correctly installs playwright-core
-// and the browser MCP server can start with NODE_PATH pointing to it.
+// E2E test: playwright-core is available as a root dependency and the
+// browser MCP server starts without needing a SessionStart install hook.
 //
-// Validates the full hook → install → server-start chain that runs on
-// every Claude Code session. Uses a temp dir to avoid polluting the
-// real CLAUDE_PLUGIN_DATA.
+// Validates that after `npm ci`, playwright-core is resolvable from the
+// monorepo root node_modules — no hook, no NODE_PATH override needed.
 
-import { describe, it, expect, afterAll } from 'vitest';
-import { execSync, spawn, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, existsSync, rmSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
+import { describe, it, expect } from 'vitest';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 
-const ENSURE_SCRIPT = resolve(import.meta.dirname, '../../../scripts/ensure-playwright.js');
+const ROOT = resolve(import.meta.dirname, '../../..');
 
-const BROWSER_BIN = resolve(
-  import.meta.dirname,
-  '../../../packages/flutter-ultra-browser/dist/bin.cjs',
-);
+const BROWSER_BIN = resolve(ROOT, 'packages/flutter-ultra-browser/dist/bin.cjs');
 
 interface JsonRpcResponse {
   jsonrpc: '2.0';
@@ -67,52 +62,24 @@ function collectResponses(
   });
 }
 
-describe('ensure-playwright.js + browser server', () => {
-  let tempDir: string;
-
-  afterAll(() => {
-    if (tempDir && existsSync(tempDir)) {
-      rmSync(tempDir, { recursive: true, force: true });
-    }
+describe('playwright-core as root dependency', () => {
+  it('playwright-core exists in root node_modules', () => {
+    const pwPath = join(ROOT, 'node_modules', 'playwright-core');
+    expect(existsSync(pwPath)).toBe(true);
   });
 
-  it('installs playwright-core to a fresh temp directory', () => {
-    tempDir = mkdtempSync(join(tmpdir(), 'flutter-ultra-pw-test-'));
+  it('playwright-core is resolvable from browser server bin', () => {
+    expect(() => require.resolve('playwright-core', { paths: [ROOT] })).not.toThrow();
+  });
 
-    expect(existsSync(join(tempDir, 'node_modules', 'playwright-core'))).toBe(false);
-
-    execSync(`node "${ENSURE_SCRIPT}" "${tempDir}"`, {
-      stdio: 'inherit',
-      timeout: 60_000,
-    });
-
-    expect(existsSync(join(tempDir, 'node_modules', 'playwright-core'))).toBe(true);
-  }, 90_000);
-
-  it('is idempotent — second run is a no-op', () => {
-    const before = existsSync(join(tempDir, 'node_modules', 'playwright-core'));
-    expect(before).toBe(true);
-
-    const start = Date.now();
-    execSync(`node "${ENSURE_SCRIPT}" "${tempDir}"`, {
-      stdio: 'inherit',
-      timeout: 30_000,
-    });
-    const elapsed = Date.now() - start;
-
-    expect(existsSync(join(tempDir, 'node_modules', 'playwright-core'))).toBe(true);
-    // Second run should be fast (< 5s) since it's a require.resolve check
-    expect(elapsed).toBeLessThan(5_000);
-  }, 30_000);
-
-  it('browser server starts with NODE_PATH pointing to installed playwright-core', async () => {
-    const nmDir = join(tempDir, 'node_modules');
+  it('browser server starts WITHOUT NODE_PATH override', async () => {
     const proc = spawn('node', [BROWSER_BIN], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        NODE_PATH: nmDir,
-        FLUTTER_ULTRA_STATE_DIR: join(tempDir, 'state'),
+        FLUTTER_ULTRA_STATE_DIR: '',
+        // Explicitly do NOT set NODE_PATH — playwright-core must resolve
+        // from the normal node_modules hierarchy
       },
     });
 
@@ -127,7 +94,7 @@ describe('ensure-playwright.js + browser server', () => {
           params: {
             protocolVersion: '2024-11-05',
             capabilities: {},
-            clientInfo: { name: 'pw-e2e-test', version: '0.0.0' },
+            clientInfo: { name: 'pw-dep-test', version: '0.0.0' },
           },
         }) + '\n',
       );
@@ -136,7 +103,8 @@ describe('ensure-playwright.js + browser server', () => {
       expect(initResp!.id).toBe(1);
       expect(initResp!.error).toBeUndefined();
 
-      // Send initialized notification then wait briefly for server to process
+      await new Promise((r) => setTimeout(r, 500));
+
       proc.stdin!.write(
         JSON.stringify({
           jsonrpc: '2.0',
@@ -144,9 +112,9 @@ describe('ensure-playwright.js + browser server', () => {
           params: {},
         }) + '\n',
       );
+
       await new Promise((r) => setTimeout(r, 500));
 
-      // List tools — should include browser tools that require playwright-core
       proc.stdin!.write(
         JSON.stringify({
           jsonrpc: '2.0',

@@ -15,6 +15,18 @@ description: Captures route-by-route screenshots of a running Flutter app for vi
 - `mcp__plugin_flutter_flutter-ultra-runtime__attach` with the returned URI.
 - For web targets, also `mcp__plugin_flutter_flutter-ultra-browser__launch_browser` or `mcp__plugin_flutter_flutter-ultra-browser__connect_over_cdp` to get a browser context.
 
+**Web launch mode for tours**: Use `webLaunchMode: "web-server"` for fast startup and parallel instance support. Tours are screenshot-only and don't need VM Service tools. See `flutter-drive` skill for the full launch mode reference.
+
+**Parallel subagent tours**: Launch multiple instances on different ports (`webPort: 8081`, `8082`, etc.) and assign route subsets to each subagent for faster coverage:
+
+```
+# Subagent 1: auth routes (port 8081)
+launch_app(..., webLaunchMode: "web-server", webPort: 8081)
+
+# Subagent 2: dashboard routes (port 8082)
+launch_app(..., webLaunchMode: "web-server", webPort: 8082)
+```
+
 ### 2. Discover routes
 
 Call `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` to extract the route table:

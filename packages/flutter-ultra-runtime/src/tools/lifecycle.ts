@@ -170,7 +170,11 @@ export function registerLifecycleTools(opts: {
     {
       name: 'launch_app',
       description:
-        'MARATHON split-tool — spawn `flutter run --machine` and return a jobId. Poll status with `poll_launch_app`. Auto-imports dartDefines + args from .vscode/launch.json when `importLaunchJsonConfig` is set.',
+        'MARATHON split-tool — spawn `flutter run --machine` and return a jobId. Poll status with `poll_launch_app`. Auto-imports dartDefines + args from .vscode/launch.json when `importLaunchJsonConfig` is set.\n\n' +
+        'Web launch modes:\n' +
+        '- chrome (default): headless Chrome + DWDS → full VM Service (widget tree, evaluate, hot reload). Slower startup (60-90s for large apps).\n' +
+        '- chrome-headed: same as chrome but visible browser window for local development.\n' +
+        '- web-server: static file server only, no DWDS/VM Service. Fast startup. Use Playwright via browser server for navigation/screenshots. Best for parallel subagent tours.',
       inputShape: {
         projectDir: z
           .string()
@@ -199,7 +203,13 @@ export function registerLifecycleTools(opts: {
           .boolean()
           .optional()
           .describe(
-            'Run web targets in headless Chrome. Defaults to true for MCP automation. Set false for headed.',
+            'Run web targets in headless Chrome. Defaults to true for MCP automation. Set false for headed. Ignored in web-server mode.',
+          ),
+        webLaunchMode: z
+          .enum(['chrome', 'chrome-headed', 'web-server'])
+          .optional()
+          .describe(
+            'Web launch mode. chrome=headless+DWDS (default), chrome-headed=visible+DWDS, web-server=static serving only (fast, no VM Service).',
           ),
       },
       timeoutClass: 'quick',
@@ -221,8 +231,14 @@ export function registerLifecycleTools(opts: {
           ? { importLaunchJsonConfig: args.importLaunchJsonConfig }
           : {}),
         ...(args.headless !== undefined ? { headless: args.headless } : {}),
+        ...(args.webLaunchMode !== undefined ? { webLaunchMode: args.webLaunchMode } : {}),
       });
-      return { jobId: job.jobId, stage: job.stage };
+      return {
+        jobId: job.jobId,
+        stage: job.stage,
+        ...(job.webLaunchMode ? { webLaunchMode: job.webLaunchMode } : {}),
+        ...(job.webServerUrl ? { webServerUrl: job.webServerUrl } : {}),
+      };
     },
   );
 

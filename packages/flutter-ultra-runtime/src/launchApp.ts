@@ -36,6 +36,8 @@ export const LaunchStageSchema = z.enum([
 ]);
 export type LaunchStage = z.infer<typeof LaunchStageSchema>;
 
+export const WebLaunchModeSchema = z.enum(['chrome', 'chrome-headed', 'web-server']);
+
 export const LaunchJobSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -49,6 +51,8 @@ export const LaunchJobSchema = z
     vmServiceUri: z.string().optional(),
     appId: z.string().optional(),
     chromeCdpPort: z.number().int().optional(),
+    webLaunchMode: WebLaunchModeSchema.optional(),
+    webServerUrl: z.string().optional(),
     startedAt: z.number().int(),
     updatedAt: z.number().int(),
     exitCode: z.number().int().optional(),
@@ -57,6 +61,8 @@ export const LaunchJobSchema = z
   })
   .strict();
 export type LaunchJob = z.infer<typeof LaunchJobSchema>;
+
+export type WebLaunchMode = 'chrome' | 'chrome-headed' | 'web-server';
 
 export interface LaunchAppInput {
   projectDir: string;
@@ -70,10 +76,9 @@ export interface LaunchAppInput {
   webBrowserFlags?: string[];
   splitDebugInfo?: string;
   pubGetFirst?: boolean;
-  // Auto-import from .vscode/launch.json by configuration name.
   importLaunchJsonConfig?: string;
-  // Run web target in headless Chrome. Defaults to true for MCP automation.
   headless?: boolean;
+  webLaunchMode?: WebLaunchMode;
 }
 
 export interface VscodeLaunchConfig {
@@ -210,23 +215,30 @@ export function createLaunchService(opts: {
   }
 
   function buildCliArgs(input: LaunchAppInput, vscodeCfg: VscodeLaunchConfig | null): string[] {
+    const mode = input.webLaunchMode ?? 'chrome';
+    const effectiveDevice = mode === 'web-server' ? 'web-server' : input.device;
+
     const args = ['run', '--machine'];
     args.push('-t', input.target);
-    args.push('-d', input.device);
+    args.push('-d', effectiveDevice);
     if (input.flavor) args.push('--flavor', input.flavor);
     else if (vscodeCfg?.flavor) args.push('--flavor', vscodeCfg.flavor);
 
-    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
+    const isWebDevice = /^(chrome|edge|web-server)$/i.test(effectiveDevice);
+    const isWebServer = mode === 'web-server';
     process.stderr.write(
-      `[flutter-ultra-runtime] buildCliArgs: device=${input.device} isWebDevice=${isWebDevice} headless=${input.headless}\n`,
+      `[flutter-ultra-runtime] buildCliArgs: device=${effectiveDevice} mode=${mode} isWebDevice=${isWebDevice} headless=${input.headless}\n`,
     );
     if (input.webRenderer) args.push(`--web-renderer=${input.webRenderer}`);
     if (input.webPort !== undefined) args.push(`--web-port=${input.webPort}`);
     if (input.webHostname) args.push(`--web-hostname=${input.webHostname}`);
     const userFlags = input.webBrowserFlags ?? [];
-    const hasHeadlessFlag = userFlags.some((f) => /headless/i.test(f));
-    if (isWebDevice && input.headless !== false && !hasHeadlessFlag) {
-      args.push('--web-browser-flag=--headless=new');
+    if (!isWebServer) {
+      const hasHeadlessFlag = userFlags.some((f) => /headless/i.test(f));
+      const wantHeadless = mode === 'chrome' && input.headless !== false;
+      if (isWebDevice && wantHeadless && !hasHeadlessFlag) {
+        args.push('--web-browser-flag=--headless=new');
+      }
     }
     for (const flag of userFlags) args.push(`--web-browser-flag=${flag}`);
     if (input.splitDebugInfo) args.push(`--split-debug-info=${input.splitDebugInfo}`);
@@ -252,11 +264,15 @@ export function createLaunchService(opts: {
       : null;
     const args = buildCliArgs(input, vscodeCfg);
 
-    // For web targets, allocate a fixed CDP port so Playwright can attach
+    // For chrome modes, allocate a fixed CDP port so Playwright can attach
     // via connect_over_cdp without manual port discovery.
-    const isWebDevice = /^(chrome|edge|web-server)$/i.test(input.device);
+    // web-server mode doesn't launch Chrome — no CDP port needed.
+    const effectiveMode = input.webLaunchMode ?? 'chrome';
+    const isWebDevice = /^(chrome|edge|web-server)$/i.test(
+      effectiveMode === 'web-server' ? 'web-server' : input.device,
+    );
     let chromeCdpPort: number | undefined;
-    if (isWebDevice) {
+    if (isWebDevice && effectiveMode !== 'web-server') {
       const hasDebugPort = args.some((a) => /remote-debugging-port/i.test(a));
       if (!hasDebugPort) {
         const { createServer } = await import('node:net');
@@ -277,9 +293,10 @@ export function createLaunchService(opts: {
       schemaVersion: 1,
       jobId,
       target: input.target,
-      device: input.device,
+      device: effectiveMode === 'web-server' ? 'web-server' : input.device,
       ...(input.flavor !== undefined ? { flavor: input.flavor } : {}),
       ...(chromeCdpPort !== undefined ? { chromeCdpPort } : {}),
+      ...(effectiveMode !== 'chrome' ? { webLaunchMode: effectiveMode } : {}),
       stage: 'pending',
       startedAt: Date.now(),
       updatedAt: Date.now(),
@@ -594,8 +611,20 @@ function setupStdoutParser(
         }
       } else if (parsed?.event === 'app.webLaunchUrl' && parsed.params) {
         isWebTarget = true;
-        process.stderr.write(`[flutter-ultra-runtime] app.webLaunchUrl → isWebTarget=true\n`);
-        logger.info('web launch URL', { jobId, url: pickString(parsed.params, ['url']) });
+        const webUrl = pickString(parsed.params, ['url']);
+        process.stderr.write(`[flutter-ultra-runtime] app.webLaunchUrl → isWebTarget=true url=${webUrl}\n`);
+        logger.info('web launch URL', { jobId, url: webUrl });
+        if (webUrl) {
+          await patchJob(jobId, { webServerUrl: webUrl });
+        }
+        // web-server mode: no DWDS attach will happen, transition immediately.
+        const currentJob = await stateRead(jobFilePath(jobId), {
+          schemaVersion: 1, jobId, target: '', device: '', stage: 'pending',
+          startedAt: 0, updatedAt: 0, recentLog: [],
+        } as LaunchJob, LaunchJobSchema);
+        if (currentJob.webLaunchMode === 'web-server') {
+          await completeAttach();
+        }
       } else if (parsed?.event === 'app.start' && parsed.params) {
         const startAppId = pickString(parsed.params, ['appId']);
         if (startAppId) handle.appId = startAppId;

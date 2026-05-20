@@ -99,6 +99,72 @@ When a flow involves an external OAuth consent screen:
 
 Produce a numbered summary: steps taken, pass/fail status per step, screenshot paths, and any errors from `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`.
 
+## Web launch modes
+
+When launching a Flutter web app, choose the mode based on what the flow needs:
+
+| Mode | Command | VM Service | Hot Reload | Startup | Best for |
+|------|---------|-----------|-----------|---------|----------|
+| `chrome` (default) | `-d chrome --headless=new` | Yes (DWDS) | Yes | 60-90s | Debugging, widget inspection, evaluate, state reading |
+| `chrome-headed` | `-d chrome` (visible) | Yes (DWDS) | Yes | 60-90s | Local development, watching the agent work |
+| `web-server` | `-d web-server` | No | No | 5-10s | Visual tours, screenshots, parallel subagent runs |
+
+### When to use each mode
+
+**Use `chrome` (default)** when the flow needs:
+- Widget tree inspection (`get_widget_tree`, `find_widget`)
+- Expression evaluation (`evaluate`)
+- Hot reload after code changes
+- Runtime error inspection (`get_runtime_errors`)
+- Gesture tools via VM Service (`tap`, `enter_text`, `scroll_to`)
+
+**Use `chrome-headed`** when:
+- You want to visually watch the agent drive the app
+- Debugging a flow that doesn't work headless (rare)
+
+**Use `web-server`** when:
+- The flow only needs screenshots and Playwright navigation
+- Running multiple parallel app instances for subagent tours
+- Fast iteration without waiting for DWDS connection
+- Cross-browser testing (Firefox, WebKit via Playwright)
+
+### Launching in each mode
+
+```
+# Default (chrome headless + DWDS):
+launch_app(projectDir, target, device: "chrome")
+
+# Chrome headed (visible + DWDS):
+launch_app(projectDir, target, device: "chrome", webLaunchMode: "chrome-headed")
+
+# Web-server (fast, no DWDS):
+launch_app(projectDir, target, device: "chrome", webLaunchMode: "web-server", webPort: 8080)
+```
+
+For web-server mode, after `poll_launch_app` shows `attached`, use browser server tools:
+- `mcp__plugin_flutter_flutter-ultra-browser__launch_browser` → navigate to `webServerUrl`
+- `mcp__plugin_flutter_flutter-ultra-browser__screenshot` for captures
+- `mcp__plugin_flutter_flutter-ultra-browser__click` / `fill` for interaction
+
+### Parallel instances for subagent tours
+
+Multiple app instances can run simultaneously on different ports. This enables parallel visual documentation where each subagent drives a different section of the app:
+
+```
+# Agent A: tour the auth flows
+launch_app(projectDir, target, device: "chrome", webLaunchMode: "web-server", webPort: 8081)
+
+# Agent B: tour the dashboard (simultaneous)
+launch_app(projectDir, target, device: "chrome", webLaunchMode: "web-server", webPort: 8082)
+
+# Agent C: tour settings (simultaneous)
+launch_app(projectDir, target, device: "chrome", webLaunchMode: "web-server", webPort: 8083)
+```
+
+Each agent launches its own Playwright browser, navigates to its port, and captures screenshots independently. No shared state, no conflicts.
+
+**Limitation**: `chrome` mode (with DWDS) does NOT support parallel instances to the same project — Flutter's machine-mode daemon locks the compile. Use `web-server` for parallelism.
+
 ## Handling edge cases
 
 - **Element not found**: call `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree` to find where the element is. Wait up to 3s via `mcp__plugin_flutter_flutter-ultra-gesture__wait_for`.

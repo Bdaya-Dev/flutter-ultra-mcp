@@ -58,21 +58,6 @@ jobs:
           HUSKY: '0'
         run: npx semantic-release
 
-      # Dart pub.dev publishing via GitHub OIDC trusted publishing.
-      # Only runs on stable releases (main branch). Pre-release branches
-      # (next/beta/alpha) skip this so only stable versions land on pub.dev.
-      - uses: subosito/flutter-action@v2
-        if: github.ref == 'refs/heads/main'
-        with:
-          channel: stable
-
-      - name: Publish Dart packages to pub.dev
-        if: github.ref == 'refs/heads/main'
-        continue-on-error: true
-        run: |
-          cd dart/ultra_flutter
-          flutter pub get
-          flutter pub publish --force
-          cd ../../dart/ultra_flutter_devtools
-          flutter pub get
-          flutter pub publish --force
+      # Dart pub.dev publishing handled by .github/workflows/publish-pub.yml
+      # which triggers on tag push and uses dart-lang/setup-dart's reusable
+      # workflow with OIDC trusted publishing. No manual auth needed.

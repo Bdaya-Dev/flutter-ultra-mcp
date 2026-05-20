@@ -19,7 +19,7 @@ Expected end state: `UltraFlutterBinding` initialized in the app entry point, `u
 
 ### 2. Add `ultra_flutter` to dependencies
 
-- `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `package: ultra_flutter` (NOT dev — it runs in the app process, guarded by `kDebugMode`).
+- `mcp__plugin_flutter_flutter-ultra-build__pub_add` with `package: ultra_flutter` (NOT dev — it runs in the app process, guarded by `!kReleaseMode`).
 - If it fails (not on pub.dev), use `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` to point to the bundled path, add `ultra_flutter: any` under `dependencies` manually, then `mcp__plugin_flutter_flutter-ultra-build__pub_get`.
 
 ### 3. Patch the app entry point
@@ -32,7 +32,7 @@ import 'package:flutter/widgets.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     UltraFlutterBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +53,7 @@ class AppBinding extends WidgetsFlutterBinding
     with SentryWidgetsBindingMixin, UltraFlutterBinding {}
 
 void main() async {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     AppBinding();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -169,7 +169,7 @@ Future<void> main() async {
   await SentryFlutter.init(
     (options) { options.dsn = '...'; },
     appRunner: () {
-      if (kDebugMode) {
+      if (!kReleaseMode) {
         AppBinding();
       } else {
         WidgetsFlutterBinding.ensureInitialized();

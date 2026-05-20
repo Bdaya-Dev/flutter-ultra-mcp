@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     UltraFlutterBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();

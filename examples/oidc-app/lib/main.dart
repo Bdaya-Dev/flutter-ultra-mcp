@@ -5,7 +5,7 @@ import 'package:ultra_flutter/ultra_flutter.dart';
 import 'oidc_service.dart';
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     UltraFlutterBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();

@@ -27,7 +27,7 @@ import 'package:ultra_flutter/src/version.g.dart' as v;
 /// class AppBinding extends WidgetsFlutterBinding with UltraFlutterBinding {}
 ///
 /// void main() {
-///   if (kDebugMode) {
+///   if (!kReleaseMode) {
 ///     UltraFlutterBinding.ensureInitialized();
 ///   } else {
 ///     WidgetsFlutterBinding.ensureInitialized();

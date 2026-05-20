@@ -29,7 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     UltraFlutterBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -102,7 +102,7 @@ import 'package:flutter/foundation.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     UltraFlutterBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +124,7 @@ class AppBinding extends WidgetsFlutterBinding
     with SentryWidgetsBindingMixin, UltraFlutterBinding {}
 
 void main() {
-  if (kDebugMode) {
+  if (!kReleaseMode) {
     AppBinding();
   } else {
     WidgetsFlutterBinding.ensureInitialized();

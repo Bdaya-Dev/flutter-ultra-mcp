@@ -26,11 +26,14 @@ void main() {
 class AppBinding extends WidgetsFlutterBinding
     with SentryWidgetsBindingMixin, UltraFlutterBinding {}
 
-void main() {
+void main() async {
   if (kDebugMode) {
-    AppBinding.ensureInitialized();
+    AppBinding();
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
   }
-  // ...
+  await SentryFlutter.init((options) { /* ... */ });
+  runApp(const MyApp());
 }
 ```
 

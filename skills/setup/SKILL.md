@@ -28,26 +28,42 @@ Expected end state: `UltraFlutterBinding` initialized in the app entry point, `u
 
 ```dart
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
 void main() {
   if (kDebugMode) {
     UltraFlutterBinding.ensureInitialized();
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
   }
   runApp(const MyApp());
 }
 ```
 
-**With Sentry** (custom binding mixin):
+**With Sentry** (composed binding class — both mixins on one binding):
 
 ```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:ultra_flutter/ultra_flutter.dart';
 
-class AppBinding extends WidgetsFlutterBinding with UltraFlutterBindingMixin {
-  static AppBinding ensureInitialized() =>
-      WidgetsFlutterBinding.ensureInitialized() as AppBinding;
+class AppBinding extends WidgetsFlutterBinding
+    with SentryWidgetsBindingMixin, UltraFlutterBinding {}
+
+void main() async {
+  if (kDebugMode) {
+    AppBinding();
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
+  }
+  await SentryFlutter.init((options) { /* ... */ });
+  runApp(const MyApp());
 }
 ```
+
+The `on WidgetsBinding` constraint lets `UltraFlutterBinding` compose with any other mixin — Sentry, integration_test, or custom bindings. Only one binding class can exist per process, so both mixins must be on the same class.
 
 Skip if `project_info` reported `hasUltraBinding: true`.
 

@@ -1,3 +1,10 @@
+## [1.9.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.3...v1.9.4) (2026-05-20)
+
+
+### Bug Fixes
+
+* **skills:** ultra_flutter is a dependency, not dev_dependency ([2a1d86d](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/2a1d86d230fc88eda7408ae5885c6ad3bb27e1ee))
+
 ## [1.9.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.9.2...v1.9.3) (2026-05-19)
 
 

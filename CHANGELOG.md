@@ -1,3 +1,10 @@
+## [1.11.5](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.4...v1.11.5) (2026-05-20)
+
+
+### Bug Fixes
+
+* **deps:** move playwright-core to root dependencies, remove session hook ([db61ba3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/db61ba310349c03c449a5cf78a01cbf961260c7d))
+
 ## [1.11.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.3...v1.11.4) (2026-05-20)
 
 

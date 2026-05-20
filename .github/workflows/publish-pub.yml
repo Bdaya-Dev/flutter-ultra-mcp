@@ -1,13 +1,17 @@
 name: Publish to pub.dev
 
+# Triggered via workflow_dispatch from release.yml with --ref pointing
+# at the semantic-release tag. pub.dev requires the OIDC token to carry
+# a tag ref — workflow_run and push-to-main events are server-side rejected.
+#
+# See: https://dart.dev/tools/pub/automated-publishing
+# See: https://github.com/dart-lang/pub-dev/issues/8507
+
 on:
-  workflow_run:
-    workflows: ['Release']
-    types: [completed]
+  workflow_dispatch:
 
 jobs:
   publish-ultra-flutter:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     permissions:
       id-token: write
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
@@ -15,7 +19,6 @@ jobs:
       working-directory: dart/ultra_flutter
 
   publish-ultra-flutter-devtools:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     permissions:
       id-token: write
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

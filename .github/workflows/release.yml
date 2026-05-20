@@ -53,11 +53,22 @@ jobs:
       # which satisfies SLSA Level 2: provenance is attested via GitHub's
       # Sigstore-backed publish attestation — no manual token needed.
       - name: semantic-release
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: '0'
-        run: npx semantic-release
+        run: |
+          npx semantic-release
+          # Extract the tag semantic-release just created (if any)
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      # Dart pub.dev publishing handled by .github/workflows/publish-pub.yml
-      # which triggers on tag push and uses dart-lang/setup-dart's reusable
-      # workflow with OIDC trusted publishing. No manual auth needed.
+      # Trigger pub.dev publish via workflow_dispatch with the tag ref.
+      # pub.dev requires the OIDC token to carry a tag ref — workflow_run
+      # and push-to-main events are server-side rejected.
+      # GITHUB_TOKEN CAN trigger workflow_dispatch (explicitly exempted).
+      - name: Trigger pub.dev publish
+        if: steps.release.outputs.tag != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run publish-pub.yml --ref "${{ steps.release.outputs.tag }}"

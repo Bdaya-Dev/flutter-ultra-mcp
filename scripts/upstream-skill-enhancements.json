@@ -1,0 +1,361 @@
+{
+  "add-integration-test": {
+    "description": "After writing the integration test, use these tools to launch the app and verify it:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__launch_app",
+        "description": "Launch the app with the integration test target"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__attach",
+        "description": "Attach to the running app's VM Service"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__screenshot",
+        "description": "Capture screenshots during test verification"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree",
+        "description": "Inspect the widget tree to verify test assertions"
+      }
+    ]
+  },
+  "add-widget-preview": {
+    "description": "After adding `@Preview` annotations, use these tools to view and capture previews:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__launch_app",
+        "description": "Launch the app to render previews"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__screenshot",
+        "description": "Capture preview screenshots for documentation"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Verify preview annotations are syntactically correct"
+      }
+    ]
+  },
+  "add-widget-test": {
+    "description": "After writing the widget test, run and validate it with these tools:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests",
+        "description": "Execute widget tests (supports `testNamePattern` to scope)"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__poll_run_widget_tests",
+        "description": "Monitor test progress until completion"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__get_run_widget_tests_result",
+        "description": "Get detailed results: passed, failed, skipped, per-failure info"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Static analysis before running tests"
+      }
+    ]
+  },
+  "apply-architecture-best-practices": {
+    "description": "Use these tools to audit and validate architectural decisions:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__list_projects",
+        "description": "Discover all projects in the workspace"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__project_info",
+        "description": "Get project structure, dependencies, and entry points"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Run static analysis to catch architectural violations"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_deps",
+        "description": "Review dependency graph for layering issues"
+      }
+    ]
+  },
+  "build-responsive-layout": {
+    "description": "After building the layout, verify responsiveness across breakpoints:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__audit_responsive",
+        "description": "Automated responsive audit at multiple viewport sizes"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__screenshot",
+        "description": "Capture screenshots at each breakpoint"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree",
+        "description": "Inspect render tree for constraint issues"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors",
+        "description": "Check for overflow errors at different sizes"
+      }
+    ]
+  },
+  "fix-layout-issues": {
+    "description": "Diagnose and verify layout fixes with live app inspection:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors",
+        "description": "Fetch current runtime errors including RenderFlex overflows"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree",
+        "description": "Inspect render tree to see constraint propagation"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__toggle_debug_paint",
+        "description": "Toggle debug paint to visualize layout boundaries"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__hot_reload",
+        "description": "Hot reload after applying fix to verify immediately"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__screenshot",
+        "description": "Capture before/after screenshots of the fix"
+      }
+    ]
+  },
+  "implement-json-serialization": {
+    "description": "If using code generation (json_serializable), run the build runner:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build",
+        "description": "Run build_runner to generate serialization code"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__poll_build_runner_job",
+        "description": "Monitor code generation progress"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Verify generated code has no analysis errors"
+      }
+    ]
+  },
+  "setup-declarative-routing": {
+    "description": "After configuring routes, test navigation in the running app:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__launch_app",
+        "description": "Launch the app to test routing"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-browser__navigate",
+        "description": "Navigate to specific routes in the browser (web targets)"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__screenshot",
+        "description": "Capture each route for visual verification"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors",
+        "description": "Check for routing errors (missing routes, redirect loops)"
+      }
+    ]
+  },
+  "setup-localization": {
+    "description": "Generate and validate localization files with these tools:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__flutter_gen_l10n",
+        "description": "Generate localization Dart code from ARB files"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__list_missing_translations",
+        "description": "Find missing translation keys across locales"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__arb_add_key",
+        "description": "Add a new translation key to all ARB files"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__arb_diff",
+        "description": "Compare ARB files to find drift between locales"
+      }
+    ]
+  },
+  "use-http-package": {
+    "description": "Monitor and debug HTTP calls in the running app:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture",
+        "description": "Start capturing HTTP traffic"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_http_events",
+        "description": "View captured HTTP requests and responses"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__stop_http_capture",
+        "description": "Stop HTTP capture"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors",
+        "description": "Check for unhandled HTTP exceptions"
+      }
+    ]
+  },
+  "add-unit-test": {
+    "description": "After writing the unit test, run and validate it:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests",
+        "description": "Execute unit tests (supports `testNamePattern` and `coverage`)"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__poll_run_unit_tests",
+        "description": "Monitor test progress until completion"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result",
+        "description": "Get detailed results with per-failure info"
+      }
+    ]
+  },
+  "build-cli-app": {
+    "description": "Use these tools to validate the CLI app structure:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Static analysis on the CLI project"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_deps",
+        "description": "Review dependency tree"
+      }
+    ]
+  },
+  "collect-coverage": {
+    "description": "Collect coverage directly via the test runner:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests",
+        "description": "Run tests with `coverage: true` to collect LCOV data"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__get_run_unit_tests_result",
+        "description": "Get results including coverage report path"
+      }
+    ]
+  },
+  "fix-runtime-errors": {
+    "description": "Diagnose and fix runtime errors in the live app:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors",
+        "description": "Fetch active stack traces from the running app"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__evaluate",
+        "description": "Evaluate expressions in the running isolate"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__hot_reload",
+        "description": "Hot reload after applying fix to verify immediately"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_logs",
+        "description": "View recent log output for context"
+      }
+    ]
+  },
+  "generate-test-mocks": {
+    "description": "Run build_runner to generate mock classes:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build",
+        "description": "Run build_runner to generate *.mocks.dart files"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__poll_build_runner_job",
+        "description": "Monitor generation progress"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__get_build_runner_result",
+        "description": "Check for generation errors"
+      }
+    ]
+  },
+  "migrate-to-checks-package": {
+    "description": "Validate the migration with static analysis and tests:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Check for type errors after migration"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__fix",
+        "description": "Apply automated fixes for simple migrations"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests",
+        "description": "Run tests to verify migration didn't break assertions"
+      }
+    ]
+  },
+  "resolve-package-conflicts": {
+    "description": "Investigate and resolve dependency conflicts:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_get",
+        "description": "Run pub get to see the current resolution state"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_deps",
+        "description": "View the full dependency tree"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_outdated",
+        "description": "Check which packages are outdated"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__pub_upgrade",
+        "description": "Attempt upgrade to resolve conflicts"
+      }
+    ]
+  },
+  "run-static-analysis": {
+    "description": "Run analysis and auto-fix via flutter-ultra tools:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Run dart analyze with full diagnostics"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__fix",
+        "description": "Apply dart fix --apply for automated lint fixes"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__fix_preview",
+        "description": "Preview fixes before applying"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__format",
+        "description": "Format code after fixes"
+      }
+    ]
+  },
+  "use-pattern-matching": {
+    "description": "Validate pattern matching usage with analysis:",
+    "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__analyze",
+        "description": "Check for exhaustiveness and type errors"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__fix",
+        "description": "Apply automated pattern matching migrations"
+      }
+    ]
+  }
+}

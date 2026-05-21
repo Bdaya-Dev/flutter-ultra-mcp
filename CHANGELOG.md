@@ -1,3 +1,10 @@
+## [1.11.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.6...v1.11.7) (2026-05-20)
+
+
+### Bug Fixes
+
+* **deps:** use official Claude Code plugin dependency pattern ([e50c1d8](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/e50c1d82f51520fb4f48f80ecaeeba2f3d6f5e2d))
+
 ## [1.11.6](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.5...v1.11.6) (2026-05-20)
 
 

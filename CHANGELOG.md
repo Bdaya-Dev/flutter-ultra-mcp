@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.7...v1.12.0) (2026-05-21)
+
+
+### Features
+
+* **skills:** vendor 19 upstream skills from flutter/skills and dart-lang/skills ([fd886ac](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/fd886ac644bc1a91383e5f8bf9db0c320aef21d9))
+
 ## [1.11.7](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.6...v1.11.7) (2026-05-20)
 
 

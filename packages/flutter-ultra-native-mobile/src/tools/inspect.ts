@@ -7,7 +7,7 @@ import type { DeviceRegistry } from '../registry.js';
 import { listDevicesSchema, dumpA11ySchema, waitForNativeElementSchema } from '../schemas.js';
 import { AndroidDevice } from '../android.js';
 import { IosSimDevice } from '../ios.js';
-import { findNode, parseUiautomatorXml } from '../a11y.js';
+import { findNode, parseUiautomatorXml, parseWdaSourceXml } from '../a11y.js';
 
 export function registerInspectTools(opts: {
   server: FlutterUltraServer;
@@ -60,15 +60,14 @@ export function registerInspectTools(opts: {
         return { platform: 'android', deviceId: args.deviceId, tree };
       }
       if (device instanceof IosSimDevice) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: 'dump_a11y_tree is not available on iOS Simulator — it requires WebDriverAgent or Apple XCUITest harness. Use flutter-ultra-gesture interactive_elements for Flutter widget introspection instead.',
-            },
-          ],
-          isError: true,
-        };
+        sendProgress({ progress: 0.2, message: 'fetching WDA /source from iOS Simulator' });
+        const xml = await device.wdaFetchSource(args.wdaPort, {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        sendProgress({ progress: 0.7, message: 'parsing WDA accessibility XML' });
+        const tree = parseWdaSourceXml(xml);
+        return { platform: 'ios-sim', deviceId: args.deviceId, tree };
       }
       throw new InvalidToolInputError(
         `dump_a11y_tree: device kind '${device.kind}' not supported.`,
@@ -88,17 +87,6 @@ export function registerInspectTools(opts: {
     async (args, { signal, sendProgress }) => {
       if (signal.aborted) throw signal.reason as Error;
       const device = await registry.get(args.deviceId);
-      if (!(device instanceof AndroidDevice)) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: 'wait_for_native_element is not available on iOS — it depends on dump_a11y_tree which requires WebDriverAgent. Use flutter-ultra-gesture wait_for with Flutter widget finders instead.',
-            },
-          ],
-          isError: true,
-        };
-      }
       const deadline = Date.now() + args.timeoutMs;
       let polls = 0;
       const finder = {
@@ -116,18 +104,29 @@ export function registerInspectTools(opts: {
         polls += 1;
         sendProgress({ progress: polls, message: `polling a11y tree (${polls})` });
         try {
-          const xml = await device.uiautomatorDumpXml({
-            timeoutMs: Math.min(15_000, deadline - Date.now()),
-            signal,
-          });
-          const tree = parseUiautomatorXml(xml);
+          let tree;
+          if (device instanceof AndroidDevice) {
+            const xml = await device.uiautomatorDumpXml({
+              timeoutMs: Math.min(15_000, deadline - Date.now()),
+              signal,
+            });
+            tree = parseUiautomatorXml(xml);
+          } else if (device instanceof IosSimDevice) {
+            const xml = await device.wdaFetchSource(args.wdaPort, {
+              timeoutMs: Math.min(25_000, deadline - Date.now()),
+              signal,
+            });
+            tree = parseWdaSourceXml(xml);
+          } else {
+            throw new InvalidToolInputError(
+              `wait_for_native_element: device kind '${device.kind}' not supported.`,
+            );
+          }
           const node = findNode(tree, finder);
           if (node) {
             return { matched: true, polls, node };
           }
         } catch (err) {
-          // Transient device drops happen during boot — keep polling unless the
-          // signal aborted us.
           if (signal.aborted) throw err;
         }
         await new Promise<void>((resolve) => setTimeout(resolve, args.pollIntervalMs).unref?.());

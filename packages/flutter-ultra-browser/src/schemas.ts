@@ -266,3 +266,122 @@ export const takeHeapSnapshotSchema = z
       .describe('Absolute path where the .heapsnapshot file is written. Defaults to a temp file.'),
   })
   .strict();
+
+export const dragSchema = z
+  .object({
+    pageId: z.string(),
+    source: z.string().describe('Selector for the element to drag.'),
+    target: z.string().describe('Selector for the drop target element.'),
+    sourcePosition: z
+      .object({ x: z.number(), y: z.number() })
+      .strict()
+      .optional()
+      .describe('Offset within the source element to start the drag (pixels from top-left).'),
+    targetPosition: z
+      .object({ x: z.number(), y: z.number() })
+      .strict()
+      .optional()
+      .describe('Offset within the target element to drop onto (pixels from top-left).'),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+export const dropFilesSchema = z
+  .object({
+    pageId: z.string(),
+    selector: z.string().describe('Selector for the file input element to receive the files.'),
+    files: z
+      .array(z.string())
+      .min(1)
+      .describe('Absolute paths of files to set on the input element.'),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+export const handleDialogSchema = z
+  .object({
+    pageId: z.string(),
+    action: z.enum(['accept', 'dismiss']).describe('Whether to accept or dismiss the dialog.'),
+    promptText: z
+      .string()
+      .optional()
+      .describe('Text to enter when accepting a prompt dialog. Ignored for alert/confirm.'),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+export const startTracingSchema = z
+  .object({
+    contextId: z.string(),
+    screenshots: z
+      .boolean()
+      .default(true)
+      .describe('Capture screenshots during tracing (recommended for timeline view).'),
+    snapshots: z
+      .boolean()
+      .default(true)
+      .describe('Capture DOM snapshots during tracing (enables source inspection).'),
+    sources: z.boolean().default(false).describe('Include source files in the trace archive.'),
+  })
+  .strict();
+
+export const stopTracingSchema = z
+  .object({
+    contextId: z.string(),
+    outputPath: z
+      .string()
+      .describe('Absolute path where the .zip trace archive is written (e.g. /tmp/trace.zip).'),
+  })
+  .strict();
+
+export const mockNetworkRouteSchema = z
+  .object({
+    contextId: z.string(),
+    pattern: z
+      .string()
+      .describe(
+        'URL glob or regex string matched by Playwright page.route(). Examples: "**/api/v1/users**", "/^\\/graphql$/". Applied to every page in the context.',
+      ),
+    status: z.number().int().min(100).max(599).default(200),
+    headers: z
+      .record(z.string(), z.string())
+      .default({})
+      .describe(
+        'Response headers. CORS headers (Access-Control-Allow-Origin etc.) are injected automatically unless overridden.',
+      ),
+    body: z
+      .string()
+      .default('')
+      .describe(
+        'Response body. Plain UTF-8 text, or base64-encoded bytes when encoding="base64" (use for gRPC-Web binary frames).',
+      ),
+    encoding: z
+      .enum(['utf8', 'base64'])
+      .default('utf8')
+      .describe('Encoding of the body field. Use "base64" for binary gRPC-Web responses.'),
+  })
+  .strict();
+
+export const unmockNetworkRouteSchema = z
+  .object({
+    contextId: z.string(),
+    pattern: z.string().describe('Exact pattern string previously passed to mock_network_route.'),
+  })
+  .strict();
+
+export const listMockRoutesSchema = z
+  .object({
+    contextId: z.string(),
+  })
+  .strict();
+
+export const networkStateSetSchema = z
+  .object({
+    contextId: z.string(),
+    offline: z
+      .boolean()
+      .describe(
+        'true = simulate complete network loss for all pages in this context; false = restore connectivity.',
+      ),
+  })
+  .strict();

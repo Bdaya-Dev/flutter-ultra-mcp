@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ultra_flutter/src/binding/register_extension_internal.dart';
@@ -475,6 +477,54 @@ mixin UltraFlutterBinding on WidgetsBinding {
           'message': didPop
               ? 'Back button pressed, route was popped'
               : 'Back button pressed, no route to pop (app may exit)',
+        });
+      },
+    );
+
+    registerInternalUltraExtension(
+      name: 'ultra.performActions',
+      callback: (params) async {
+        final rawActions = params['actions'];
+        if (rawActions == null) {
+          return UltraExtensionResult.invalidParams(
+            'Missing required parameter: actions',
+          );
+        }
+
+        final List<dynamic> decoded;
+        try {
+          decoded = json.decode(rawActions) as List<dynamic>;
+        } on FormatException catch (e) {
+          return UltraExtensionResult.invalidParams(
+            'Parameter "actions" must be a JSON array: ${e.message}',
+          );
+        }
+
+        final actions = <Map<String, dynamic>>[];
+        for (var i = 0; i < decoded.length; i++) {
+          final entry = decoded[i];
+          if (entry is! Map<String, dynamic>) {
+            return UltraExtensionResult.invalidParams(
+              'actions[$i] must be an object with "pointerId" and "steps"',
+            );
+          }
+          if (entry['pointerId'] is! String) {
+            return UltraExtensionResult.invalidParams(
+              'actions[$i].pointerId must be a string',
+            );
+          }
+          if (entry['steps'] is! List) {
+            return UltraExtensionResult.invalidParams(
+              'actions[$i].steps must be an array',
+            );
+          }
+          actions.add(entry);
+        }
+
+        await _gestureDispatcher.performActions(actions);
+
+        return UltraExtensionResult.success({
+          'message': 'Performed ${actions.length} action chain(s)',
         });
       },
     );

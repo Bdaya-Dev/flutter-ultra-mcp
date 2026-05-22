@@ -2,7 +2,6 @@
 // pin_lock, dismiss_permission_dialog, permission grant/deny, orientation,
 // clipboard get/set, take_device_screenshot.
 
-import type { z } from 'zod';
 import { InvalidToolInputError, type FlutterUltraServer } from '@flutter-ultra/mcp-runtime';
 import type { DeviceRegistry } from '../registry.js';
 import { AndroidDevice } from '../android.js';
@@ -24,7 +23,13 @@ import {
   clipboardSetSchema,
   clipboardGetSchema,
 } from '../schemas.js';
-import { detectPermissionDialog, findNode, parseUiautomatorXml, type A11yNode } from '../a11y.js';
+import {
+  detectPermissionDialog,
+  findNode,
+  parseUiautomatorXml,
+  parseWdaSourceXml,
+  type A11yNode,
+} from '../a11y.js';
 
 // Android KeyEvent constants we use here.
 const KEYCODE = {
@@ -63,13 +68,6 @@ export function registerInteractTools(opts: {
         x = args.target.x;
         y = args.target.y;
       } else {
-        if (!(device instanceof AndroidDevice)) {
-          throw new InvalidToolInputError(
-            'native_tap finder targeting is Android-only today (depends on dump_a11y_tree).',
-          );
-        }
-        const xml = await device.uiautomatorDumpXml({ timeoutMs: args.timeoutMs, signal });
-        const tree = parseUiautomatorXml(xml);
         const finder = args.target.finder;
         const finderArgs = {
           ...(finder.text !== undefined ? { text: finder.text } : {}),
@@ -79,7 +77,19 @@ export function registerInteractTools(opts: {
           ...(finder.className !== undefined ? { className: finder.className } : {}),
           index: finder.index,
         };
-        const node: A11yNode | undefined = findNode(tree, finderArgs);
+        let node: A11yNode | undefined;
+        if (device instanceof AndroidDevice) {
+          const xml = await device.uiautomatorDumpXml({ timeoutMs: args.timeoutMs, signal });
+          node = findNode(parseUiautomatorXml(xml), finderArgs);
+        } else if (device instanceof IosSimDevice) {
+          // wdaPort is not on nativeTapSchema — default to 8100.
+          const xml = await device.wdaFetchSource(8100, { timeoutMs: args.timeoutMs, signal });
+          node = findNode(parseWdaSourceXml(xml), finderArgs);
+        } else {
+          throw new InvalidToolInputError(
+            `native_tap finder: unsupported device kind '${device.kind}'.`,
+          );
+        }
         if (!node || !node.bounds) {
           return { tapped: false, reason: 'finder did not match a node with bounds' };
         }
@@ -211,51 +221,126 @@ export function registerInteractTools(opts: {
     },
   );
 
-  function defineKeyTool(
-    name: string,
-    description: string,
-    keycode: number,
-    schemaShape: z.ZodRawShape,
-  ): void {
-    server.defineTool(
-      { name, description, inputShape: schemaShape, timeoutClass: 'quick' },
-      async (args, { signal }) => {
-        if (signal.aborted) throw signal.reason as Error;
-        const device = await registry.get(args.deviceId);
-        if (device instanceof AndroidDevice) {
-          const res = await device.shell(['input', 'keyevent', String(keycode)], {
-            timeoutMs: args.timeoutMs,
-            signal,
-          });
-          return {
-            ok: res.ok,
-            keycode,
-            exitCode: res.exitCode,
-            stderr: res.stderr.trim() || undefined,
-          };
-        }
-        // iOS sim has no key event for these; surface unsupported.
+  server.defineTool(
+    {
+      name: 'native_back',
+      description:
+        'Press the Back button (Android) or trigger a swipe-back edge gesture (iOS Simulator via simctl io pressButton).',
+      inputShape: nativeBackSchema.shape,
+      timeoutClass: 'quick',
+    },
+    async (args, { signal }) => {
+      if (signal.aborted) throw signal.reason as Error;
+      const device = await registry.get(args.deviceId);
+      if (device instanceof AndroidDevice) {
+        const res = await device.shell(['input', 'keyevent', String(KEYCODE.BACK)], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
         return {
-          ok: false,
-          unsupported: true,
-          message: `${name} is not implemented for iOS Simulator. Use simctl 'pressbutton' verbs via shell instead.`,
+          ok: res.ok,
+          keycode: KEYCODE.BACK,
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
         };
-      },
-    );
-  }
-
-  defineKeyTool(
-    'native_back',
-    'Press Android back / iOS swipe-back.',
-    KEYCODE.BACK,
-    nativeBackSchema.shape,
+      }
+      if (device instanceof IosSimDevice) {
+        // iOS has no universal back button. Simulate a left-edge swipe gesture
+        // (from x=1 to x=100 at vertical midpoint) which triggers navigation
+        // pop in apps using UINavigationController / Flutter Navigator.
+        const res = await device.simctl(['io', args.deviceId, 'swipe', '1', '400', '100', '400'], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return {
+          ok: res.ok,
+          gesture: 'edge-swipe-back',
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
+        };
+      }
+      throw new InvalidToolInputError(`native_back: unsupported device kind '${device.kind}'.`);
+    },
   );
-  defineKeyTool('native_home', 'Press Home button.', KEYCODE.HOME, nativeHomeSchema.shape);
-  defineKeyTool(
-    'native_app_switch',
-    'Show recent apps / app switcher.',
-    KEYCODE.APP_SWITCH,
-    nativeAppSwitchSchema.shape,
+
+  server.defineTool(
+    {
+      name: 'native_home',
+      description:
+        'Press the Home button. Android: KEYCODE_HOME. iOS Simulator: xcrun simctl io pressButton home.',
+      inputShape: nativeHomeSchema.shape,
+      timeoutClass: 'quick',
+    },
+    async (args, { signal }) => {
+      if (signal.aborted) throw signal.reason as Error;
+      const device = await registry.get(args.deviceId);
+      if (device instanceof AndroidDevice) {
+        const res = await device.shell(['input', 'keyevent', String(KEYCODE.HOME)], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return {
+          ok: res.ok,
+          keycode: KEYCODE.HOME,
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
+        };
+      }
+      if (device instanceof IosSimDevice) {
+        const res = await device.pressButton('home', { timeoutMs: args.timeoutMs, signal });
+        return {
+          ok: res.ok,
+          button: 'home',
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
+        };
+      }
+      throw new InvalidToolInputError(`native_home: unsupported device kind '${device.kind}'.`);
+    },
+  );
+
+  server.defineTool(
+    {
+      name: 'native_app_switch',
+      description:
+        'Show the recent-apps / app-switcher UI. Android: KEYCODE_APP_SWITCH. iOS Simulator: double-tap Home (two consecutive simctl io pressButton home calls).',
+      inputShape: nativeAppSwitchSchema.shape,
+      timeoutClass: 'quick',
+    },
+    async (args, { signal }) => {
+      if (signal.aborted) throw signal.reason as Error;
+      const device = await registry.get(args.deviceId);
+      if (device instanceof AndroidDevice) {
+        const res = await device.shell(['input', 'keyevent', String(KEYCODE.APP_SWITCH)], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return {
+          ok: res.ok,
+          keycode: KEYCODE.APP_SWITCH,
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
+        };
+      }
+      if (device instanceof IosSimDevice) {
+        // App switcher on iOS: swipe up and hold from the bottom of the screen.
+        // simctl io swipe from bottom-center upward halfway then hold (achieved
+        // via a slow swipe with no pressButton equivalent for app-switcher).
+        const res = await device.simctl(
+          ['io', args.deviceId, 'swipe', '200', '800', '200', '400'],
+          { timeoutMs: args.timeoutMs, signal },
+        );
+        return {
+          ok: res.ok,
+          gesture: 'swipe-up-hold',
+          exitCode: res.exitCode,
+          stderr: res.stderr.trim() || undefined,
+        };
+      }
+      throw new InvalidToolInputError(
+        `native_app_switch: unsupported device kind '${device.kind}'.`,
+      );
+    },
   );
 
   server.defineTool(
@@ -372,21 +457,30 @@ export function registerInteractTools(opts: {
     {
       name: 'native_permission_grant',
       description:
-        'Grant a runtime permission to an Android package via `pm grant`. Does not prompt the user.',
+        'Grant a runtime permission without a UI prompt. Android: `pm grant <packageName> <permission>`. iOS Simulator: `xcrun simctl privacy <udid> grant <service> <bundleId>` — service examples: camera, microphone, photos, location, contacts, calendar, reminders, all.',
       inputShape: nativePermissionGrantSchema.shape,
       timeoutClass: 'quick',
     },
     async (args, { signal }) => {
       if (signal.aborted) throw signal.reason as Error;
       const device = await registry.get(args.deviceId);
-      if (!(device instanceof AndroidDevice)) {
-        return { granted: false, unsupported: true, message: 'pm grant is Android-only.' };
+      if (device instanceof AndroidDevice) {
+        const res = await device.shell(['pm', 'grant', args.packageName, args.permission], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return { granted: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
       }
-      const res = await device.shell(['pm', 'grant', args.packageName, args.permission], {
-        timeoutMs: args.timeoutMs,
-        signal,
-      });
-      return { granted: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
+      if (device instanceof IosSimDevice) {
+        const res = await device.simctlPrivacy('grant', args.permission, args.packageName, {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return { granted: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
+      }
+      throw new InvalidToolInputError(
+        `native_permission_grant: unsupported device kind '${device.kind}'.`,
+      );
     },
   );
 
@@ -394,21 +488,30 @@ export function registerInteractTools(opts: {
     {
       name: 'native_permission_deny',
       description:
-        'Revoke a runtime permission from an Android package via `pm revoke`. Counterpart to native_permission_grant.',
+        'Revoke a runtime permission. Android: `pm revoke <packageName> <permission>`. iOS Simulator: `xcrun simctl privacy <udid> revoke <service> <bundleId>`.',
       inputShape: nativePermissionDenySchema.shape,
       timeoutClass: 'quick',
     },
     async (args, { signal }) => {
       if (signal.aborted) throw signal.reason as Error;
       const device = await registry.get(args.deviceId);
-      if (!(device instanceof AndroidDevice)) {
-        return { revoked: false, unsupported: true, message: 'pm revoke is Android-only.' };
+      if (device instanceof AndroidDevice) {
+        const res = await device.shell(['pm', 'revoke', args.packageName, args.permission], {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return { revoked: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
       }
-      const res = await device.shell(['pm', 'revoke', args.packageName, args.permission], {
-        timeoutMs: args.timeoutMs,
-        signal,
-      });
-      return { revoked: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
+      if (device instanceof IosSimDevice) {
+        const res = await device.simctlPrivacy('revoke', args.permission, args.packageName, {
+          timeoutMs: args.timeoutMs,
+          signal,
+        });
+        return { revoked: res.ok, exitCode: res.exitCode, stderr: res.stderr.trim() || undefined };
+      }
+      throw new InvalidToolInputError(
+        `native_permission_deny: unsupported device kind '${device.kind}'.`,
+      );
     },
   );
 

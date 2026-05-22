@@ -21,12 +21,23 @@ export interface BrowserRecord {
   startedAt: string;
 }
 
+export interface MockRoute {
+  pattern: string;
+  status: number;
+  headers: Record<string, string>;
+  body: string; // base64 if binary, utf-8 text otherwise
+  encoding: 'utf8' | 'base64';
+  addedAt: string;
+}
+
 export interface ContextRecord {
   contextId: string;
   browserId: string;
   context: BrowserContext;
   flutterSessionId?: string;
   recordingDir?: string;
+  mockRoutes: Map<string, MockRoute>; // pattern → route definition
+  offlineMode: boolean;
 }
 
 export interface PageRecord {
@@ -250,6 +261,8 @@ export class BrowserManager {
       browserId,
       context: ctx,
       ...(recordingDir ? { recordingDir } : {}),
+      mockRoutes: new Map(),
+      offlineMode: false,
     };
     this.contexts.set(contextId, record);
     ctx.on('close', () => {
@@ -389,6 +402,22 @@ export class BrowserManager {
         ...(failure !== undefined ? { failureText: failure } : {}),
       });
     });
+
+    // Install any active mock routes on this new page.
+    for (const [, ctxRec] of this.contexts) {
+      if (ctxRec.contextId === contextId && ctxRec.mockRoutes.size > 0) {
+        for (const route of ctxRec.mockRoutes.values()) {
+          this.installRouteHandler(page, route).catch((e) =>
+            log.warn('mock_route_install_failed', {
+              pageId,
+              pattern: route.pattern,
+              err: (e as Error).message,
+            }),
+          );
+        }
+        break;
+      }
+    }
 
     // If any console capture is active in this context, retroactively wire it
     // to this new page — covers `navigate()`-spawned new pages and survives
@@ -579,6 +608,99 @@ export class BrowserManager {
     }
     capture.listeners.clear();
     capture.pageIds.clear();
+  }
+
+  // -------- Network mocking (page.route / page.unroute) --------
+
+  async mockNetworkRoute(args: {
+    contextId: string;
+    pattern: string;
+    status: number;
+    headers: Record<string, string>;
+    body: string;
+    encoding: 'utf8' | 'base64';
+  }): Promise<MockRoute> {
+    const rec = this.getContext(args.contextId);
+
+    // Remove any existing handler for this pattern first.
+    if (rec.mockRoutes.has(args.pattern)) {
+      for (const p of this.pages.values()) {
+        if (p.contextId === args.contextId) {
+          await p.page.unroute(args.pattern).catch(() => {
+            /* page may already be closed */
+          });
+        }
+      }
+    }
+
+    const corsDefaults: Record<string, string> = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    };
+    const mergedHeaders = { ...corsDefaults, ...args.headers };
+
+    const route: MockRoute = {
+      pattern: args.pattern,
+      status: args.status,
+      headers: mergedHeaders,
+      body: args.body,
+      encoding: args.encoding,
+      addedAt: new Date().toISOString(),
+    };
+    rec.mockRoutes.set(args.pattern, route);
+
+    // Install handler on every existing page in this context.
+    for (const p of this.pages.values()) {
+      if (p.contextId === args.contextId) {
+        await this.installRouteHandler(p.page, route);
+      }
+    }
+
+    log.info('mock_route_added', { contextId: args.contextId, pattern: args.pattern });
+    return route;
+  }
+
+  private async installRouteHandler(
+    page: import('playwright-core').Page,
+    route: MockRoute,
+  ): Promise<void> {
+    const { pattern, status, headers, body, encoding } = route;
+    await page.route(pattern, async (r) => {
+      const bodyBuffer =
+        encoding === 'base64' ? Buffer.from(body, 'base64') : Buffer.from(body, 'utf8');
+      await r.fulfill({ status, headers, body: bodyBuffer });
+    });
+  }
+
+  async unmockNetworkRoute(args: { contextId: string; pattern: string }): Promise<boolean> {
+    const rec = this.getContext(args.contextId);
+    if (!rec.mockRoutes.has(args.pattern)) return false;
+
+    for (const p of this.pages.values()) {
+      if (p.contextId === args.contextId) {
+        await p.page.unroute(args.pattern).catch(() => {
+          /* page may already be closed */
+        });
+      }
+    }
+    rec.mockRoutes.delete(args.pattern);
+    log.info('mock_route_removed', { contextId: args.contextId, pattern: args.pattern });
+    return true;
+  }
+
+  listMockRoutes(contextId: string): MockRoute[] {
+    const rec = this.getContext(contextId);
+    return Array.from(rec.mockRoutes.values());
+  }
+
+  // -------- Offline simulation (context.setOffline) --------
+
+  async setNetworkState(args: { contextId: string; offline: boolean }): Promise<void> {
+    const rec = this.getContext(args.contextId);
+    await rec.context.setOffline(args.offline);
+    rec.offlineMode = args.offline;
+    log.info('network_state_set', { contextId: args.contextId, offline: args.offline });
   }
 
   async linkToFlutter(contextId: string, flutterSessionId: string): Promise<void> {

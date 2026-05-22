@@ -57,3 +57,35 @@ export function resolveLinuxPythonBin(): string {
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   return 'python3';
 }
+
+/**
+ * SSH config for remote macOS testing. All fields are optional; when all are
+ * absent, SshDevice creation is skipped and local backend selection runs.
+ *
+ * Env vars:
+ *   FLUTTER_ULTRA_SSH_HOST       — remote hostname or IP (required to activate)
+ *   FLUTTER_ULTRA_SSH_PORT       — SSH port (default 22)
+ *   FLUTTER_ULTRA_SSH_USER       — SSH username (default "flutter")
+ *   FLUTTER_ULTRA_SSH_KEY        — path to private key file (default ~/.ssh/id_rsa)
+ *   FLUTTER_ULTRA_SSH_MAC_HELPER — path to the Swift helper on the REMOTE host
+ */
+export interface SshConfig {
+  host: string;
+  port: number;
+  username: string;
+  privateKeyPath: string;
+  remoteHelperPath: string;
+}
+
+export function resolveSshConfig(): SshConfig | null {
+  const host = process.env.FLUTTER_ULTRA_SSH_HOST;
+  if (!host || host.length === 0) return null;
+  const port = parseInt(process.env.FLUTTER_ULTRA_SSH_PORT ?? '22', 10);
+  const username = process.env.FLUTTER_ULTRA_SSH_USER ?? 'flutter';
+  const privateKeyPath =
+    process.env.FLUTTER_ULTRA_SSH_KEY ??
+    `${process.env.HOME ?? process.env.USERPROFILE ?? '~'}/.ssh/id_rsa`;
+  const remoteHelperPath =
+    process.env.FLUTTER_ULTRA_SSH_MAC_HELPER ?? '/usr/local/bin/flutter-ultra-mac-helper';
+  return { host, port, username, privateKeyPath, remoteHelperPath };
+}

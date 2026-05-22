@@ -101,6 +101,61 @@ export class IosSimDevice implements DeviceTransport {
     return this.simctl(['openurl', this.id, url], { timeoutMs: 10_000, ...options });
   }
 
+  // Press a hardware button on the simulator via `simctl io pressButton`.
+  // Supported buttons: home, lock, sideButton, volumeUp, volumeDown.
+  // App-switcher is emulated by double-tapping home with a short delay.
+  async pressButton(
+    button: 'home' | 'lock' | 'sideButton' | 'volumeUp' | 'volumeDown',
+    options: ShellOptions = {},
+  ): Promise<ShellResult> {
+    return this.simctl(['io', this.id, 'pressButton', button], {
+      timeoutMs: 10_000,
+      ...options,
+    });
+  }
+
+  // Fetch the WDA accessibility tree XML from a running WebDriverAgent
+  // instance. WDA must be started separately (e.g. via xcodebuild or Appium)
+  // and listening on `wdaPort` (default 8100).
+  //
+  // Endpoint: GET http://localhost:<port>/source?onlyVisible=true
+  // Returns the raw XML string (WDA/Appium page source format).
+  async wdaFetchSource(wdaPort = 8100, options: ShellOptions = {}): Promise<string> {
+    const url = `http://localhost:${String(wdaPort)}/source?onlyVisible=true`;
+    // Use curl so we don't need a Node HTTP dependency in this low-level module.
+    const res = await spawnAwait(['curl', '-sf', '--max-time', '20', url], {
+      timeoutMs: options.timeoutMs ?? 25_000,
+      ...(options.signal ? { signal: options.signal } : {}),
+    });
+    if (!res.ok) {
+      const hint =
+        res.stderr.includes('Connection refused') || res.stderr.includes('Failed to connect')
+          ? ' WebDriverAgent is not running on that port. Start WDA first: xcodebuild test -scheme WebDriverAgentRunner -destination "id=<udid>"'
+          : '';
+      throw new Error(
+        `WDA /source request failed (exit ${String(res.exitCode)}): ${res.stderr.trim()}${hint}`,
+      );
+    }
+    return res.stdout;
+  }
+
+  // Grant or revoke a simulator privacy permission without a UI dialog.
+  // Wraps `xcrun simctl privacy <udid> grant|revoke <service> <bundleId>`.
+  // Common services: camera, microphone, photos, location, contacts,
+  //                  calendar, reminders, motion, health, homekit,
+  //                  siri, speech, media-library, all.
+  async simctlPrivacy(
+    action: 'grant' | 'revoke' | 'reset',
+    service: string,
+    bundleId: string,
+    options: ShellOptions = {},
+  ): Promise<ShellResult> {
+    return this.simctl(['privacy', this.id, action, service, bundleId], {
+      timeoutMs: 15_000,
+      ...options,
+    });
+  }
+
   async screenshotPng(options: ShellOptions = {}): Promise<Buffer> {
     const tmp = localTempPath('sim-screenshot', '.png');
     await mkdir(dirname(tmp), { recursive: true });

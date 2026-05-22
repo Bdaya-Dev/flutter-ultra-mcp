@@ -41,6 +41,15 @@ export const dumpA11ySchema = z
   .object({
     deviceId: deviceIdSchema,
     timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(8100)
+      .describe(
+        'iOS Simulator only: port where WebDriverAgent is listening (default 8100). Ignored for Android.',
+      ),
   })
   .strict();
 
@@ -105,6 +114,13 @@ export const waitForNativeElementSchema = z
     finder: finderSpecSchema,
     timeoutMs: z.number().int().positive().max(300_000).default(30_000),
     pollIntervalMs: z.number().int().min(100).max(5_000).default(500),
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(8100)
+      .describe('iOS Simulator only: WebDriverAgent port (default 8100). Ignored for Android.'),
   })
   .strict();
 
@@ -119,8 +135,18 @@ export const dismissPermissionDialogSchema = z
 export const nativePermissionGrantSchema = z
   .object({
     deviceId: deviceIdSchema,
-    packageName: z.string().min(1),
-    permission: z.string().min(1).describe('Full permission name, e.g. android.permission.CAMERA'),
+    packageName: z
+      .string()
+      .min(1)
+      .describe(
+        'Android: package name (e.g. com.example.app). iOS: bundle ID (e.g. com.example.App).',
+      ),
+    permission: z
+      .string()
+      .min(1)
+      .describe(
+        'Android: full permission name, e.g. android.permission.CAMERA. iOS: simctl privacy service name, e.g. camera, microphone, photos, location, contacts, calendar, reminders, all.',
+      ),
     timeoutMs: z.number().int().positive().max(30_000).default(15_000),
   })
   .strict();
@@ -201,6 +227,102 @@ export const startDeviceRecordingSchema = z
 export const stopDeviceRecordingSchema = z
   .object({
     recordingId: z.string().min(1).describe('ID returned by start_device_recording.'),
+  })
+  .strict();
+
+// GPS / location simulation.
+export const setDeviceLocationSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    altitude: z.number().optional().describe('Altitude in metres (Android emulator only).'),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const clearDeviceLocationSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+// Deep link dispatch.
+export const dispatchDeepLinkSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    uri: z.string().min(1).describe('The URI to dispatch, e.g. "myapp://path?query=1".'),
+    packageName: z
+      .string()
+      .optional()
+      .describe('Android only: restrict the intent to this package name.'),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+// App install / uninstall / clear / list.
+export const installAppSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    apkOrIpaPath: z
+      .string()
+      .min(1)
+      .describe('Absolute local path to the .apk (Android) or .app bundle dir (iOS sim).'),
+    timeoutMs: z.number().int().positive().max(300_000).default(120_000),
+  })
+  .strict();
+
+export const uninstallAppSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    packageName: z
+      .string()
+      .min(1)
+      .describe(
+        'Package name (Android, e.g. com.example.app) or bundle ID (iOS, e.g. com.example.App).',
+      ),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+export const clearAppDataSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    packageName: z.string().min(1).describe('Android package name whose data will be cleared.'),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const listInstalledAppsSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    includeSystem: z.boolean().default(false).describe('Include system packages (Android only).'),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+// Network / WiFi toggle and device shake.
+export const toggleDeviceWifiSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    enable: z.boolean(),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const toggleAirplaneModeSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    enable: z.boolean(),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const shakeDeviceSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
   })
   .strict();
 

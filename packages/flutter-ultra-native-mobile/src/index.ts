@@ -3,7 +3,7 @@
 // Wires the shared mcp-runtime scaffolding to the native-mobile tool
 // catalogue. Plan §5.5 + §5.5.1.
 //
-// Tool catalogue (17):
+// Tool catalogue (28):
 //   list_devices, dump_a11y_tree, wait_for_native_element,
 //   native_tap, native_type, native_swipe,
 //   native_back, native_home, native_app_switch, native_open_settings,
@@ -12,7 +12,11 @@
 //   take_device_screenshot, set_device_orientation,
 //   native_clipboard_set, native_clipboard_get,
 //   start_device_logs, poll_device_logs, stop_device_logs,
-//   solve_oauth_cct.
+//   solve_oauth_cct,
+//   set_device_location, clear_device_location,
+//   dispatch_deep_link,
+//   install_app, uninstall_app, clear_app_data, list_installed_apps,
+//   toggle_device_wifi, toggle_airplane_mode, shake_device.
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { createDeviceRegistry, type DeviceRegistry, type RegistryOptions } from './registry.js';
@@ -22,6 +26,10 @@ import { registerInteractTools } from './tools/interact.js';
 import { registerLogTools } from './tools/logs.js';
 import { registerOauthTools } from './tools/oauth.js';
 import { registerRecordingTools, shutdownRecordings } from './tools/recording.js';
+import { registerLocationTools } from './tools/location.js';
+import { registerDeepLinkTools } from './tools/deepLink.js';
+import { registerAppManagementTools } from './tools/appManagement.js';
+import { registerDeviceControlTools } from './tools/deviceControls.js';
 
 export const SERVER_NAME = 'flutter-ultra-native-mobile';
 export const SERVER_VERSION = '0.0.1';
@@ -47,6 +55,10 @@ export async function createNativeMobileServer(options: CreateNativeMobileServer
   registerLogTools({ server, registry, logStream });
   registerOauthTools({ server, registry });
   registerRecordingTools({ server, registry });
+  registerLocationTools({ server, registry });
+  registerDeepLinkTools({ server, registry });
+  registerAppManagementTools({ server, registry });
+  registerDeviceControlTools({ server, registry });
 
   return {
     server,
@@ -95,6 +107,7 @@ export {
 } from './device.js';
 export {
   parseUiautomatorXml,
+  parseWdaSourceXml,
   findNode,
   walkTree,
   detectPermissionDialog,

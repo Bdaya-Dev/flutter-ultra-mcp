@@ -445,6 +445,146 @@ class GestureDispatcher {
     await _handlePointerEventRecord(records);
   }
 
+  /// Executes a W3C-style multi-touch action sequence.
+  ///
+  /// [actions] is a list of pointer chains. Each chain has a [pointerId] string
+  /// and a list of steps:
+  ///   - `{ "type": "pointerDown", "x": <num>, "y": <num> }`
+  ///   - `{ "type": "pointerMove", "x": <num>, "y": <num>, "duration": <ms> }`
+  ///   - `{ "type": "pointerUp" }`
+  ///   - `{ "type": "pause", "duration": <ms> }`
+  ///
+  /// All chains advance in lock-step: tick N across every chain is dispatched
+  /// as a single batched [_handlePointerEventRecord] group, matching the W3C
+  /// Actions interleaving model.
+  Future<void> performActions(
+    List<Map<String, dynamic>> actions,
+  ) async {
+    // Assign a unique integer pointer id and device id per named pointer chain.
+    final pointerIds = <String, int>{};
+    final deviceIds = <String, int>{};
+    for (final chain in actions) {
+      final name = chain['pointerId'] as String;
+      pointerIds[name] = _nextPointerId++;
+      // Each pointer gets its own logical device id so Flutter treats them as
+      // independent touch contacts.
+      deviceIds[name] = _nextPointerId; // unique, never reused
+    }
+
+    // Build the per-chain tick sequences.  Each chain entry is a list of
+    // (delay, events) pairs — delay in ms before emitting those events.
+    final chainTicks = <List<({int delayMs, List<PointerEvent> events})>>[];
+
+    for (final chain in actions) {
+      final name = chain['pointerId'] as String;
+      final pid = pointerIds[name]!;
+      final did = deviceIds[name]!;
+      final steps = (chain['steps'] as List).cast<Map<String, dynamic>>();
+
+      final ticks = <({int delayMs, List<PointerEvent> events})>[];
+      Offset? currentPos;
+
+      for (final step in steps) {
+        final type = step['type'] as String;
+        switch (type) {
+          case 'pointerDown':
+            final pos = Offset(
+              (step['x'] as num).toDouble(),
+              (step['y'] as num).toDouble(),
+            );
+            currentPos = pos;
+            ticks.add((
+              delayMs: 0,
+              events: [
+                PointerAddedEvent(position: pos, device: did),
+                PointerDownEvent(pointer: pid, position: pos, device: did),
+              ],
+            ));
+
+          case 'pointerMove':
+            final end = Offset(
+              (step['x'] as num).toDouble(),
+              (step['y'] as num).toDouble(),
+            );
+            final durationMs = (step['duration'] as num?)?.toInt() ?? 0;
+            final start = currentPos ?? end;
+            final distance = (end - start).distance;
+            final stepCount =
+                (distance / kMaxDelta).ceil().clamp(1, 1 << 20).toInt();
+            final stepDelayMs =
+                stepCount > 1 ? (durationMs / stepCount).round() : durationMs;
+
+            for (var i = 1; i <= stepCount; i++) {
+              final t = i / stepCount;
+              final pos = Offset.lerp(start, end, t)!;
+              ticks.add((
+                delayMs: stepDelayMs,
+                events: [
+                  PointerMoveEvent(
+                    pointer: pid,
+                    position: pos,
+                    delta: pos -
+                        (i == 1
+                            ? start
+                            : Offset.lerp(start, end, (i - 1) / stepCount)!),
+                    device: did,
+                  ),
+                ],
+              ));
+            }
+            currentPos = end;
+
+          case 'pointerUp':
+            final pos = currentPos ?? Offset.zero;
+            ticks.add((
+              delayMs: 0,
+              events: [
+                PointerUpEvent(pointer: pid, position: pos, device: did),
+                PointerRemovedEvent(position: pos, device: did),
+              ],
+            ));
+            currentPos = null;
+
+          case 'pause':
+            final durationMs = (step['duration'] as num?)?.toInt() ?? 0;
+            ticks.add((delayMs: durationMs, events: const []));
+
+          default:
+            throw ArgumentError('Unknown action step type: "$type"');
+        }
+      }
+
+      chainTicks.add(ticks);
+    }
+
+    if (chainTicks.isEmpty) return;
+
+    // Interleave chains tick-by-tick (W3C model: pad shorter chains with nulls).
+    final maxTicks = chainTicks.fold(0, (m, c) => c.length > m ? c.length : m);
+
+    for (var t = 0; t < maxTicks; t++) {
+      // Collect the maximum delay across all chains at this tick.
+      var tickDelayMs = 0;
+      final batchEvents = <PointerEvent>[];
+
+      for (final chain in chainTicks) {
+        if (t >= chain.length) continue;
+        final tick = chain[t];
+        if (tick.delayMs > tickDelayMs) tickDelayMs = tick.delayMs;
+        batchEvents.addAll(tick.events);
+      }
+
+      if (batchEvents.isNotEmpty) {
+        batchEvents.forEach(GestureBinding.instance.handlePointerEvent);
+        WidgetsBinding.instance.scheduleFrame();
+      }
+
+      final delay =
+          tickDelayMs > 0 ? Duration(milliseconds: tickDelayMs) : kDelay;
+      await Future<void>.delayed(delay);
+    }
+  }
+
   /// Handles a list of pointer event records by dispatching them with proper timing.
   ///
   /// Similar to Flutter's test framework handlePointerEventRecord, but simplified

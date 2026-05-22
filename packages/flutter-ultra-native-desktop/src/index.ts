@@ -11,7 +11,7 @@
 // the registry switch below; the registration glue is OS-agnostic.
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
-import { LocalDevice } from './device/index.js';
+import { LocalDevice, SshDevice } from './device/index.js';
 import { MacDesktopBackend } from './backends/macos.js';
 import { WindowsDesktopBackend } from './backends/windows.js';
 import { LinuxDesktopBackend } from './backends/linux.js';
@@ -20,6 +20,7 @@ import {
   resolveWinHelperPath,
   resolveLinuxHelperPath,
   resolveLinuxPythonBin,
+  resolveSshConfig,
 } from './sidecar/sidecarPaths.js';
 import { registerDesktopTools } from './registry.js';
 import type { DesktopBackend } from './types.js';
@@ -46,56 +47,85 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
   });
 
   const platform = options.platformOverride ?? process.platform;
-  const device = new LocalDevice();
 
+  // SSH remote-Mac path: if FLUTTER_ULTRA_SSH_HOST is set, drive the Swift
+  // helper on a remote Mac over SSH regardless of the local platform. This
+  // lets a Windows/Linux MCP host orchestrate macOS desktop tests without a
+  // local sidecar.
+  const sshConfig = resolveSshConfig();
   let backend: DesktopBackend | null = null;
-  if (platform === 'darwin') {
-    const helperPath = resolveMacHelperPath();
-    server.logger.info('probing mac helper', { helperPath });
+
+  if (sshConfig !== null) {
+    const sshDevice = new SshDevice({
+      host: sshConfig.host,
+      port: sshConfig.port,
+      username: sshConfig.username,
+      privateKeyPath: sshConfig.privateKeyPath,
+    });
+    server.logger.info('using SSH device for remote macOS testing', {
+      label: sshDevice.label,
+      remoteHelper: sshConfig.remoteHelperPath,
+    });
     backend = await MacDesktopBackend.create({
-      device,
-      helperPath,
+      device: sshDevice,
+      helperPath: sshConfig.remoteHelperPath,
       logger: server.logger,
     });
     if (!backend) {
       server.logger.warn(
-        'no mac backend — install the Swift helper or set FLUTTER_ULTRA_MAC_HELPER',
-        { attempted: helperPath },
-      );
-    }
-  } else if (platform === 'win32') {
-    const helperPath = resolveWinHelperPath();
-    server.logger.info('probing win helper', { helperPath });
-    backend = await WindowsDesktopBackend.create({
-      device,
-      helperPath,
-      logger: server.logger,
-    });
-    if (!backend) {
-      server.logger.warn(
-        'no windows backend — build the FlaUI sidecar or set FLUTTER_ULTRA_WIN_HELPER',
-        { attempted: helperPath },
-      );
-    }
-  } else if (platform === 'linux') {
-    const sidecarPath = resolveLinuxHelperPath();
-    const pythonBin = resolveLinuxPythonBin();
-    server.logger.info('probing linux at-spi sidecar', { sidecarPath, pythonBin });
-    backend = await LinuxDesktopBackend.create({
-      device,
-      sidecarPath,
-      pythonBin,
-      logger: server.logger,
-    });
-    if (!backend) {
-      server.logger.warn(
-        'no linux backend — install python3-gi + gir1.2-atspi-2.0 or set FLUTTER_ULTRA_LINUX_HELPER',
-        { attempted: sidecarPath },
+        'SSH device connected but remote mac helper not found; set FLUTTER_ULTRA_SSH_MAC_HELPER',
+        { attempted: sshConfig.remoteHelperPath },
       );
     }
   } else {
-    server.logger.warn('unsupported platform — no desktop backend will register', { platform });
-    backend = null;
+    const device = new LocalDevice();
+    if (platform === 'darwin') {
+      const helperPath = resolveMacHelperPath();
+      server.logger.info('probing mac helper', { helperPath });
+      backend = await MacDesktopBackend.create({
+        device,
+        helperPath,
+        logger: server.logger,
+      });
+      if (!backend) {
+        server.logger.warn(
+          'no mac backend — install the Swift helper or set FLUTTER_ULTRA_MAC_HELPER',
+          { attempted: helperPath },
+        );
+      }
+    } else if (platform === 'win32') {
+      const helperPath = resolveWinHelperPath();
+      server.logger.info('probing win helper', { helperPath });
+      backend = await WindowsDesktopBackend.create({
+        device,
+        helperPath,
+        logger: server.logger,
+      });
+      if (!backend) {
+        server.logger.warn(
+          'no windows backend — build the FlaUI sidecar or set FLUTTER_ULTRA_WIN_HELPER',
+          { attempted: helperPath },
+        );
+      }
+    } else if (platform === 'linux') {
+      const sidecarPath = resolveLinuxHelperPath();
+      const pythonBin = resolveLinuxPythonBin();
+      server.logger.info('probing linux at-spi sidecar', { sidecarPath, pythonBin });
+      backend = await LinuxDesktopBackend.create({
+        device,
+        sidecarPath,
+        pythonBin,
+        logger: server.logger,
+      });
+      if (!backend) {
+        server.logger.warn(
+          'no linux backend — install python3-gi + gir1.2-atspi-2.0 or set FLUTTER_ULTRA_LINUX_HELPER',
+          { attempted: sidecarPath },
+        );
+      }
+    } else {
+      server.logger.warn('unsupported platform — no desktop backend will register', { platform });
+    }
   }
 
   registerDesktopTools({ server, backend });
@@ -117,8 +147,14 @@ export async function createNativeDesktopServer(options: CreateNativeDesktopServ
   };
 }
 
-export { LocalDevice } from './device/index.js';
-export type { Device, ExecOptions, ExecResult, RpcStream } from './device/index.js';
+export { LocalDevice, SshDevice } from './device/index.js';
+export type {
+  Device,
+  ExecOptions,
+  ExecResult,
+  RpcStream,
+  SshDeviceOptions,
+} from './device/index.js';
 export { MacDesktopBackend, TCC_REMEDIATION, describeMacError } from './backends/macos.js';
 export { WindowsDesktopBackend, describeWindowsError } from './backends/windows.js';
 export {
@@ -132,6 +168,8 @@ export {
   resolveWinHelperPath,
   resolveLinuxHelperPath,
   resolveLinuxPythonBin,
+  resolveSshConfig,
 } from './sidecar/sidecarPaths.js';
+export type { SshConfig } from './sidecar/sidecarPaths.js';
 export { JsonRpcClient, JsonRpcError } from './rpc/jsonRpcClient.js';
 export { detectLocalDistro, detectDeviceDistro } from './platform.js';

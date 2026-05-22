@@ -29,6 +29,10 @@ import * as networkTool from './tools/network.js';
 import * as storageTool from './tools/storage.js';
 import * as scripting from './tools/scripting.js';
 import * as webPerf from './tools/webPerf.js';
+import * as dragDrop from './tools/dragDrop.js';
+import * as dialog from './tools/dialog.js';
+import * as recording from './tools/recording.js';
+import * as networkMock from './tools/networkMock.js';
 
 export const SERVER_NAME = 'flutter-ultra-browser';
 
@@ -253,6 +257,77 @@ const TOOLS: ToolDefErased[] = [
     schema: schemas.takeHeapSnapshotSchema,
     meta: { class: 'long', ceilingMs: 5 * 60_000 },
     handler: webPerf.takeHeapSnapshot,
+  }),
+  defTool({
+    name: 'drag',
+    description:
+      'Drag an element from source selector to target selector using Playwright dragAndDrop. Supports optional sub-element offsets via sourcePosition/targetPosition.',
+    schema: schemas.dragSchema,
+    meta: { class: 'quick', ceilingMs: 30_000 },
+    handler: dragDrop.drag,
+  }),
+  defTool({
+    name: 'drop_files',
+    description:
+      'Set files on a file input element (simulates dropping files). Provide absolute paths. Use for <input type="file"> or drop-zone inputs.',
+    schema: schemas.dropFilesSchema,
+    meta: { class: 'quick', ceilingMs: 30_000 },
+    handler: dragDrop.dropFiles,
+  }),
+  defTool({
+    name: 'handle_dialog',
+    description:
+      'Wait for and handle the next browser dialog (alert, confirm, prompt, beforeunload) on a page. Accepts or dismisses the dialog and returns its type, message, and defaultValue.',
+    schema: schemas.handleDialogSchema,
+    meta: { class: 'long', ceilingMs: 60_000 },
+    handler: dialog.handleDialog,
+  }),
+  defTool({
+    name: 'start_tracing',
+    description:
+      'Start Playwright tracing for a browser context. Captures screenshots and DOM snapshots. Call stop_tracing to flush the trace archive to disk.',
+    schema: schemas.startTracingSchema,
+    meta: { class: 'quick', ceilingMs: 15_000 },
+    handler: recording.startTracing,
+  }),
+  defTool({
+    name: 'stop_tracing',
+    description:
+      'Stop tracing for a browser context and write the trace archive (.zip) to outputPath. Open in https://trace.playwright.dev to inspect.',
+    schema: schemas.stopTracingSchema,
+    meta: { class: 'long', ceilingMs: 60_000 },
+    handler: recording.stopTracing,
+  }),
+  defTool({
+    name: 'mock_network_route',
+    description:
+      'Intercept and stub network requests matching a URL pattern on all pages in a context. Returns a fixed status/headers/body. Auto-injects CORS headers. Supports base64 body for gRPC-Web binary responses. Use unmock_network_route to remove.',
+    schema: schemas.mockNetworkRouteSchema,
+    meta: { class: 'quick', ceilingMs: 15_000 },
+    handler: networkMock.mockNetworkRoute,
+  }),
+  defTool({
+    name: 'unmock_network_route',
+    description:
+      'Remove a previously installed network mock route from all pages in a context. Pass the exact pattern string used in mock_network_route.',
+    schema: schemas.unmockNetworkRouteSchema,
+    meta: { class: 'quick', ceilingMs: 15_000 },
+    handler: networkMock.unmockNetworkRoute,
+  }),
+  defTool({
+    name: 'list_mock_routes',
+    description: 'List all active network mock routes for a context.',
+    schema: schemas.listMockRoutesSchema,
+    meta: { class: 'quick', ceilingMs: 5_000 },
+    handler: networkMock.listMockRoutes,
+  }),
+  defTool({
+    name: 'network_state_set',
+    description:
+      'Simulate network connectivity state for a browser context. offline=true cuts all network access for every page in the context; offline=false restores it.',
+    schema: schemas.networkStateSetSchema,
+    meta: { class: 'quick', ceilingMs: 10_000 },
+    handler: networkMock.networkStateSet,
   }),
 ];
 

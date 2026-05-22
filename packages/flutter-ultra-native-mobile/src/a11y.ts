@@ -143,6 +143,114 @@ function walk(raw: Record<string, unknown>, path: string): A11yNode {
   return node;
 }
 
+// ---------------------------------------------------------------------------
+// iOS WDA (WebDriverAgent) accessibility tree parser.
+//
+// WDA /source returns XML whose root element is <AppiumAUT> or <XCUIElementTypeApplication>.
+// Each element carries attributes: type, name, label, value, enabled, visible,
+// accessible, x, y, width, height. Children are nested elements of the same form.
+//
+// We map this to the same A11yNode shape as UIAutomator so callers are platform-agnostic.
+// ---------------------------------------------------------------------------
+
+export function parseWdaSourceXml(xml: string): A11yNode {
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: '@_',
+    allowBooleanAttributes: true,
+    parseAttributeValue: false,
+    parseTagValue: false,
+    // All element type names are valid child names — treat every tag as an array.
+    isArray: () => true,
+  });
+  const tree = parser.parse(xml) as Record<string, unknown>;
+
+  // WDA wraps content in either <AppiumAUT> or the root XCUIElement type.
+  // Pick the first top-level element that isn't empty.
+  const topKey = Object.keys(tree).find((k) => k !== '?xml' && tree[k]);
+  if (!topKey) return { path: '', children: [] };
+
+  const topVal = tree[topKey];
+  const rootArray = Array.isArray(topVal) ? topVal : [topVal];
+  const rootRaw = rootArray[0] as Record<string, unknown> | undefined;
+  if (!rootRaw) return { path: '', children: [] };
+
+  return walkWda(rootRaw, topKey, '');
+}
+
+function walkWda(raw: Record<string, unknown>, tagName: string, path: string): A11yNode {
+  const get = (k: string): string | undefined => {
+    const v = raw[`@_${k}`];
+    return typeof v === 'string' ? v : undefined;
+  };
+
+  // Collect child elements: every key that doesn't start with @_ and is an array.
+  const children: A11yNode[] = [];
+  let childIdx = 0;
+  for (const key of Object.keys(raw)) {
+    if (key.startsWith('@_')) continue;
+    const childItems = raw[key];
+    if (!Array.isArray(childItems)) continue;
+    for (const item of childItems) {
+      if (item === null || typeof item !== 'object') continue;
+      const childPath = path === '' ? String(childIdx) : `${path}/${String(childIdx)}`;
+      children.push(walkWda(item as Record<string, unknown>, key, childPath));
+      childIdx += 1;
+    }
+  }
+
+  const node: A11yNode = { path, children };
+
+  // WDA uses XCUIElementType* as class names.
+  const typeName = get('type') ?? tagName;
+  if (typeName) node.className = typeName;
+
+  // `name` maps to resourceId (accessibility identifier in XCUITest).
+  const name = get('name');
+  if (name && name.length > 0) node.resourceId = name;
+
+  // `label` is the human-visible text (accessibility label).
+  const label = get('label');
+  if (label && label.length > 0) node.contentDesc = label;
+
+  // `value` is the current value of controls (text field content, slider pos).
+  const value = get('value');
+  if (value && value.length > 0) node.text = value;
+
+  // Booleans.
+  const enabled = get('enabled');
+  if (enabled !== undefined) node.enabled = enabled === 'true';
+  const visible = get('visible');
+  // Map visible → focused (closest semantic equivalent for display purposes).
+  if (visible !== undefined) node.focused = visible === 'true';
+  const accessible = get('accessible');
+  if (accessible !== undefined) node.clickable = accessible === 'true';
+
+  // Bounds from x/y/width/height attributes.
+  const x = get('x');
+  const y = get('y');
+  const w = get('width');
+  const h = get('height');
+  if (x !== undefined && y !== undefined && w !== undefined && h !== undefined) {
+    const left = Number(x);
+    const top = Number(y);
+    const width = Number(w);
+    const height = Number(h);
+    node.bounds = {
+      left,
+      top,
+      right: left + width,
+      bottom: top + height,
+      centerX: Math.round(left + width / 2),
+      centerY: Math.round(top + height / 2),
+      width,
+      height,
+    };
+  }
+
+  return node;
+}
+
 export interface FinderSpec {
   // At least one must be provided.
   text?: string;

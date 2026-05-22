@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.12.0...v1.13.0) (2026-05-22)
+
+
+### Features
+
+* add call_vm_service_method + create_project tools, re-sync vendored skills ([238d205](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/238d205f10665ad89babe937ca7eebda04d280e0))
+
 # [1.12.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.11.7...v1.12.0) (2026-05-21)
 
 

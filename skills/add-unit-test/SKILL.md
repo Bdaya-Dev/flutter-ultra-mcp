@@ -1,6 +1,7 @@
 ---
 name: add-unit-test
 description: Write and organize unit tests for functions, methods, and classes using `package:test`. Use when creating new logic or fixing bugs to ensure code remains correct and regression-free.
+  last_modified: Fri, 24 Apr 2026 15:07:58 GMT
 ---
 
 # Testing Dart and Flutter Applications

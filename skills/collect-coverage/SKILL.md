@@ -1,6 +1,7 @@
 ---
 name: collect-coverage
-description: Collect coverage using the coverage package and create an LCOV report
+description: Collect coverage using the coverage packge and create an LCOV report
+  last_modified: Fri, 24 Apr 2026 15:14:32 GMT
 ---
 
 # Implementing Dart and Flutter Test Coverage
@@ -63,7 +64,11 @@ Use the bundled `test_with_coverage` script. This script automatically runs all 
 dart run coverage:test_with_coverage
 ```
 
+_Note: If working within a Dart workspace (monorepo), specify the test directories explicitly (e.g., `dart run coverage:test_with_coverage -- pkgs/foo/test pkgs/bar/test`)._
+
 ### 3. Feedback Loop: Validate Output
+
+**Run validator -> review errors -> fix:**
 
 1. Verify that the `coverage/` directory was created in the project root.
 2. Ensure `coverage/coverage.json` (raw data) and `coverage/lcov.info` (formatted report) exist.
@@ -95,6 +100,8 @@ Extract the coverage data from the running VM service and output it to a JSON fi
 dart run coverage:collect_coverage --wait-paused --uri=http://127.0.0.1:8181/ -o coverage/coverage.json --resume-isolates
 ```
 
+_Optional: Append `--function-coverage` and `--branch-coverage` to gather deeper metrics (requires Dart VM 2.17.0+)._
+
 ### 3. Format to LCOV
 
 Convert the raw JSON data into the standard LCOV format.
@@ -106,6 +113,8 @@ dart run coverage:format_coverage --packages=.dart_tool/package_config.json --lc
 ## Examples
 
 ### Example: `pubspec.yaml` Configuration
+
+Ensure your `pubspec.yaml` reflects the `coverage` package strictly under `dev_dependencies`.
 
 ```yaml
 name: my_dart_app
@@ -121,6 +130,8 @@ dev_dependencies:
 ```
 
 ### Example: Applying Ignore Directives
+
+Use ignore directives to prevent generated code or untestable edge cases from lowering coverage scores.
 
 ```dart
 // coverage:ignore-file

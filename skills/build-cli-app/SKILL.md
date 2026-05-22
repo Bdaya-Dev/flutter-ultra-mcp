@@ -1,6 +1,7 @@
 ---
 name: build-cli-app
 description: Entrypoint structure, exit codes, cross-platform scripts. Use when building command line utilities, scripts, or applications.
+  last_modified: Fri, 04 May 2026 17:41:00 GMT
 ---
 
 # Building Dart CLI Applications
@@ -32,7 +33,7 @@ Import the `args` package to manage command-line arguments, flags, and subcomman
 - If building a complex, multi-command CLI (like `git`): Implement `CommandRunner` and extend `Command` for each subcommand.
 - Define global arguments on the `CommandRunner.argParser` and command-specific arguments on the individual `Command.argParser`.
 - Catch `UsageException` to gracefully handle invalid arguments and display the automatically generated help text.
-- **Validate Help Text Accuracy**: Ensure the help text provides all necessary information to run the tool.
+- **Validate Help Text Accuracy**: Ensure the help text provides all necessary information to run the tool. If the help text references a compiled executable name, and the user needs to add it to their PATH to run it that way, provide clear instructions on how to do so in the help text or description.
 
 ## Execution & Error Handling
 
@@ -42,10 +43,13 @@ Leverage the `io` and `stack_trace` packages to build robust, production-ready C
 - Use `sharedStdIn` from the `io` package if multiple asynchronous listeners need sequential access to standard input.
 - Wrap the application execution in `Chain.capture()` from the `stack_trace` package to track asynchronous stack chains.
 - Format output stack traces using `Trace.terse` or `Chain.terse` to strip noisy core library frames and present readable errors to the user.
-- **Do not swallow exceptions** in lower-level logic unless recovery is possible. Let them bubble up.
-- **Fail fast and with non-zero exit codes**: Ensure operation failures result in descriptive error messages to `stderr` and appropriate non-zero exit codes.
+- **Do not swallow exceptions** in lower-level logic or storage classes unless recovery is possible. Let them bubble up or rethrow them so higher-level commands know operations failed.
+- **Fail fast and with non-zero exit codes**: Ensure operation failures result in descriptive error messages to `stderr` and appropriate non-zero exit codes (e.g., using `exit(1)` or triggering a 64 exit code after a caught `UsageException`).
 
 ## Testing CLI Applications
+
+> [!IMPORTANT]
+> **All new commands and significant features must be covered by automated tests.** Manual verification is not sufficient for testing logic. However, manual verification of help text and user experience (UX) is still required to ensure the interface is intuitive and correct.
 
 Use `test_process` and `test_descriptor` to write high-fidelity integration tests for your CLI.
 
@@ -61,9 +65,25 @@ Use `test_process` and `test_descriptor` to write high-fidelity integration test
 Select the appropriate compilation target based on your distribution requirements.
 
 - **If testing locally during development:** Use `dart run bin/cli.dart`. This uses the JIT compiler for rapid iteration.
-- **If bundling code assets and dynamic libraries:** Use `dart build cli`.
-- **If distributing a standalone native executable:** Use `dart compile exe bin/cli.dart -o <output_path>`.
-- **If distributing multiple apps with strict disk space limits:** Use `dart compile aot-snapshot bin/cli.dart`.
+- **If bundling code assets and dynamic libraries:** Use `dart build cli`. This runs build hooks and outputs to `build/cli/_/bundle/`.
+- **If distributing a standalone native executable:** Use `dart compile exe bin/cli.dart -o <output_path>`. This bundles the Dart runtime and machine code into a single file.
+- **If distributing multiple apps with strict disk space limits:** Use `dart compile aot-snapshot bin/cli.dart`. Run the resulting `.aot` file using `dartaotruntime`.
+
+<details>
+<summary>Cross-Compilation Targets (Linux Only)</summary>
+
+Dart supports cross-compiling to Linux from macOS, Windows, or Linux hosts.
+Use the `--target-os` and `--target-arch` flags with `dart compile exe` or `dart compile aot-snapshot`.
+
+- `--target-os=linux` (Only Linux is currently supported as a cross-compilation target)
+- `--target-arch=arm64` (64-bit ARM)
+- `--target-arch=x64` (x86-64)
+- `--target-arch=arm` (32-bit ARM)
+- `--target-arch=riscv64` (64-bit RISC-V)
+
+Example: `dart compile exe --target-os=linux --target-arch=arm64 bin/cli.dart`
+
+</details>
 
 ## Workflows
 
@@ -74,9 +94,9 @@ Select the appropriate compilation target based on your distribution requirement
 - [ ] Register command-specific flags in the constructor using `argParser.addFlag()` or `argParser.addOption()`.
 - [ ] Implement the `run()` method with the core logic.
 - [ ] Register the new command in the `CommandRunner` instance in `bin/cli.dart` using `addCommand()`.
-- [ ] Create tests for the new command in the `test/` directory.
+- [ ] Create tests for the new command in the `test/` directory using `test_process` or standard tests.
 - [ ] Run validator -> Execute `dart run bin/cli.dart help <command_name>` to verify help text generation.
-- [ ] Verify final UX: Compile the application using `dart compile exe` and run the resulting executable.
+- [ ] Verify final UX: Compile the application using `dart compile exe` and run the resulting executable to verify the target user experience (e.g., `./bin/cli <command>`).
 
 ### Task Progress: Compile and Release Native Executable
 
@@ -84,6 +104,7 @@ Select the appropriate compilation target based on your distribution requirement
 - [ ] Run validator -> Execute `dart analyze` to ensure no static analysis errors.
 - [ ] Run validator -> Execute `dart test` to pass all integration tests.
 - [ ] Compile for host OS: `dart compile exe bin/cli.dart -o build/cli-host`
+- [ ] Compile for Linux (if host is macOS/Windows): `dart compile exe --target-os=linux --target-arch=x64 bin/cli.dart -o build/cli-linux-x64`
 
 ## Examples
 
@@ -121,7 +142,7 @@ void main(List<String> args) {
     if (error is UsageException) {
       stderr.writeln(error.message);
       stderr.writeln(error.usage);
-      exit(64);
+      exit(64); // ExitCode.usage.code
     } else {
       stderr.writeln('Fatal error: $error');
       stderr.writeln(chain.terse);
@@ -140,18 +161,24 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
   test('CLI formats output correctly and modifies filesystem', () async {
+    // 1. Setup mock filesystem
     await d.dir('project', [
       d.file('config.json', '{"key": "value"}')
     ]).create();
 
+    // 2. Spawn the CLI process
     final process = await TestProcess.start(
       'dart',
       ['run', 'bin/cli.dart', 'process', '--path', '${d.sandbox}/project']
     );
 
+    // 3. Validate stdout stream
     await expectLater(process.stdout, emitsThrough('Processing complete.'));
+
+    // 4. Validate exit code
     await process.shouldExit(0);
 
+    // 5. Validate filesystem mutations
     await d.dir('project', [
       d.file('config.json', '{"key": "value"}'),
       d.file('output.log', 'Success')

@@ -7,11 +7,13 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { extname, join, resolve as resolvePath } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { defineTool } from './register.js';
-import { okJson } from '../runtime/result.js';
+import { okJson, err } from '../runtime/result.js';
+import { spawnCapture } from '../runtime/spawn.js';
+import { resolveCli } from '../util/cli.js';
 import { loadProject, normalizeRoot, readPubspec } from '../util/project.js';
 
 const SKIP_DIRS = new Set([
@@ -159,6 +161,114 @@ export function register(server: McpServer): void {
     handler: async ({ root }) => {
       const proj = loadProject(root);
       return okJson({ dartDefines: detectDartDefines(proj.root) });
+    },
+  });
+
+  const ALLOWED_PLATFORMS = ['android', 'ios', 'web', 'linux', 'macos', 'windows'] as const;
+
+  defineTool<{
+    root: string;
+    directory: string;
+    projectType: 'dart' | 'flutter';
+    template?: string;
+    platforms?: string[];
+    empty?: boolean;
+  }>(server, {
+    name: 'create_project',
+    description:
+      'Create a new Dart or Flutter project. Wraps `flutter create` or `dart create` with template, platform, and empty flags.',
+    inputSchema: {
+      root: z
+        .string()
+        .min(1)
+        .describe('Absolute path to the parent directory where the project will be created.'),
+      directory: z
+        .string()
+        .min(1)
+        .describe('Subdirectory name for the new project (must be a relative path).'),
+      projectType: z
+        .enum(['dart', 'flutter'])
+        .describe("The type of project: 'dart' or 'flutter'."),
+      template: z
+        .string()
+        .optional()
+        .describe(
+          'Project template to use. Flutter: "app" (default), "module", "package", "plugin", "skeleton". Dart: "cli" (default), "package", "server-shelf", "web".',
+        ),
+      platforms: z
+        .array(z.enum(ALLOWED_PLATFORMS))
+        .optional()
+        .describe(
+          'Platforms to enable (Flutter only). Defaults to all. Allowed: android, ios, web, linux, macos, windows.',
+        ),
+      empty: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe('Create an empty project with minimal boilerplate. Defaults to true.'),
+    },
+    watchdog: { name: 'create_project', ceilingMs: 120_000, toolClass: 'long' },
+    handler: async ({ root, directory, projectType, template, platforms, empty }) => {
+      const normalized = normalizeRoot(root);
+      if (!existsSync(normalized)) return err(`Root directory does not exist: ${normalized}`);
+
+      if (directory.startsWith('/') || directory.startsWith('\\') || directory.includes('..'))
+        return err('directory must be a relative path without ".."');
+
+      const targetDir = resolvePath(normalized, directory);
+      if (existsSync(targetDir)) return err(`Target directory already exists: ${targetDir}`);
+
+      const args: string[] = ['create'];
+
+      if (projectType === 'flutter') {
+        const cli = resolveCli('flutter');
+        if (template) args.push('--template', template);
+        if (platforms && platforms.length > 0) args.push('--platforms', platforms.join(','));
+        if (empty) args.push('--empty');
+        args.push('--project-name', directory.replace(/[^a-z0-9_]/g, '_'));
+        args.push(targetDir);
+
+        const result = await spawnCapture({
+          cmd: cli,
+          args,
+          cwd: normalized,
+          timeoutMs: 120_000,
+        });
+
+        if (result.exitCode !== 0) {
+          return err(`flutter create failed (exit ${result.exitCode}):\n${result.stderr}`);
+        }
+        return okJson({
+          created: targetDir,
+          projectType: 'flutter',
+          template: template ?? 'app',
+          platforms: platforms ?? ALLOWED_PLATFORMS.slice(),
+          stdout: result.stdout,
+        });
+      } else {
+        const cli = resolveCli('dart');
+        if (template) args.push('--template', template);
+        if (empty) args.push('--no-template');
+        args.push('--project-name', directory.replace(/[^a-z0-9_]/g, '_'));
+        args.push(targetDir);
+
+        const result = await spawnCapture({
+          cmd: cli,
+          args,
+          cwd: normalized,
+          timeoutMs: 60_000,
+        });
+
+        if (result.exitCode !== 0) {
+          return err(`dart create failed (exit ${result.exitCode}):\n${result.stderr}`);
+        }
+        return okJson({
+          created: targetDir,
+          projectType: 'dart',
+          template: template ?? 'cli',
+          stdout: result.stdout,
+        });
+      }
     },
   });
 }

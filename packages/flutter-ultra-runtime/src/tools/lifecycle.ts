@@ -403,6 +403,56 @@ export function registerLifecycleTools(opts: {
       }
     },
   );
+
+  server.defineTool(
+    {
+      name: 'call_vm_service_method',
+      description:
+        'Invoke any VM service method on a connected session. Supports core RPCs (getVM, getIsolate, getStack, getObject, evaluate, invoke, resume, pause, etc.) AND service extensions (ext.flutter.*, ext.dwds.*). Use call_service_extension for launch-job-only daemon calls; use this for direct VM service access on any attached session. See https://github.com/dart-lang/sdk/blob/main/runtime/vm/service/service.md for available methods.',
+      inputShape: {
+        sessionId: SessionIdSchema,
+        method: z
+          .string()
+          .describe(
+            'VM service method name, e.g. "getVM", "getIsolate", "evaluate", "ext.flutter.inspector.getRootWidgetSummaryTree".',
+          ),
+        isolateId: z
+          .string()
+          .optional()
+          .describe(
+            'Target isolate ID. Required for isolate-scoped methods (getIsolate, evaluate, invoke, getStack, etc.). Get IDs via getVM first.',
+          ),
+        params: z
+          .record(z.string(), z.any())
+          .optional()
+          .describe(
+            'Additional parameters for the method (e.g. { expression: "1+1" } for evaluate).',
+          ),
+      },
+      timeoutClass: 'long',
+      ceilingMs: 60_000,
+    },
+    async (args) => {
+      const { client, release } = await sessions.acquireClient(args.sessionId);
+      try {
+        const callParams: Record<string, unknown> = {};
+        if (args.isolateId) callParams.isolateId = args.isolateId;
+        if (args.params) Object.assign(callParams, args.params);
+
+        const result = await client.transport.request(
+          args.method,
+          Object.keys(callParams).length > 0
+            ? (callParams as {
+                [key: string]: import('@flutter-ultra/vm-service-client').JsonValue;
+              })
+            : undefined,
+        );
+        return { ok: true, method: args.method, result };
+      } finally {
+        await release();
+      }
+    },
+  );
 }
 
 // Helper: surface "session terminated" as a structured error early.

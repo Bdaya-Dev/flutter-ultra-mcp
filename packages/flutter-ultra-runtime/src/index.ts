@@ -10,6 +10,7 @@ import { createLaunchService } from './launchApp.js';
 import { createSessionRegistry } from './sessions.js';
 import { registerDesignAuditTools } from './tools/designAudit.js';
 import { registerDeviceTools } from './tools/devices.js';
+import { registerEditorTools } from './tools/editor.js';
 import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
@@ -51,6 +52,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
 
   registerDeviceTools({ server, router: deviceRouter });
   registerLifecycleTools({ server, sessions, launch });
+  registerEditorTools({ server });
   registerInspectTools({ server, sessions });
   registerLogsAndHttpTools({ server, sessions, http: httpCapture });
   registerPerformanceTools({ server, sessions });

@@ -1,7 +1,10 @@
 // Zod schemas for the subset of Dart VM service types this client surfaces.
 //
 // Conventions (binding per plan §16.2):
-// - `.strict()` on every object to catch upstream protocol changes loudly
+// - `.passthrough()` on VM service response types (the Dart VM includes private
+//   `_`-prefixed fields like `_features`, `_profilerMode`, `_embedder`,
+//   `_maxRSS` on native targets that web/DWDS omits — strict rejects these)
+// - `.strict()` on internal protocol types (JsonRpcRequest, etc.) that we control
 // - No `z.any()` / `z.record()`; service-extension args fall back to a
 //   typed `JsonValue` recursion
 // - `discriminatedUnion` on the `type` discriminator for polymorphic responses
@@ -48,7 +51,7 @@ export const SuccessSchema = z
   .object({
     type: z.literal('Success'),
   })
-  .strict();
+  .passthrough();
 export type Success = z.infer<typeof SuccessSchema>;
 
 export const SentinelKindSchema = z.enum([
@@ -67,7 +70,7 @@ export const SentinelSchema = z
     kind: SentinelKindSchema,
     valueAsString: z.string(),
   })
-  .strict();
+  .passthrough();
 export type Sentinel = z.infer<typeof SentinelSchema>;
 
 // -- Version / VM / Isolate ---------------------------------------------------
@@ -81,7 +84,7 @@ export const IsolateRefSchema = z
     isSystemIsolate: z.boolean().optional(),
     isolateGroupId: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type IsolateRef = z.infer<typeof IsolateRefSchema>;
 
 export const IsolateGroupRefSchema = z
@@ -92,7 +95,7 @@ export const IsolateGroupRefSchema = z
     name: z.string(),
     isSystemIsolateGroup: z.boolean().optional(),
   })
-  .strict();
+  .passthrough();
 export type IsolateGroupRef = z.infer<typeof IsolateGroupRefSchema>;
 
 export const VMSchema = z
@@ -111,7 +114,7 @@ export const VMSchema = z
     systemIsolates: z.array(IsolateRefSchema).optional(),
     systemIsolateGroups: z.array(IsolateGroupRefSchema).optional(),
   })
-  .strict();
+  .passthrough();
 export type VM = z.infer<typeof VMSchema>;
 
 // `Isolate` carries many fields we never inspect — preserve them as
@@ -124,7 +127,7 @@ export const LibraryRefSchema = z
     name: z.string().optional(),
     uri: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type LibraryRef = z.infer<typeof LibraryRefSchema>;
 
 export const PauseEventSchema = responseBase;
@@ -162,7 +165,7 @@ export const ClassRefSchema = z
     name: z.string(),
     library: LibraryRefSchema.optional(),
   })
-  .strict();
+  .passthrough();
 export type ClassRef = z.infer<typeof ClassRefSchema>;
 
 export const InstanceRefSchema = z
@@ -199,7 +202,7 @@ export const ErrorRefSchema = z
     kind: z.string(),
     message: z.string(),
   })
-  .strict();
+  .passthrough();
 export type ErrorRef = z.infer<typeof ErrorRefSchema>;
 
 export const ErrorObjSchema = z
@@ -240,7 +243,7 @@ export const InstanceSetSchema = z
     totalCount: z.number().int(),
     instances: z.array(InstanceRefSchema),
   })
-  .strict();
+  .passthrough();
 export type InstanceSet = z.infer<typeof InstanceSetSchema>;
 
 // -- Stack --------------------------------------------------------------------
@@ -279,7 +282,7 @@ export const FlagSchema = z
     modified: z.boolean(),
     valueAsString: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 export type Flag = z.infer<typeof FlagSchema>;
 
 export const FlagListSchema = z
@@ -287,7 +290,7 @@ export const FlagListSchema = z
     type: z.literal('FlagList'),
     flags: z.array(FlagSchema),
   })
-  .strict();
+  .passthrough();
 export type FlagList = z.infer<typeof FlagListSchema>;
 
 // -- Events (stream) ----------------------------------------------------------
@@ -352,7 +355,7 @@ export const StreamHistorySchema = z
     type: z.literal('StreamHistory'),
     history: z.array(EventSchema),
   })
-  .strict();
+  .passthrough();
 export type StreamHistory = z.infer<typeof StreamHistorySchema>;
 
 export const ClientNameSchema = z

@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.15.0...v1.15.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* **runtime:** resolve 3 bugs from iOS simulator testing ([#113](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/113), [#114](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/114), [#115](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/115)) ([2010c0c](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/2010c0c02a84d86f2aa291ca6f97a6f03b73c5a7)), closes [flutter#159454](https://github.com/flutter/issues/159454)
+
 # [1.15.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.14.1...v1.15.0) (2026-05-23)
 
 

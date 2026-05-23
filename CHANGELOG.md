@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.14.0...v1.14.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* **ci:** use connection retry loop in E2E attach workflows ([abccf88](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/abccf880a66bd64b9b9b1a355845be73aead13d2))
+
 # [1.14.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.13.0...v1.14.0) (2026-05-23)
 
 

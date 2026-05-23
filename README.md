@@ -5,7 +5,7 @@
 [![CI](https://github.com/Bdaya-Dev/flutter-ultra-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Bdaya-Dev/flutter-ultra-mcp/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Bdaya-Dev/flutter-ultra-mcp)](LICENSE)
 
-A Claude Code plugin that gives your AI agent full control over Flutter apps across all platforms. 8 isolated MCP servers, 248 tools, 2 Dart packages, and 12 built-in skills — installed with a single command.
+A Claude Code plugin that gives your AI agent full control over Flutter apps across all platforms. 8 isolated MCP servers, 295 tools, 2 Dart packages, and 31 built-in skills — installed with a single command.
 
 ## Why
 
@@ -44,23 +44,25 @@ Start a debug session (`flutter run -d chrome`), open Claude Code, and ask it to
 
 Each server runs as its own Node.js process. Crash isolation means a bug in one server cannot affect the others. Servers share session state through small JSON files on disk — if a server restarts, it picks up where it left off.
 
-| Server                         |   Tools | What it does                                                                                              |
-| ------------------------------ | ------: | --------------------------------------------------------------------------------------------------------- |
-| `flutter-ultra-build`          |      96 | Pub dependencies, code generation, analysis, formatting, tests, platform builds, l10n, assets, signing    |
-| `flutter-ultra-runtime`        |      55 | Attach to debug sessions, widget tree inspection, performance profiling, design audit, logs, HTTP capture |
-| `flutter-ultra-browser`        |      26 | Playwright-driven web automation — OAuth flows, popups, console, network, storage, JS evaluation          |
-| `flutter-ultra-native-mobile`  |      24 | Android (UIAutomator) + iOS (XCUITest) — permissions, OAuth tabs, accessibility tree, device recording    |
-| `flutter-ultra-gesture`        |      18 | Tap, swipe, scroll, text input, screenshots, screencast via the in-app `ultra_flutter` mixin              |
-| `flutter-ultra-patrol`         |      15 | Orchestrate `patrol_cli` for E2E tests across web, Android, and iOS — run, poll, record, screenshot       |
-| `flutter-ultra-native-desktop` |       9 | Windows (UIA), macOS (Accessibility), Linux (AT-SPI) — window listing, a11y tree, clicks, file dialogs    |
-| `flutter-ultra-devtools`       |       5 | Live MCP activity panel inside Flutter DevTools — sessions, tool calls, errors, screenshot grid           |
-| **Total**                      | **248** |                                                                                                           |
+| Server                         |   Tools | What it does                                                                                                             |
+| ------------------------------ | ------: | ------------------------------------------------------------------------------------------------------------------------ |
+| `flutter-ultra-build`          |      97 | Pub dependencies, code generation, analysis, formatting, tests, platform builds, l10n, assets, signing, project creation |
+| `flutter-ultra-runtime`        |      56 | Attach to debug sessions, widget tree, VM service method calls, performance profiling, design audit, logs, HTTP capture  |
+| `flutter-ultra-browser`        |      35 | Playwright web automation — network mocking, offline sim, OAuth, drag-drop, dialogs, tracing, console, storage           |
+| `flutter-ultra-native-mobile`  |      43 | Android + iOS — a11y tree, permissions, file picker, notifications, share sheet, CCT/SVC, GPS, deep links, app mgmt      |
+| `flutter-ultra-gesture`        |      19 | Tap, swipe, scroll, text input, multi-touch W3C Actions, screenshots, screencast via `ultra_flutter` mixin               |
+| `flutter-ultra-patrol`         |      31 | Orchestrate `patrol_cli` for E2E tests across web, Android, and iOS — run, poll, record, screenshot                      |
+| `flutter-ultra-native-desktop` |       9 | Windows (UIA), macOS (Accessibility), Linux (AT-SPI) — window listing, a11y tree, clicks, file dialogs, remote SSH       |
+| `flutter-ultra-devtools`       |       5 | Live MCP activity panel inside Flutter DevTools — sessions, tool calls, errors, screenshot grid                          |
+| **Total**                      | **295** |                                                                                                                          |
 
 See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ## Skills
 
 Skills teach Claude the correct tool call sequences for common workflows. Invoke them with `/flutter:<name>`.
+
+### Workflow skills (12)
 
 | Skill                    | Description                                                                                  |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
@@ -77,6 +79,32 @@ Skills teach Claude the correct tool call sequences for common workflows. Invoke
 | `/flutter:record-demo`   | Record a video or GIF demo of an app flow (web browser or native device)                     |
 | `/flutter:devtools`      | Wire up and use the DevTools panel for live MCP activity inspection                          |
 
+### Teaching skills (19 — vendored from [flutter/skills](https://github.com/flutter/skills) + [dart-lang/skills](https://github.com/dart-lang/skills))
+
+Each teaching skill includes a **Flutter Ultra Integration** section mapping to the MCP tools that execute the workflow it teaches.
+
+| Skill                                        | Description                                                          |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `/flutter:add-integration-test`              | Configure Flutter Driver and write integration tests                 |
+| `/flutter:add-widget-preview`                | Add `@Preview` annotations for real-time widget previewing           |
+| `/flutter:add-widget-test`                   | Write component-level tests with `WidgetTester`                      |
+| `/flutter:apply-architecture-best-practices` | Structure apps with MVVM + Repository layered architecture           |
+| `/flutter:build-responsive-layout`           | Build adaptive layouts with `LayoutBuilder` and `MediaQuery`         |
+| `/flutter:fix-layout-issues`                 | Diagnose and fix RenderFlex overflow and unbounded constraint errors |
+| `/flutter:implement-json-serialization`      | Manual JSON mapping with `fromJson`/`toJson`                         |
+| `/flutter:setup-declarative-routing`         | Configure `go_router` with deep linking and nested navigation        |
+| `/flutter:setup-localization`                | Set up `flutter_localizations` with ARB files                        |
+| `/flutter:use-http-package`                  | Execute HTTP requests with the `http` package                        |
+| `/flutter:add-unit-test`                     | Write unit tests with `package:test`                                 |
+| `/flutter:build-cli-app`                     | Build Dart CLI apps with argument parsing and compilation            |
+| `/flutter:collect-coverage`                  | Collect LCOV coverage reports                                        |
+| `/flutter:fix-runtime-errors`                | Resolve type system, null safety, and static analysis errors         |
+| `/flutter:generate-test-mocks`               | Generate mock objects with `package:mockito` + `build_runner`        |
+| `/flutter:migrate-to-checks-package`         | Migrate from `expect`/`matcher` to `package:checks`                  |
+| `/flutter:resolve-package-conflicts`         | Fix `pub get` version conflicts                                      |
+| `/flutter:run-static-analysis`               | Run `dart analyze` and `dart fix`                                    |
+| `/flutter:use-pattern-matching`              | Apply switch expressions and Dart 3 pattern matching                 |
+
 ## Installation
 
 ### Plugin (required)
@@ -85,7 +113,7 @@ Skills teach Claude the correct tool call sequences for common workflows. Invoke
 /plugin install Bdaya-Dev/flutter-ultra-mcp
 ```
 
-This registers all 8 MCP servers and 12 skills automatically. No manual configuration needed.
+This registers all 8 MCP servers and 31 skills automatically. No manual configuration needed.
 
 ### Dart package (required for gesture and screencast tools)
 

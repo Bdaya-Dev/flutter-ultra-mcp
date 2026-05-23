@@ -122,13 +122,14 @@ jobs:
 
           async function connectWithRetry(uri, maxRetries = 10) {
             for (let i = 0; i < maxRetries; i++) {
+              const client = new VmServiceClient(uri);
               try {
-                const client = new VmServiceClient(uri);
-                await new Promise(r => setTimeout(r, 2000));
-                await client.getVM(); // test connection
+                await client.connect();
+                await client.getVM();
                 return client;
               } catch (e) {
                 console.log('  Retry ' + (i+1) + '/' + maxRetries + ': ' + e.message);
+                try { await client.dispose(); } catch {}
                 await new Promise(r => setTimeout(r, 3000));
               }
             }

@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { InspectorNode } from '../src/widgetTree.js';
-import { findInTree, matchesFinder, walkTree } from '../src/widgetTree.js';
+import { fetchSummaryTree, findInTree, matchesFinder, walkTree } from '../src/widgetTree.js';
+import type { VmServiceClient } from '@flutter-ultra/vm-service-client';
 
 // Mini synthetic tree mimicking the inspector summary shape (Flutter 3.x).
 const tree: InspectorNode = {
@@ -105,5 +106,69 @@ describe('findInTree', () => {
   it('reports ancestor chain', () => {
     const found = findInTree(tree, { kind: 'key', value: 'login_button' });
     expect(found[0]?.parentChain).toEqual(['MaterialApp', 'Scaffold', 'Column']);
+  });
+});
+
+const minimalTree: InspectorNode = { description: 'MaterialApp', type: 'MaterialApp' };
+const treeEnvelope = { result: minimalTree };
+
+function makeClient(impl: Partial<VmServiceClient>): VmServiceClient {
+  return impl as VmServiceClient;
+}
+
+describe('fetchSummaryTree', () => {
+  it('returns summary tree when getRootWidgetSummaryTree succeeds', async () => {
+    const client = makeClient({
+      callServiceExtension: vi.fn().mockResolvedValue(treeEnvelope),
+    });
+    const result = await fetchSummaryTree(client, 'isolate/1');
+    expect(result).toMatchObject({ type: 'MaterialApp' });
+    expect(client.callServiceExtension).toHaveBeenCalledTimes(1);
+    expect(client.callServiceExtension).toHaveBeenCalledWith(
+      'ext.flutter.inspector.getRootWidgetSummaryTree',
+      expect.anything(),
+    );
+  });
+
+  it('falls back to getRootWidgetTree when summary tree throws', async () => {
+    const client = makeClient({
+      callServiceExtension: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('extension not registered'))
+        .mockResolvedValueOnce(treeEnvelope),
+    });
+    const result = await fetchSummaryTree(client, 'isolate/1');
+    expect(result).toMatchObject({ type: 'MaterialApp' });
+    expect(client.callServiceExtension).toHaveBeenCalledTimes(2);
+    expect(client.callServiceExtension).toHaveBeenNthCalledWith(
+      2,
+      'ext.flutter.inspector.getRootWidgetTree',
+      expect.objectContaining({
+        args: expect.objectContaining({
+          isSummaryTree: 'true',
+          fullDetails: 'false',
+        }),
+      }),
+    );
+  });
+
+  it('falls back to getRootWidgetTree when summary tree returns null', async () => {
+    const client = makeClient({
+      callServiceExtension: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(treeEnvelope),
+    });
+    const result = await fetchSummaryTree(client, 'isolate/1');
+    expect(result).toMatchObject({ type: 'MaterialApp' });
+    expect(client.callServiceExtension).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns null when both extensions fail', async () => {
+    const client = makeClient({
+      callServiceExtension: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('no summary'))
+        .mockRejectedValueOnce(new Error('no full tree')),
+    });
+    const result = await fetchSummaryTree(client, 'isolate/1');
+    expect(result).toBeNull();
   });
 });

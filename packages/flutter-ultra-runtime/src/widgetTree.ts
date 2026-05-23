@@ -3,10 +3,11 @@
 // Per AC-R5: must be side-effect-free (no setState fires), return in < 300 ms
 // on a 500-node tree, and accept the same FinderSpec gesture/tap accepts.
 //
-// We call `ext.flutter.inspector.getRootWidgetSummaryTree` which the Flutter
-// inspector marks explicitly as read-only; the response is a recursive
-// node shape with {type, valueId, children, description, ...} plus optional
-// runtimeType / textPreview / shownName / widgetRuntimeType fields.
+// We call `ext.flutter.inspector.getRootWidgetSummaryTree` first (all Flutter
+// versions), falling back to `getRootWidgetTree` (Flutter >= 3.24) when the
+// summary variant is unavailable (web/DWDS proxying issues). Both return a
+// recursive read-only node shape with {type, valueId, children, description,
+// ...} plus optional runtimeType / textPreview / shownName / widgetRuntimeType.
 
 import { z } from 'zod';
 import { matchesText, type FinderSpec, type Rect } from '@flutter-ultra/mcp-runtime';
@@ -75,14 +76,7 @@ export interface WidgetExistsResult {
 
 const MAX_DEPTH = 256;
 
-export async function fetchSummaryTree(
-  client: VmServiceClient,
-  isolateId: string,
-): Promise<InspectorNode | null> {
-  const raw = await client.callServiceExtension('ext.flutter.inspector.getRootWidgetSummaryTree', {
-    isolateId,
-    args: { groupName: 'flutter-ultra-runtime' },
-  });
+function extractTreeFromResponse(raw: unknown): InspectorNode | null {
   if (raw == null || typeof raw !== 'object') return null;
   // The actual tree is at `result` on the response envelope.
   const envelope = raw as Record<string, unknown>;
@@ -91,6 +85,41 @@ export async function fetchSummaryTree(
   const parsed = InspectorNodeSchema.safeParse(treeRaw);
   if (!parsed.success) return null;
   return parsed.data as InspectorNode;
+}
+
+export async function fetchSummaryTree(
+  client: VmServiceClient,
+  isolateId: string,
+): Promise<InspectorNode | null> {
+  // Try optimized summary tree first (not available on web/DWDS or some iOS targets).
+  try {
+    const raw = await client.callServiceExtension(
+      'ext.flutter.inspector.getRootWidgetSummaryTree',
+      { isolateId, args: { groupName: 'flutter-ultra-runtime' } },
+    );
+    const result = extractTreeFromResponse(raw);
+    if (result) return result;
+  } catch {
+    // Summary tree unavailable — fall through to full tree.
+  }
+
+  // Fallback: getRootWidgetTree (Flutter >= 3.24) with isSummaryTree to get
+  // the same user-code-only subset. fullDetails=false uses the iterative
+  // serializer on web, avoiding Chrome stack overflow (flutter#159454).
+  try {
+    const raw = await client.callServiceExtension('ext.flutter.inspector.getRootWidgetTree', {
+      isolateId,
+      args: {
+        groupName: 'flutter-ultra-runtime',
+        isSummaryTree: 'true',
+        withPreviews: 'false',
+        fullDetails: 'false',
+      },
+    });
+    return extractTreeFromResponse(raw);
+  } catch {
+    return null;
+  }
 }
 
 // Walk the tree depth-first, calling visitor on each node. Aborts early when

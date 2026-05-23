@@ -295,8 +295,13 @@ export function registerInspectTools(opts: {
       try {
         const b64 = await withUltraFallback(
           async () => {
-            const root = await fetchSummaryTree(client, isolateId);
-            const rootId = root?.valueId ?? '';
+            let rootId = '';
+            try {
+              const root = await fetchSummaryTree(client, isolateId);
+              rootId = root?.valueId ?? '';
+            } catch {
+              // fetchSummaryTree failed — try screenshot without rootId
+            }
             const result = await client.callServiceExtension('ext.flutter.inspector.screenshot', {
               isolateId,
               args: {
@@ -310,7 +315,11 @@ export function registerInspectTools(opts: {
             });
             const data = extractScreenshotB64(result);
             if (!data || data.length < 200) {
-              throw new Error(`Inspector returned empty screenshot (${data?.length ?? 0} bytes)`);
+              throw new Error(
+                `Inspector returned empty screenshot (${data?.length ?? 0} bytes). ` +
+                  `On iOS Simulator or software-renderer targets, use device_exec instead:\n` +
+                  `  xcrun simctl io booted screenshot /tmp/screenshot.png`,
+              );
             }
             return data;
           },
@@ -355,7 +364,15 @@ export function registerInspectTools(opts: {
             );
           }
         }
-        throw vmErr;
+        throw new InvalidToolInputError(
+          `All screenshot methods failed on this target.\n` +
+            `VM inspector: ${vmErr instanceof Error ? vmErr.message : String(vmErr)}\n` +
+            `CDP: not available (no Chrome DevTools port)\n\n` +
+            `For native targets, use device_exec to capture screenshots directly:\n` +
+            `  iOS Simulator: xcrun simctl io booted screenshot /tmp/screenshot.png\n` +
+            `  Android: adb exec-out screencap -p > /tmp/screenshot.png\n` +
+            `Then read the file with the Read tool.`,
+        );
       } finally {
         await release();
       }

@@ -23,6 +23,7 @@
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { createDeviceRegistry, type DeviceRegistry, type RegistryOptions } from './registry.js';
+import { parseSshConfigFromEnv } from './ssh.js';
 import { createLogStreamService, type LogStreamService } from './logStream.js';
 import { registerInspectTools } from './tools/inspect.js';
 import { registerInteractTools } from './tools/interact.js';
@@ -54,7 +55,11 @@ export async function createNativeMobileServer(options: CreateNativeMobileServer
       : {}),
   });
 
-  const registry: DeviceRegistry = createDeviceRegistry(options.registry ?? {});
+  const sshConfig = parseSshConfigFromEnv();
+  const registry: DeviceRegistry = createDeviceRegistry({
+    ...(options.registry ?? {}),
+    ...(sshConfig ? { sshConfig } : {}),
+  });
   const logStream: LogStreamService = createLogStreamService();
 
   registerInspectTools({ server, registry });

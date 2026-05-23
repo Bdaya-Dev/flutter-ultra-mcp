@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createServer } from '../index.js';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -241,8 +241,6 @@ describe('create_project handler: directory path traversal rejection', () => {
           _registeredTools: Record<string, { handler?: (args: unknown) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const tool = tools['create_project'];
-
       // The tool may not expose handler directly (it's wrapped by withWatchdog).
       // Validate via schema instead: '..' must fail at the handler level.
       // The schema allows any string for directory, so the traversal guard is
@@ -279,8 +277,7 @@ describe('create_project handler: directory path traversal rejection', () => {
 
   it('accepts a safe relative directory name (no traversal)', () => {
     const safeDir = 'my_new_project';
-    const isBlocked =
-      safeDir.startsWith('/') || safeDir.startsWith('\\') || safeDir.includes('..');
+    const isBlocked = safeDir.startsWith('/') || safeDir.startsWith('\\') || safeDir.includes('..');
     expect(isBlocked).toBe(false);
   });
 

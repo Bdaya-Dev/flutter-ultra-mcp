@@ -17,6 +17,7 @@ import {
 } from './device.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { type ExecFn, type SshTransport } from './ssh.js';
 
 export interface IosDeviceInfo {
   udid: string;
@@ -35,6 +36,8 @@ export class IosSimDevice implements DeviceTransport {
   constructor(
     readonly id: string,
     private readonly xcrunPath = 'xcrun',
+    private readonly exec: ExecFn = spawnAwait,
+    private readonly sshTransport?: SshTransport,
   ) {
     this.host = new LocalDevice(`sim-host-${id}`, 'ios-sim');
   }
@@ -55,13 +58,13 @@ export class IosSimDevice implements DeviceTransport {
         durationMs: 0,
       };
     }
-    return spawnAwait([this.xcrunPath, 'simctl', 'spawn', this.id, ...argv], options);
+    return this.exec([this.xcrunPath, 'simctl', 'spawn', this.id, ...argv], options);
   }
 
   // High-level simctl helpers. Many iOS tools go through these instead of
   // shell() because simctl has its own subcommands (openurl, io, screenshot).
   async simctl(argv: readonly string[], options: ShellOptions = {}): Promise<ShellResult> {
-    return spawnAwait([this.xcrunPath, 'simctl', ...argv], options);
+    return this.exec([this.xcrunPath, 'simctl', ...argv], options);
   }
 
   async upload(localPath: string, options: UploadOptions): Promise<string> {
@@ -70,6 +73,10 @@ export class IosSimDevice implements DeviceTransport {
     // the sim container we'd need bundle-id context — surface that the
     // caller picks the right verb.
     // For generic transfer to the host filesystem we just copy.
+    if (this.sshTransport) {
+      await this.sshTransport.uploadFile(localPath, options.remotePath);
+      return options.remotePath;
+    }
     if (localPath !== options.remotePath) {
       const data = await readFile(localPath);
       await mkdir(dirname(options.remotePath), { recursive: true });
@@ -80,6 +87,10 @@ export class IosSimDevice implements DeviceTransport {
 
   async download(remotePath: string, localPath?: string): Promise<string> {
     const target = localPath ?? localTempPath('sim-pull');
+    if (this.sshTransport) {
+      await this.sshTransport.downloadFile(remotePath, target);
+      return target;
+    }
     const data = await readFile(remotePath);
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, data);
@@ -87,7 +98,7 @@ export class IosSimDevice implements DeviceTransport {
   }
 
   async isAlive(): Promise<boolean> {
-    const res = await this.simctl(['list', 'devices', '-j']);
+    const res = await this.exec([this.xcrunPath, 'simctl', 'list', 'devices', '-j']);
     if (!res.ok) return false;
     return res.stdout.includes(this.id);
   }
@@ -123,7 +134,7 @@ export class IosSimDevice implements DeviceTransport {
   async wdaFetchSource(wdaPort = 8100, options: ShellOptions = {}): Promise<string> {
     const url = `http://localhost:${String(wdaPort)}/source?onlyVisible=true`;
     // Use curl so we don't need a Node HTTP dependency in this low-level module.
-    const res = await spawnAwait(['curl', '-sf', '--max-time', '20', url], {
+    const res = await this.exec(['curl', '-sf', '--max-time', '20', url], {
       timeoutMs: options.timeoutMs ?? 25_000,
       ...(options.signal ? { signal: options.signal } : {}),
     });
@@ -157,6 +168,17 @@ export class IosSimDevice implements DeviceTransport {
   }
 
   async screenshotPng(options: ShellOptions = {}): Promise<Buffer> {
+    if (this.sshTransport) {
+      const remoteTmp = `/tmp/flutter-ultra-screenshot-${Date.now()}.png`;
+      const res = await this.simctl(['io', this.id, 'screenshot', remoteTmp], {
+        timeoutMs: 15_000,
+        ...options,
+      });
+      if (!res.ok) {
+        throw new Error(`simctl screenshot failed: ${res.stderr.trim()}`);
+      }
+      return this.sshTransport.readRemoteFile(remoteTmp);
+    }
     const tmp = localTempPath('sim-screenshot', '.png');
     await mkdir(dirname(tmp), { recursive: true });
     const res = await this.simctl(['io', this.id, 'screenshot', tmp], {

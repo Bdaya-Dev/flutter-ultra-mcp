@@ -16,6 +16,7 @@ import {
   type ShellResult,
   type UploadOptions,
 } from './device.js';
+import { type ExecFn, type SshTransport } from './ssh.js';
 
 export interface AndroidDeviceInfo {
   udid: string;
@@ -37,6 +38,8 @@ export class AndroidDevice implements DeviceTransport {
   constructor(
     readonly id: string,
     private readonly adbPath = 'adb',
+    private readonly exec: ExecFn = spawnAwait,
+    private readonly sshTransport?: SshTransport,
   ) {
     this.host = new LocalDevice(`adb-host-${id}`, 'android');
   }
@@ -58,13 +61,13 @@ export class AndroidDevice implements DeviceTransport {
   // We pass argv to `adb shell` as separate args so adb does its own quoting.
   async shell(argv: readonly string[], options: ShellOptions = {}): Promise<ShellResult> {
     const full = [this.adbPath, '-s', this.id, 'shell', ...argv];
-    return spawnAwait(full, options);
+    return this.exec(full, options);
   }
 
   // adb non-shell subcommand (push, pull, install, ...). Used internally
   // by upload/download.
   async adb(argv: readonly string[], options: ShellOptions = {}): Promise<ShellResult> {
-    return spawnAwait([this.adbPath, '-s', this.id, ...argv], options);
+    return this.exec([this.adbPath, '-s', this.id, ...argv], options);
   }
 
   async upload(localPath: string, options: UploadOptions): Promise<string> {
@@ -83,6 +86,17 @@ export class AndroidDevice implements DeviceTransport {
   async download(remotePath: string, localPath?: string): Promise<string> {
     const target = localPath ?? localTempPath('adb-pull');
     await mkdir(dirname(target), { recursive: true });
+    if (this.sshTransport) {
+      const remoteTmp = `/tmp/flutter-ultra-pull-${Date.now()}`;
+      const res = await this.adb(['pull', remotePath, remoteTmp], { timeoutMs: 30_000 });
+      if (!res.ok) {
+        throw new Error(
+          `adb pull failed (exit ${String(res.exitCode)}): ${res.stderr.trim() || res.stdout.trim()}`,
+        );
+      }
+      await this.sshTransport.downloadFile(remoteTmp, target);
+      return target;
+    }
     const res = await this.adb(['pull', remotePath, target], { timeoutMs: 30_000 });
     if (!res.ok) {
       throw new Error(
@@ -101,7 +115,7 @@ export class AndroidDevice implements DeviceTransport {
   }
 
   async isAlive(): Promise<boolean> {
-    const res = await this.adb(['get-state'], { timeoutMs: 5_000 });
+    const res = await this.exec([this.adbPath, '-s', this.id, 'get-state'], { timeoutMs: 5_000 });
     return res.ok && res.stdout.trim() === 'device';
   }
 
@@ -135,7 +149,7 @@ export class AndroidDevice implements DeviceTransport {
 
   // Screencap via adb exec-out (binary on stdout, no intermediate file).
   async screencapPng(options: ShellOptions = {}): Promise<Buffer> {
-    const res = await spawnAwait([this.adbPath, '-s', this.id, 'exec-out', 'screencap', '-p'], {
+    const res = await this.exec([this.adbPath, '-s', this.id, 'exec-out', 'screencap', '-p'], {
       timeoutMs: 15_000,
       binaryStdout: true,
       ...(options.signal ? { signal: options.signal } : {}),

@@ -1,0 +1,88 @@
+name: SSH iOS simulator E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/flutter-ultra-native-mobile/**'
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-native-mobile/**'
+
+concurrency:
+  group: ssh-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ssh-ios-test:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Enable SSH to localhost
+        run: |
+          ssh-keygen -t ed25519 -f ~/.ssh/test_key -N ""
+          mkdir -p ~/.ssh
+          cat ~/.ssh/test_key.pub >> ~/.ssh/authorized_keys
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/authorized_keys
+          sudo systemsetup -setremotelogin on
+          ssh-keyscan -H localhost >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/test_key -o StrictHostKeyChecking=no localhost "echo SSH_OK"
+
+      - name: Boot iOS simulator
+        run: |
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c "import json,sys; rts=json.load(sys.stdin)['runtimes']; print([r['identifier'] for r in rts if 'iOS' in r.get('name','')][-1])")
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; devs=json.load(sys.stdin)['devices']; ids=[d['udid'] for r,ds in devs.items() for d in ds if 'iPhone' in d.get('name','') and d['state']!='Booted']; print(ids[0] if ids else '')")
+          [ -z "$UDID" ] && { echo "No iPhone simulator found"; exit 1; }
+          xcrun simctl boot "$UDID"
+          echo "DEVICE_UDID=$UDID" >> $GITHUB_ENV
+          echo "Booted $UDID"
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS
+        run: npm run build
+
+      - name: Run SSH unit tests
+        run: npx vitest run packages/flutter-ultra-native-mobile/src/ssh.test.ts
+
+      - name: Run SSH integration tests
+        run: npx vitest run packages/flutter-ultra-native-mobile/src/ssh-integration.test.ts
+
+      - name: Test SSH-tunneled simctl
+        env:
+          FLUTTER_ULTRA_SSH_HOST: localhost
+          FLUTTER_ULTRA_SSH_PORT: '22'
+          FLUTTER_ULTRA_SSH_USER: runner
+          FLUTTER_ULTRA_SSH_KEY: ~/.ssh/test_key
+        run: |
+          node -e "
+            const { parseSshConfigFromEnv, SshTransport, createSshExecFn } = require('./packages/flutter-ultra-native-mobile/dist/ssh.js');
+            const config = parseSshConfigFromEnv();
+            if (!config) { console.log('No SSH config'); process.exit(1); }
+            const transport = new SshTransport(config);
+            const exec = createSshExecFn(transport);
+            exec(['xcrun', 'simctl', 'list', 'devices', 'booted']).then(r => {
+              console.log('SSH simctl output:', r.stdout);
+              console.log('Exit code:', r.exitCode);
+              transport.dispose();
+              process.exit(r.ok ? 0 : 1);
+            }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Shutdown simulator
+        if: always()
+        run: xcrun simctl shutdown "$DEVICE_UDID" 2>/dev/null || true

@@ -4,20 +4,35 @@
 // IosSimDevice directly so a future SshDevice path can intercept the
 // "physical device on remote host" case before falling through to local adb.
 
-import { AndroidDevice, listAndroidDevices, type AndroidDeviceInfo } from './android.js';
+import {
+  AndroidDevice,
+  listAndroidDevices,
+  parseAdbDevices,
+  type AndroidDeviceInfo,
+} from './android.js';
 import {
   IosPhysicalDevice,
   IosSimDevice,
   listIosPhysical,
   listIosSimulators,
+  parseSimctlDevices,
   type IosDeviceInfo,
+  type SimctlDevicesJson,
 } from './ios.js';
 import type { DeviceTransport } from './device.js';
+import {
+  SshTransport,
+  parseSshConfigFromEnv,
+  createSshExecFn,
+  type SshConfig,
+  type ExecFn,
+} from './ssh.js';
 
 export interface RegistryOptions {
   adbPath?: string;
   xcrunPath?: string;
   iosCliPath?: string;
+  sshConfig?: SshConfig;
 }
 
 export interface CombinedDeviceInfo {
@@ -48,11 +63,47 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
     process.env.FLUTTER_ULTRA_IOS_CLI ??
     'ios';
 
+  const sshConfig = options.sshConfig ?? parseSshConfigFromEnv();
+  const sshTransport = sshConfig ? new SshTransport(sshConfig) : undefined;
+  const sshExecFn: ExecFn | undefined = sshTransport ? createSshExecFn(sshTransport) : undefined;
+
+  // Track which device IDs were discovered via SSH so get() can recreate them.
+  const sshAndroidUdids = new Set<string>();
+  const sshIosSimUdids = new Set<string>();
+
   let cachedAndroid: AndroidDeviceInfo[] | null = null;
   let cachedIosSim: IosDeviceInfo[] | null = null;
   let cachedIosReal: IosDeviceInfo[] | null = null;
   let lastEnumeratedAt = 0;
   const ENUMERATION_TTL_MS = 5_000;
+
+  async function sshEnumerate(): Promise<{
+    android: AndroidDeviceInfo[];
+    iosSim: IosDeviceInfo[];
+  }> {
+    if (!sshTransport) return { android: [], iosSim: [] };
+
+    const [adbRes, simctlRes] = await Promise.all([
+      sshTransport.exec(['adb', 'devices', '-l'], { timeoutMs: 5_000 }).catch(() => null),
+      sshTransport
+        .exec(['xcrun', 'simctl', 'list', 'devices', '-j'], { timeoutMs: 5_000 })
+        .catch(() => null),
+    ]);
+
+    const android = adbRes?.ok
+      ? parseAdbDevices(adbRes.stdout).map((d) => ({ ...d, udid: `ssh:${d.udid}` }))
+      : [];
+    let iosSim: IosDeviceInfo[] = [];
+    if (simctlRes?.ok) {
+      try {
+        const json = JSON.parse(simctlRes.stdout) as SimctlDevicesJson;
+        iosSim = parseSimctlDevices(json).map((d) => ({ ...d, udid: `ssh:${d.udid}` }));
+      } catch {
+        // ignore parse failures
+      }
+    }
+    return { android, iosSim };
+  }
 
   async function enumerate(force = false): Promise<{
     android: AndroidDeviceInfo[];
@@ -69,16 +120,24 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
     ) {
       return { android: cachedAndroid, iosSim: cachedIosSim, iosReal: cachedIosReal };
     }
-    const [android, iosSim, iosReal] = await Promise.all([
+    const [localAndroid, localIosSim, iosReal, ssh] = await Promise.all([
       listAndroidDevices(adbPath),
       listIosSimulators(xcrunPath),
       listIosPhysical(iosCliPath),
+      sshEnumerate(),
     ]);
-    cachedAndroid = android;
-    cachedIosSim = iosSim;
+
+    // Track SSH-discovered UDIDs for get() to use SSH constructors.
+    sshAndroidUdids.clear();
+    for (const d of ssh.android) sshAndroidUdids.add(d.udid);
+    sshIosSimUdids.clear();
+    for (const d of ssh.iosSim) sshIosSimUdids.add(d.udid);
+
+    cachedAndroid = [...localAndroid, ...ssh.android];
+    cachedIosSim = [...localIosSim, ...ssh.iosSim];
     cachedIosReal = iosReal;
     lastEnumeratedAt = now;
-    return { android, iosSim, iosReal };
+    return { android: cachedAndroid, iosSim: cachedIosSim, iosReal: cachedIosReal };
   }
 
   return {
@@ -91,7 +150,12 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
           platform: 'android',
           state: a.state,
           ...(a.model !== undefined ? { name: a.model } : {}),
-          meta: { product: a.product, device: a.device, transportId: a.transportId },
+          meta: {
+            product: a.product,
+            device: a.device,
+            transportId: a.transportId,
+            ...(sshAndroidUdids.has(a.udid) ? { ssh: 'true' } : {}),
+          },
         });
       }
       for (const s of iosSim) {
@@ -100,7 +164,10 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
           platform: 'ios-sim',
           state: s.state,
           name: s.name,
-          ...(s.runtime !== undefined ? { meta: { runtime: s.runtime } } : {}),
+          meta: {
+            ...(s.runtime !== undefined ? { runtime: s.runtime } : {}),
+            ...(sshIosSimUdids.has(s.udid) ? { ssh: 'true' } : {}),
+          },
         });
       }
       for (const p of iosReal) {
@@ -119,13 +186,20 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
       const cached = cache.get(deviceId);
       if (cached) return cached;
       const { android, iosSim, iosReal } = await enumerate();
+
       if (android.some((d) => d.udid === deviceId)) {
-        const dev = new AndroidDevice(deviceId, adbPath);
+        const dev =
+          sshAndroidUdids.has(deviceId) && sshExecFn && sshTransport
+            ? new AndroidDevice(deviceId, adbPath, sshExecFn, sshTransport)
+            : new AndroidDevice(deviceId, adbPath);
         cache.set(deviceId, dev);
         return dev;
       }
       if (iosSim.some((d) => d.udid === deviceId)) {
-        const dev = new IosSimDevice(deviceId, xcrunPath);
+        const dev =
+          sshIosSimUdids.has(deviceId) && sshExecFn && sshTransport
+            ? new IosSimDevice(deviceId, xcrunPath, sshExecFn, sshTransport)
+            : new IosSimDevice(deviceId, xcrunPath);
         cache.set(deviceId, dev);
         return dev;
       }
@@ -172,12 +246,15 @@ export function createDeviceRegistry(options: RegistryOptions = {}): DeviceRegis
       cachedAndroid = null;
       cachedIosSim = null;
       cachedIosReal = null;
+      sshAndroidUdids.clear();
+      sshIosSimUdids.clear();
       lastEnumeratedAt = 0;
     },
 
     async shutdown(): Promise<void> {
       await Promise.all(Array.from(cache.values()).map((d) => d.dispose().catch(() => undefined)));
       cache.clear();
+      if (sshTransport) await sshTransport.dispose().catch(() => undefined);
     },
   };
 }

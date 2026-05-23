@@ -224,7 +224,12 @@ function buildShellCommand(
   if (env) {
     envPrefix =
       Object.entries(env)
-        .map(([k, v]) => `${k}=${shellQuote(v)}`)
+        .map(([k, v]) => {
+          if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) {
+            throw new Error(`Invalid env var name: ${k}`);
+          }
+          return `${k}=${shellQuote(v)}`;
+        })
         .join(' ') + ' ';
   }
   return envPrefix + parts.join(' ');

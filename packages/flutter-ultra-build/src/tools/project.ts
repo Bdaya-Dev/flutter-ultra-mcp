@@ -248,7 +248,7 @@ export function register(server: McpServer): void {
       } else {
         const cli = resolveCli('dart');
         if (template) args.push('--template', template);
-        if (empty) args.push('--no-template');
+        else if (empty) args.push('--no-template');
         args.push('--project-name', directory.replace(/[^a-z0-9_]/g, '_'));
         args.push(targetDir);
 

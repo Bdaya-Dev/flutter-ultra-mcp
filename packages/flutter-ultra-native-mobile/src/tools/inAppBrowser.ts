@@ -20,6 +20,7 @@ import { AndroidDevice } from '../android.js';
 import { IosSimDevice } from '../ios.js';
 import { detectInAppBrowserSchema, interactInAppBrowserSchema } from '../schemas.js';
 import { findNode, parseUiautomatorXml, parseWdaSourceXml } from '../a11y.js';
+import { escapeAdbInput } from './interact.js';
 
 // Android activity / package patterns that indicate an in-app browser.
 const ANDROID_CCT_PATTERNS = [
@@ -221,7 +222,7 @@ export function registerInAppBrowserTools(opts: {
         }
 
         // fill: tap placed focus, now type.
-        const escaped = args.text!.replace(/'/g, `'"'"'`);
+        const escaped = escapeAdbInput(args.text!);
         const typeRes = await device.shell(['sh', '-c', `input text '${escaped}'`], {
           timeoutMs: args.timeoutMs,
           signal,

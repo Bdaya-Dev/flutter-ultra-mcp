@@ -39,7 +39,7 @@ const KEYCODE = {
   MENU: 82,
 };
 
-function escapeAdbInput(text: string): string {
+export function escapeAdbInput(text: string): string {
   // `adb shell input text` is brittle with special characters. Wrap in
   // single quotes and escape any embedded single-quote: ' → '"'"'.
   return text.replace(/'/g, `'"'"'`);

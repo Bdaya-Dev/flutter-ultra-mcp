@@ -26,6 +26,9 @@ const root = resolve(__dirname, '..');
 const ALWAYS_EXTERNAL = [
   'playwright-core',
   'playwright-core/*',
+  'ssh2',
+  'ssh2/*',
+  'cpu-features',
 ];
 
 /** Shim file that provides __importMetaUrl for CJS output. */

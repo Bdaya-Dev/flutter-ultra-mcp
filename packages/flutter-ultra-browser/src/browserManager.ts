@@ -405,7 +405,7 @@ export class BrowserManager {
 
     // Install any active mock routes on this new page.
     for (const [, ctxRec] of this.contexts) {
-      if (ctxRec.contextId === contextId && ctxRec.mockRoutes.size > 0) {
+      if (ctxRec.contextId === contextId && ctxRec.mockRoutes?.size > 0) {
         for (const route of ctxRec.mockRoutes.values()) {
           this.installRouteHandler(page, route).catch((e) =>
             log.warn('mock_route_install_failed', {

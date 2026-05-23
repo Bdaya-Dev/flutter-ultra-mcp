@@ -12,6 +12,7 @@ Expected end state: `UltraFlutterBinding` initialized in the app entry point, `u
 ### 1. Verify the environment
 
 - `mcp__plugin_flutter_flutter-ultra-build__flutter_doctor` — stop if Flutter SDK, devices, or Dart show `[x]`.
+- `mcp__plugin_flutter_flutter-ultra-build__list_projects` — check if the target project already exists. If not, use `mcp__plugin_flutter_flutter-ultra-build__create_project` to scaffold it (an alternative to running `flutter create` manually), then proceed with setup steps below.
 - `mcp__plugin_flutter_flutter-ultra-build__project_info` — note entry points, `hasSentry`, `hasPatrol`, `hasUltraBinding`.
 - `mcp__plugin_flutter_flutter-ultra-runtime__list_devices` — verify at least one target device is available.
 - `mcp__plugin_flutter_flutter-ultra-build__list_dart_defines` — discover required dart-defines for launch.

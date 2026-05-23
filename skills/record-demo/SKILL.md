@@ -68,6 +68,26 @@ For responsive demos, resize the viewport between key interactions:
 
 Take screenshots at key moments for verification alongside the recording.
 
+### 3b. Web performance trace (optional, alongside video)
+
+For web demos where you also want a Chrome DevTools trace alongside the video:
+
+```
+mcp__plugin_flutter_flutter-ultra-browser__start_tracing
+  contextId: <id>
+  categories: ["blink", "v8", "disabled-by-default-devtools.timeline"]
+  outputPath: /tmp/flutter-demo-trace.json
+```
+
+Drive the UI flow, then stop:
+
+```
+mcp__plugin_flutter_flutter-ultra-browser__stop_tracing
+  contextId: <id>
+```
+
+Returns the trace JSON path. Open in `chrome://tracing` or Perfetto for frame-level analysis alongside the recorded video.
+
 ### 4. Stop recording
 
 #### Web

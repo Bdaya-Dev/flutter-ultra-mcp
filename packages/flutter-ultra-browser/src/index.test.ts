@@ -33,6 +33,15 @@ describe('tool registry', () => {
       'link_to_flutter',
       'run_playwright_script',
       'eval_playwright_recipe',
+      'mock_network_route',
+      'unmock_network_route',
+      'list_mock_routes',
+      'network_state_set',
+      'drag',
+      'drop_files',
+      'handle_dialog',
+      'start_tracing',
+      'stop_tracing',
     ];
     for (const n of names) {
       expect(registry.has(n), `missing ${n}`).toBe(true);
@@ -87,5 +96,116 @@ describe('schema strictness (§16.2)', () => {
       levels: ['fatal'],
     });
     expect(bad.success).toBe(false);
+  });
+
+  it('mockNetworkRouteSchema: valid contextId+pattern+status+body, reject missing contextId', () => {
+    const good = schemas.mockNetworkRouteSchema.safeParse({
+      contextId: 'ctx_1',
+      pattern: '**/api/v1/users**',
+      status: 200,
+      body: '{"ok":true}',
+    });
+    expect(good.success).toBe(true);
+    const missing = schemas.mockNetworkRouteSchema.safeParse({
+      pattern: '**/api/v1/users**',
+      status: 200,
+      body: '{"ok":true}',
+    });
+    expect(missing.success).toBe(false);
+  });
+
+  it('unmockNetworkRouteSchema: valid contextId+pattern, reject missing pattern', () => {
+    const good = schemas.unmockNetworkRouteSchema.safeParse({
+      contextId: 'ctx_1',
+      pattern: '**/api/v1/users**',
+    });
+    expect(good.success).toBe(true);
+    const missing = schemas.unmockNetworkRouteSchema.safeParse({
+      contextId: 'ctx_1',
+    });
+    expect(missing.success).toBe(false);
+  });
+
+  it('networkStateSetSchema: valid boolean offline, reject non-boolean', () => {
+    const good = schemas.networkStateSetSchema.safeParse({
+      contextId: 'ctx_1',
+      offline: true,
+    });
+    expect(good.success).toBe(true);
+    const bad = schemas.networkStateSetSchema.safeParse({
+      contextId: 'ctx_1',
+      offline: 'yes',
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it('dragSchema: valid source+target selectors, reject missing source', () => {
+    const good = schemas.dragSchema.safeParse({
+      pageId: 'pg_1',
+      source: '#drag-handle',
+      target: '#drop-zone',
+    });
+    expect(good.success).toBe(true);
+    const missing = schemas.dragSchema.safeParse({
+      pageId: 'pg_1',
+      target: '#drop-zone',
+    });
+    expect(missing.success).toBe(false);
+  });
+
+  it('dropFilesSchema: valid files array, reject empty files', () => {
+    const good = schemas.dropFilesSchema.safeParse({
+      pageId: 'pg_1',
+      selector: '#file-input',
+      files: ['/tmp/report.pdf'],
+    });
+    expect(good.success).toBe(true);
+    const empty = schemas.dropFilesSchema.safeParse({
+      pageId: 'pg_1',
+      selector: '#file-input',
+      files: [],
+    });
+    expect(empty.success).toBe(false);
+  });
+
+  it('handleDialogSchema: valid action enum (accept/dismiss), reject invalid action', () => {
+    const accept = schemas.handleDialogSchema.safeParse({
+      pageId: 'pg_1',
+      action: 'accept',
+    });
+    expect(accept.success).toBe(true);
+    const dismiss = schemas.handleDialogSchema.safeParse({
+      pageId: 'pg_1',
+      action: 'dismiss',
+    });
+    expect(dismiss.success).toBe(true);
+    const bad = schemas.handleDialogSchema.safeParse({
+      pageId: 'pg_1',
+      action: 'ignore',
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it('startTracingSchema: valid contextId with defaults, reject missing contextId', () => {
+    const good = schemas.startTracingSchema.safeParse({
+      contextId: 'ctx_1',
+    });
+    expect(good.success).toBe(true);
+    const missing = schemas.startTracingSchema.safeParse({
+      screenshots: true,
+    });
+    expect(missing.success).toBe(false);
+  });
+
+  it('stopTracingSchema: valid contextId+outputPath, reject missing outputPath', () => {
+    const good = schemas.stopTracingSchema.safeParse({
+      contextId: 'ctx_1',
+      outputPath: '/tmp/trace.zip',
+    });
+    expect(good.success).toBe(true);
+    const missing = schemas.stopTracingSchema.safeParse({
+      contextId: 'ctx_1',
+    });
+    expect(missing.success).toBe(false);
   });
 });

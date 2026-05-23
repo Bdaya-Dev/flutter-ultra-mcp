@@ -96,7 +96,24 @@ Collect live evidence before diagnosing. Propose code fixes only after inspectin
 - `mcp__plugin_flutter_flutter-ultra-runtime__count_widget_tree_nodes` to gauge tree complexity.
 - `mcp__plugin_flutter_flutter-ultra-runtime__start_tail_logs` + `mcp__plugin_flutter_flutter-ultra-runtime__poll_tail_logs` for live log streaming during reproduction.
 
-### 5. Evaluate in-app expressions
+### 5. Advanced VM service access
+
+For low-level inspection beyond the standard helpers, use `mcp__plugin_flutter_flutter-ultra-runtime__call_vm_service_method` to call raw VM Service protocol methods directly:
+
+- `getStack` — full isolate stack frames at any moment (useful when `get_runtime_errors` doesn't capture a synchronous deadlock).
+- `getObject` — inspect any live Dart object by its VM object ID retrieved from `evaluate`.
+- `evaluate` with full params — pass `disableBreakpoints: true` or `scope` overrides that the wrapper `evaluate` tool does not expose.
+
+```
+call_vm_service_method(
+  method: "getStack",
+  params: { "isolateId": "<id>", "limit": 20 }
+)
+```
+
+Use this when `evaluate` and `get_runtime_errors` are insufficient to explain observed behaviour.
+
+### 6. Evaluate in-app expressions
 
 `mcp__plugin_flutter_flutter-ultra-runtime__evaluate` freely to inspect live objects:
 
@@ -104,7 +121,7 @@ Collect live evidence before diagnosing. Propose code fixes only after inspectin
 - `context.read<MyBloc>().state.toString()`
 - `ProviderScope.containerOf(context).read(myProvider).toString()`
 
-### 6. Test the fix
+### 7. Test the fix
 
 1. Apply the code change.
 2. `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload` (or `mcp__plugin_flutter_flutter-ultra-runtime__hot_restart` if `initState` changed).

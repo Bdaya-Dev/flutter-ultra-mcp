@@ -30,18 +30,22 @@ Break the user's request into discrete, verifiable steps. Announce the plan befo
 
 **Perform the action:**
 
-| Action                    | Tool                                                              |
-| ------------------------- | ----------------------------------------------------------------- |
-| Tap by key/text/coords    | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                  |
-| Double tap                | `mcp__plugin_flutter_flutter-ultra-gesture__double_tap`           |
-| Long press                | `mcp__plugin_flutter_flutter-ultra-gesture__long_press`           |
-| Enter text                | `mcp__plugin_flutter_flutter-ultra-gesture__enter_text`           |
-| Clear text field          | `mcp__plugin_flutter_flutter-ultra-gesture__clear_text`           |
-| Scroll to element         | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_to`            |
-| Scroll until visible      | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_until_visible` |
-| Swipe gesture             | `mcp__plugin_flutter_flutter-ultra-gesture__swipe`                |
-| Pinch zoom                | `mcp__plugin_flutter_flutter-ultra-gesture__pinch_zoom`           |
-| Navigate programmatically | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`             |
+| Action                    | Tool                                                                   |
+| ------------------------- | ---------------------------------------------------------------------- |
+| Tap by key/text/coords    | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                       |
+| Double tap                | `mcp__plugin_flutter_flutter-ultra-gesture__double_tap`                |
+| Long press                | `mcp__plugin_flutter_flutter-ultra-gesture__long_press`                |
+| Enter text                | `mcp__plugin_flutter_flutter-ultra-gesture__enter_text`                |
+| Clear text field          | `mcp__plugin_flutter_flutter-ultra-gesture__clear_text`                |
+| Scroll to element         | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_to`                 |
+| Scroll until visible      | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_until_visible`      |
+| Swipe gesture             | `mcp__plugin_flutter_flutter-ultra-gesture__swipe`                     |
+| Pinch zoom                | `mcp__plugin_flutter_flutter-ultra-gesture__pinch_zoom`                |
+| Drag and drop             | `mcp__plugin_flutter_flutter-ultra-browser__drag`                      |
+| Multi-touch gesture       | `mcp__plugin_flutter_flutter-ultra-gesture__perform_actions`           |
+| Open deep link            | `mcp__plugin_flutter_flutter-ultra-native-mobile__dispatch_deep_link`  |
+| Set location              | `mcp__plugin_flutter_flutter-ultra-native-mobile__set_device_location` |
+| Navigate programmatically | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`                  |
 
 **Wait for the UI to settle:**
 
@@ -77,8 +81,19 @@ When a flow involves an external OAuth consent screen:
 3. `mcp__plugin_flutter_flutter-ultra-browser__fill` for username/password fields.
 4. `mcp__plugin_flutter_flutter-ultra-browser__click` on the submit button.
 5. `mcp__plugin_flutter_flutter-ultra-browser__wait_for_url` matching the app's redirect URI.
+6. Use `mcp__plugin_flutter_flutter-ultra-browser__mock_network_route` to stub API responses during the flow when deterministic data is needed.
+7. Use `mcp__plugin_flutter_flutter-ultra-browser__network_state_set` to simulate offline/slow-network conditions and verify the app handles connectivity loss gracefully.
 
-### 6. Native mobile system dialogs (mobile targets)
+### 6. Native OS interactions (mobile targets)
+
+For flows that leave the Flutter layer and interact with the host OS:
+
+- **Share sheet**: `mcp__plugin_flutter_flutter-ultra-native-mobile__handle_share_sheet` to detect the OS share sheet after triggering a share action, then select an app or dismiss.
+- **Notification flows**: `mcp__plugin_flutter_flutter-ultra-native-mobile__open_notification_tray` to expand the shade, `mcp__plugin_flutter_flutter-ultra-native-mobile__list_notifications` to find the target notification, `mcp__plugin_flutter_flutter-ultra-native-mobile__tap_notification` to open it and return to the app.
+- **Chrome Custom Tab / SFSafariViewController flows**: `mcp__plugin_flutter_flutter-ultra-native-mobile__detect_in_app_browser` to confirm the CCT/SVC is open, `mcp__plugin_flutter_flutter-ultra-native-mobile__interact_in_app_browser` to type/tap within it (e.g., OAuth consent), then wait for the app to resume.
+- **File picker**: `mcp__plugin_flutter_flutter-ultra-native-mobile__pick_file_native` to select a file from the OS file picker dialog that Flutter cannot drive with gesture tools.
+
+### 7. Native mobile system dialogs (mobile targets)
 
 - `mcp__plugin_flutter_flutter-ultra-native-mobile__wait_for_native_element` to detect OS dialogs.
 - `mcp__plugin_flutter_flutter-ultra-native-mobile__native_permission_grant` or `mcp__plugin_flutter_flutter-ultra-native-mobile__native_permission_deny`.
@@ -87,7 +102,7 @@ When a flow involves an external OAuth consent screen:
 - `mcp__plugin_flutter_flutter-ultra-native-mobile__native_home` to press Home.
 - `mcp__plugin_flutter_flutter-ultra-native-mobile__solve_oauth_cct` for Chrome Custom Tab OAuth flows.
 
-### 7. Native desktop dialogs (desktop targets)
+### 8. Native desktop dialogs (desktop targets)
 
 - `mcp__plugin_flutter_flutter-ultra-native-desktop__wait_for_window` to detect native dialogs.
 - `mcp__plugin_flutter_flutter-ultra-native-desktop__desktop_click` to interact with dialog buttons.
@@ -95,7 +110,7 @@ When a flow involves an external OAuth consent screen:
 - `mcp__plugin_flutter_flutter-ultra-native-desktop__select_file_in_dialog` for file picker dialogs.
 - `mcp__plugin_flutter_flutter-ultra-native-desktop__confirm_dialog` to accept/dismiss confirmation dialogs.
 
-### 8. Report the flow result
+### 9. Report the flow result
 
 Produce a numbered summary: steps taken, pass/fail status per step, screenshot paths, and any errors from `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`.
 

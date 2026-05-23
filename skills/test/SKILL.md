@@ -11,7 +11,7 @@ Covers all Flutter test layers: unit, widget, golden, and patrol E2E. For ad-hoc
 
 ### 1. Identify project and scope
 
-- `mcp__plugin_flutter_flutter-ultra-build__list_projects` to find available projects.
+- `mcp__plugin_flutter_flutter-ultra-build__list_projects` to find available projects. If the target project does not yet exist, use `mcp__plugin_flutter_flutter-ultra-build__create_project` to scaffold it before proceeding.
 - `mcp__plugin_flutter_flutter-ultra-build__project_info` for the target project path, flavors, and entry points.
 - `mcp__plugin_flutter_flutter-ultra-build__test_filter` to discover test files matching a name pattern before running.
 - Determine scope from the user's request: unit only, widget only, patrol E2E only, golden only, full suite, or coverage.
@@ -107,6 +107,7 @@ After unit tests with `coverage: true`:
 4. **Patrol E2E failures**: read `logContext` from `get_patrol_result`. Cross-reference with `get_patrol_browser_errors` for web.
 5. **Screenshot on failure**: patrol captures screenshots automatically. For unit/widget failures, call `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` if the app is running.
 6. **Network issues during E2E**: use `mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture` + `mcp__plugin_flutter_flutter-ultra-runtime__get_http_events` to check API calls.
+7. **Flaky tests due to external API responses**: use `mcp__plugin_flutter_flutter-ultra-browser__mock_network_route` before running patrol web tests to stub non-deterministic endpoints and isolate the test from network variance.
 
 ## Output format
 

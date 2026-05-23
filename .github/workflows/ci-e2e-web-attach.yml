@@ -1,8 +1,10 @@
 name: E2E — Web attach + tool chain
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/ci-e2e-web-attach.yml'
       - 'packages/flutter-ultra-runtime/**'
       - 'shared/vm-service-client/**'
       - 'packages/flutter-ultra-browser/**'

@@ -1,8 +1,10 @@
 name: E2E — iOS simulator attach + tool chain
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/ci-e2e-ios-attach.yml'
       - 'packages/flutter-ultra-runtime/**'
       - 'shared/vm-service-client/**'
       - 'packages/flutter-ultra-gesture/**'

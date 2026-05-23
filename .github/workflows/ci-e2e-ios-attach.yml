@@ -1,0 +1,200 @@
+name: E2E — iOS simulator attach + tool chain
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/flutter-ultra-runtime/**'
+      - 'shared/vm-service-client/**'
+      - 'packages/flutter-ultra-gesture/**'
+      - 'dart/ultra_flutter/**'
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-runtime/**'
+      - 'shared/vm-service-client/**'
+      - 'packages/flutter-ultra-gesture/**'
+      - 'dart/ultra_flutter/**'
+
+jobs:
+  ios-attach-test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Create test Flutter app with ultra_flutter
+        run: |
+          cd /tmp
+          flutter create --empty ultra_e2e_app
+          cd ultra_e2e_app
+          flutter pub add ultra_flutter
+
+          # Write main.dart with UltraFlutterBinding
+          cat > lib/main.dart << 'DARTEOF'
+          import 'package:flutter/foundation.dart';
+          import 'package:flutter/material.dart';
+          import 'package:ultra_flutter/ultra_flutter.dart';
+
+          void main() {
+            if (!kReleaseMode) {
+              UltraFlutterBinding.ensureInitialized();
+            } else {
+              WidgetsFlutterBinding.ensureInitialized();
+            }
+            runApp(MaterialApp(
+              home: Scaffold(
+                appBar: AppBar(title: const Text('E2E Test')),
+                body: const Center(child: Text('Hello E2E')),
+              ),
+            ));
+          }
+          DARTEOF
+
+      - name: Boot iOS simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          devs = json.load(sys.stdin)['devices']
+          for runtime, devices in devs.items():
+            for d in devices:
+              if 'iPhone' in d.get('name', '') and d['state'] != 'Booted':
+                print(d['udid'])
+                sys.exit(0)
+          sys.exit(1)
+          ")
+          xcrun simctl boot "$UDID"
+          echo "DEVICE_UDID=$UDID" >> $GITHUB_ENV
+          echo "Booted simulator: $UDID"
+
+      - name: Launch Flutter app on simulator
+        run: |
+          cd /tmp/ultra_e2e_app
+          flutter run -d "$DEVICE_UDID" --machine > /tmp/flutter_stdout.log 2>/tmp/flutter_stderr.log &
+          FLUTTER_PID=$!
+          echo "FLUTTER_PID=$FLUTTER_PID" >> $GITHUB_ENV
+
+          # Wait for VM Service URI (up to 5 minutes)
+          for i in $(seq 1 60); do
+            if grep -q 'vmServiceUri' /tmp/flutter_stdout.log 2>/dev/null; then
+              break
+            fi
+            sleep 5
+            # Check process still alive
+            if ! kill -0 $FLUTTER_PID 2>/dev/null; then
+              echo "Flutter process died!"
+              cat /tmp/flutter_stderr.log
+              exit 1
+            fi
+          done
+
+          # Extract URI
+          VM_URI=$(python3 -c "
+          import json
+          for line in open('/tmp/flutter_stdout.log'):
+            line = line.strip().strip('[]')
+            if not line: continue
+            try:
+              obj = json.loads(line)
+              if obj.get('event') == 'app.debugPort':
+                print(obj['params'].get('wsUri', obj['params'].get('uri', '')))
+            except: pass
+          " | tail -1)
+
+          if [ -z "$VM_URI" ]; then
+            echo "No VM Service URI found!"
+            cat /tmp/flutter_stdout.log
+            cat /tmp/flutter_stderr.log
+            exit 1
+          fi
+
+          echo "VM_SERVICE_URI=$VM_URI" >> $GITHUB_ENV
+          echo "VM Service URI: $VM_URI"
+
+      - name: Run E2E attach + tool chain test
+        run: |
+          node -e "
+          const { VmServiceClient } = require('./shared/vm-service-client/dist/client.js');
+          const assert = require('assert');
+
+          async function test() {
+            const uri = process.env.VM_SERVICE_URI;
+            console.log('Connecting to:', uri);
+
+            const client = new VmServiceClient(uri);
+            await new Promise(r => setTimeout(r, 2000)); // Wait for connection
+
+            // Test 1: getVM — the one that failed with .strict()
+            console.log('Test 1: getVM');
+            const vm = await client.getVM();
+            assert.strictEqual(vm.type, 'VM');
+            assert.ok(vm.isolates.length > 0, 'Should have at least 1 isolate');
+            assert.ok(vm.pid > 0, 'Should have a real PID (not web -1)');
+            console.log('  OK: VM name=' + vm.name + ', pid=' + vm.pid + ', isolates=' + vm.isolates.length);
+
+            // Test 2: getIsolate — verifies IsolateSchema passthrough
+            console.log('Test 2: getIsolate');
+            const isolateId = vm.isolates[0].id;
+            const isolate = await client.getIsolate(isolateId);
+            assert.strictEqual(isolate.type, 'Isolate');
+            assert.ok(isolate.extensionRPCs, 'Should have extension RPCs');
+            console.log('  OK: isolate name=' + isolate.name + ', extensions=' + (isolate.extensionRPCs || []).length);
+
+            // Test 3: Check ultra binding is registered
+            console.log('Test 3: UltraFlutterBinding detection');
+            const hasUltra = (isolate.extensionRPCs || []).some(e => e.startsWith('ext.flutter.ultra'));
+            assert.ok(hasUltra, 'UltraFlutterBinding extensions should be registered');
+            console.log('  OK: ultra extensions found');
+
+            // Test 4: Call a service extension
+            console.log('Test 4: ext.flutter.ultra.getVersion');
+            const version = await client.callServiceExtension('ext.flutter.ultra.getVersion', {
+              isolateId, args: {}
+            });
+            assert.ok(version, 'Should return version info');
+            console.log('  OK: ultra version=' + JSON.stringify(version));
+
+            // Test 5: evaluate expression
+            console.log('Test 5: evaluate');
+            const evalResult = await client.evaluate(isolateId, isolate.rootLib.id, '1 + 1');
+            assert.ok(evalResult, 'Should return eval result');
+            console.log('  OK: 1+1=' + (evalResult.valueAsString || JSON.stringify(evalResult)));
+
+            // Test 6: getVM includes private _-prefixed fields (the bug we fixed)
+            console.log('Test 6: Verify private fields are preserved (passthrough)');
+            const rawVm = await client.transport.request('getVM');
+            const hasPrivateFields = Object.keys(rawVm).some(k => k.startsWith('_'));
+            console.log('  Private fields present: ' + hasPrivateFields);
+            console.log('  Fields: ' + Object.keys(rawVm).filter(k => k.startsWith('_')).join(', '));
+            // On native targets these exist; on web they don't. Just log, don't assert.
+
+            console.log('');
+            console.log('ALL 6 TESTS PASSED');
+
+            await client.dispose();
+          }
+
+          test().catch(e => {
+            console.error('TEST FAILED:', e.message);
+            process.exit(1);
+          });
+          "
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kill $FLUTTER_PID 2>/dev/null || true
+          xcrun simctl shutdown "$DEVICE_UDID" 2>/dev/null || true

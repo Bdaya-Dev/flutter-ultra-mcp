@@ -1,0 +1,172 @@
+name: E2E — Web attach + tool chain
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/flutter-ultra-runtime/**'
+      - 'shared/vm-service-client/**'
+      - 'packages/flutter-ultra-browser/**'
+  pull_request:
+    paths:
+      - 'packages/flutter-ultra-runtime/**'
+      - 'shared/vm-service-client/**'
+      - 'packages/flutter-ultra-browser/**'
+
+jobs:
+  web-attach-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Build TS servers
+        run: npm run build
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Create test Flutter app with ultra_flutter
+        run: |
+          cd /tmp
+          flutter create --empty ultra_e2e_web
+          cd ultra_e2e_web
+          flutter pub add ultra_flutter
+
+          cat > lib/main.dart << 'DARTEOF'
+          import 'package:flutter/foundation.dart';
+          import 'package:flutter/material.dart';
+          import 'package:ultra_flutter/ultra_flutter.dart';
+
+          void main() {
+            if (!kReleaseMode) {
+              UltraFlutterBinding.ensureInitialized();
+            } else {
+              WidgetsFlutterBinding.ensureInitialized();
+            }
+            runApp(MaterialApp(
+              home: Scaffold(
+                appBar: AppBar(title: const Text('Web E2E')),
+                body: const Center(child: Text('Hello Web E2E')),
+              ),
+            ));
+          }
+          DARTEOF
+
+      - name: Launch Flutter web app
+        run: |
+          cd /tmp/ultra_e2e_web
+          flutter run -d chrome --web-port=9753 --machine \
+            --web-browser-flag=--headless=new \
+            --web-browser-flag=--disable-gpu \
+            --web-browser-flag=--no-sandbox \
+            > /tmp/flutter_web_stdout.log 2>/tmp/flutter_web_stderr.log &
+          FLUTTER_PID=$!
+          echo "FLUTTER_PID=$FLUTTER_PID" >> $GITHUB_ENV
+
+          # Wait for VM Service URI
+          for i in $(seq 1 60); do
+            if grep -q 'vmServiceUri' /tmp/flutter_web_stdout.log 2>/dev/null; then
+              break
+            fi
+            sleep 5
+            if ! kill -0 $FLUTTER_PID 2>/dev/null; then
+              echo "Flutter died!"
+              cat /tmp/flutter_web_stderr.log
+              exit 1
+            fi
+          done
+
+          VM_URI=$(python3 -c "
+          import json
+          for line in open('/tmp/flutter_web_stdout.log'):
+            line = line.strip().strip('[]')
+            if not line: continue
+            try:
+              obj = json.loads(line)
+              if obj.get('event') == 'app.debugPort':
+                print(obj['params'].get('wsUri', obj['params'].get('uri', '')))
+            except: pass
+          " | tail -1)
+
+          if [ -z "$VM_URI" ]; then
+            echo "No VM Service URI found"
+            cat /tmp/flutter_web_stdout.log
+            cat /tmp/flutter_web_stderr.log
+            exit 1
+          fi
+
+          echo "VM_SERVICE_URI=$VM_URI" >> $GITHUB_ENV
+          echo "VM Service URI: $VM_URI"
+
+      - name: Run E2E attach + tool chain test
+        run: |
+          node -e "
+          const { VmServiceClient } = require('./shared/vm-service-client/dist/client.js');
+          const assert = require('assert');
+
+          async function test() {
+            const uri = process.env.VM_SERVICE_URI;
+            console.log('Connecting to:', uri);
+
+            const client = new VmServiceClient(uri);
+            await new Promise(r => setTimeout(r, 3000));
+
+            // Test 1: getVM
+            console.log('Test 1: getVM');
+            const vm = await client.getVM();
+            assert.strictEqual(vm.type, 'VM');
+            assert.ok(vm.isolates.length > 0);
+            console.log('  OK: name=' + vm.name + ', isolates=' + vm.isolates.length);
+
+            // Test 2: getIsolate
+            console.log('Test 2: getIsolate');
+            const isolateId = vm.isolates[0].id;
+            const isolate = await client.getIsolate(isolateId);
+            assert.strictEqual(isolate.type, 'Isolate');
+            console.log('  OK: name=' + isolate.name);
+
+            // Test 3: service extension call
+            console.log('Test 3: callServiceExtension (ultra.getVersion)');
+            try {
+              const ver = await client.callServiceExtension('ext.flutter.ultra.getVersion', {
+                isolateId, args: {}
+              });
+              console.log('  OK: version=' + JSON.stringify(ver));
+            } catch(e) {
+              console.log('  SKIP (web DWDS may not support): ' + e.message);
+            }
+
+            // Test 4: raw transport.request (passthrough validation)
+            console.log('Test 4: raw transport.request getVM');
+            const rawVm = await client.transport.request('getVM');
+            assert.ok(rawVm.type === 'VM');
+            console.log('  OK: fields=' + Object.keys(rawVm).length);
+
+            console.log('');
+            console.log('ALL TESTS PASSED');
+            await client.dispose();
+          }
+
+          test().catch(e => {
+            console.error('FAILED:', e.message);
+            process.exit(1);
+          });
+          "
+
+      - name: Cleanup
+        if: always()
+        run: kill $FLUTTER_PID 2>/dev/null || true

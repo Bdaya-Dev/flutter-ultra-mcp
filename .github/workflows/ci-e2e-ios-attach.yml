@@ -132,12 +132,26 @@ jobs:
           const { VmServiceClient } = require('./shared/vm-service-client/dist/client.js');
           const assert = require('assert');
 
+          async function connectWithRetry(uri, maxRetries = 15) {
+            for (let i = 0; i < maxRetries; i++) {
+              try {
+                const client = new VmServiceClient(uri);
+                await new Promise(r => setTimeout(r, 2000));
+                await client.getVM();
+                return client;
+              } catch (e) {
+                console.log('  Retry ' + (i+1) + '/' + maxRetries + ': ' + e.message);
+                await new Promise(r => setTimeout(r, 3000));
+              }
+            }
+            throw new Error('Failed to connect after ' + maxRetries + ' retries');
+          }
+
           async function test() {
             const uri = process.env.VM_SERVICE_URI;
             console.log('Connecting to:', uri);
 
-            const client = new VmServiceClient(uri);
-            await new Promise(r => setTimeout(r, 2000)); // Wait for connection
+            const client = await connectWithRetry(uri);
 
             // Test 1: getVM — the one that failed with .strict()
             console.log('Test 1: getVM');

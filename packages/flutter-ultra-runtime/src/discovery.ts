@@ -5,7 +5,7 @@
 //
 // Strategies (in order):
 //   S1. Explicit URI passed by caller        (instant)
-//   S2. Our own DTD instance                  (not impl v1 — opt-in)
+//   S2. Dart Tooling Daemon (DTD)              (`dart tooling-daemon --list`)
 //   S3. Spawner-written DTD info files        (not impl v1 — heuristic)
 //   S4. VS Code LSP                           (not impl v1 — needs LSP client)
 //   S5. Process scan + raw VM redirect trick  (PRIMARY — Windows-first)
@@ -49,6 +49,13 @@ export async function discover(options: DiscoveryOptions): Promise<DiscoveredSes
   const log = options.logger.child({ component: 'discovery' });
   const probeTimeout = options.probeTimeoutMs ?? HTTP_TIMEOUT_DEFAULT;
 
+  // S2: DTD discovery — find apps launched by IDEs (VS Code, IntelliJ)
+  const dtdSessions = await discoverViaDtd(log, probeTimeout).catch((err) => {
+    log.debug('DTD discovery skipped', { err: String(err) });
+    return [] as DiscoveredSession[];
+  });
+
+  // S5: Process scan — find apps launched via `flutter run`
   const procs = await enumerateProcesses(log).catch((err) => {
     log.warn('process enumeration failed', { err: String(err) });
     return [] as ProcessInfo[];
@@ -67,6 +74,14 @@ export async function discover(options: DiscoveryOptions): Promise<DiscoveredSes
 
   const seen = new Set<string>();
   const results: DiscoveredSession[] = [];
+
+  // Add DTD-discovered sessions first (higher quality — IDE-launched apps)
+  for (const dtdSession of dtdSessions) {
+    if (!seen.has(dtdSession.uri)) {
+      seen.add(dtdSession.uri);
+      results.push(dtdSession);
+    }
+  }
 
   for (const proc of dartVmProcs) {
     const candidates = extractVmCandidates(proc.cmdline);
@@ -245,6 +260,156 @@ export function findChromeCdpPort(procs: ProcessInfo[]): number | undefined {
   }
   return undefined;
 }
+
+// -- DTD discovery (Strategy S2) -----------------------------------------------
+//
+// Runs `dart tooling-daemon --list` to find DTD instances, then queries each
+// for connected apps. This discovers apps launched by IDEs (VS Code, IntelliJ)
+// that process scanning cannot find.
+
+async function findDartSdkPath(): Promise<string | null> {
+  // Check DART_ROOT env var first (new in Dart 3.12)
+  if (process.env.DART_ROOT) {
+    return `${process.env.DART_ROOT}/bin/dart`;
+  }
+  // Try to resolve from PATH
+  try {
+    const cmd = process.platform === 'win32' ? 'where dart' : 'which dart';
+    const { stdout } = await exec(cmd, { timeout: 5_000 });
+    const path = stdout.trim().split(/\r?\n/)[0];
+    return path || null;
+  } catch {
+    return null;
+  }
+}
+
+interface DtdInstance {
+  uri: string;
+  workingDir?: string;
+}
+
+function parseDtdList(stdout: string): DtdInstance[] {
+  const instances: DtdInstance[] = [];
+  // Output format: one DTD per line with URI and optional working directory
+  // Lines look like: ws://127.0.0.1:PORT/TOKEN= (workingDir: /path/to/project)
+  for (const line of stdout.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const wsMatch = trimmed.match(/(wss?:\/\/[^\s()]+)/);
+    if (wsMatch?.[1]) {
+      const dirMatch = trimmed.match(/workingDir:\s*([^\s()]+)/i);
+      instances.push({
+        uri: wsMatch[1],
+        ...(dirMatch?.[1] ? { workingDir: dirMatch[1] } : {}),
+      });
+    }
+  }
+  return instances;
+}
+
+async function queryDtdForApps(dtdUri: string, timeoutMs: number): Promise<DiscoveredSession[]> {
+  const { WebSocket } = await import('ws');
+  return new Promise<DiscoveredSession[]>((resolve) => {
+    const timer = setTimeout(() => {
+      ws.close();
+      resolve([]);
+    }, timeoutMs);
+
+    const ws = new WebSocket(dtdUri);
+
+    ws.on('error', () => {
+      clearTimeout(timer);
+      ws.close();
+      resolve([]);
+    });
+
+    ws.on('open', () => {
+      // Query for connected VM services via DTD's getVmServices RPC
+      ws.send(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getVmServices',
+          params: {},
+        }),
+      );
+    });
+
+    ws.on('message', (data: Buffer | string) => {
+      clearTimeout(timer);
+      try {
+        const msg = JSON.parse(data.toString()) as {
+          result?: {
+            vmServicesInfos?: Array<{ uri: string; name?: string }>;
+          };
+          error?: { message: string };
+        };
+
+        if (msg.error || !msg.result?.vmServicesInfos) {
+          ws.close();
+          resolve([]);
+          return;
+        }
+
+        const sessions: DiscoveredSession[] = msg.result.vmServicesInfos.map((info) => ({
+          uri: info.uri.endsWith('/ws') ? info.uri : info.uri.replace(/\/?$/, '/ws'),
+          source: 'dtd' as const,
+          ...(info.name !== undefined ? { device: info.name } : {}),
+        }));
+
+        ws.close();
+        resolve(sessions);
+      } catch {
+        ws.close();
+        resolve([]);
+      }
+    });
+
+    ws.on('close', () => {
+      clearTimeout(timer);
+    });
+  });
+}
+
+async function discoverViaDtd(log: Logger, probeTimeout: number): Promise<DiscoveredSession[]> {
+  const dartPath = await findDartSdkPath();
+  if (!dartPath) {
+    log.debug('DTD discovery: dart SDK not found in PATH');
+    return [];
+  }
+
+  let stdout: string;
+  try {
+    const result = await exec(`"${dartPath}" tooling-daemon --list`, {
+      timeout: 10_000,
+    });
+    stdout = result.stdout;
+  } catch (err) {
+    log.debug('DTD discovery: dart tooling-daemon --list failed', {
+      err: String(err),
+    });
+    return [];
+  }
+
+  const dtdInstances = parseDtdList(stdout);
+  if (dtdInstances.length === 0) {
+    log.debug('DTD discovery: no DTD instances found');
+    return [];
+  }
+
+  log.debug('DTD discovery: found instances', { count: dtdInstances.length });
+
+  const allSessions: DiscoveredSession[] = [];
+  for (const dtd of dtdInstances) {
+    const sessions = await queryDtdForApps(dtd.uri, probeTimeout);
+    allSessions.push(...sessions);
+  }
+
+  log.debug('DTD discovery: found apps', { count: allSessions.length });
+  return allSessions;
+}
+
+export { parseDtdList, findDartSdkPath };
 
 export async function enumerateProcesses(log: Logger): Promise<ProcessInfo[]> {
   if (process.platform === 'win32') {

@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.14.1...v1.15.0) (2026-05-23)
+
+
+### Features
+
+* **runtime:** add DTD discovery for IDE-launched apps (Dart 3.12 agentic hot reload) ([b587757](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/b58775743b22ee6b7e08b93ba0a43d06a3afae85))
+
 ## [1.14.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.14.0...v1.14.1) (2026-05-23)
 
 

@@ -42,6 +42,8 @@ Break the user's request into discrete, verifiable steps. Announce the plan befo
 | Swipe gesture             | `mcp__plugin_flutter_flutter-ultra-gesture__swipe`                     |
 | Pinch zoom                | `mcp__plugin_flutter_flutter-ultra-gesture__pinch_zoom`                |
 | Drag and drop             | `mcp__plugin_flutter_flutter-ultra-browser__drag`                      |
+| Press key                 | `mcp__plugin_flutter_flutter-ultra-browser__press_key`                 |
+| Handle dialog             | `mcp__plugin_flutter_flutter-ultra-browser__handle_dialog`             |
 | Multi-touch gesture       | `mcp__plugin_flutter_flutter-ultra-gesture__perform_actions`           |
 | Open deep link            | `mcp__plugin_flutter_flutter-ultra-native-mobile__dispatch_deep_link`  |
 | Set location              | `mcp__plugin_flutter_flutter-ultra-native-mobile__set_device_location` |

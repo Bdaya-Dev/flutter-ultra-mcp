@@ -140,6 +140,10 @@ Got: InvoiceListLoaded with 0 items
 | Start widget tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_widget_tests`        |
 | Start golden tests | `mcp__plugin_flutter_flutter-ultra-build__start_run_golden_tests`        |
 | Update goldens     | `mcp__plugin_flutter_flutter-ultra-build__start_update_goldens`          |
+| Start integ tests  | `mcp__plugin_flutter_flutter-ultra-build__start_run_integration_tests`   |
+| Poll integ tests   | `mcp__plugin_flutter_flutter-ultra-build__poll_run_integration_tests`    |
+| Get integ results  | `mcp__plugin_flutter_flutter-ultra-build__get_run_integration_tests_result` |
+| Cancel integ tests | `mcp__plugin_flutter_flutter-ultra-build__cancel_run_integration_tests`  |
 | List patrol tests  | `mcp__plugin_flutter_flutter-ultra-patrol__list_tests`                   |
 | Start patrol test  | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`            |
 | Poll patrol        | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`              |

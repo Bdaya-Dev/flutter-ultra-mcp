@@ -121,12 +121,39 @@ Use this when `evaluate` and `get_runtime_errors` are insufficient to explain ob
 - `context.read<MyBloc>().state.toString()`
 - `ProviderScope.containerOf(context).read(myProvider).toString()`
 
-### 7. Test the fix
+### 7. Static analysis and auto-fix
+
+When the runtime triage points to a code-level issue:
+
+- `mcp__plugin_flutter_flutter-ultra-build__analyze` — run static analysis to surface type errors, lint violations, and deprecation warnings related to the bug.
+- `mcp__plugin_flutter_flutter-ultra-build__fix_preview` — preview automated fixes before applying.
+- `mcp__plugin_flutter_flutter-ultra-build__fix` — apply safe automated fixes (`dart fix --apply`).
+
+### 8. IDE-level code navigation
+
+Use LSP tools for pinpoint navigation when reading unfamiliar call paths:
+
+- `mcp__plugin_oh-my-claudecode_t__lsp_hover` (`dart_hover`) — inspect the type, docs, and inferred value of any expression at a given file:line:col without running the app.
+- `mcp__plugin_oh-my-claudecode_t__lsp_goto_definition` (`dart_go_to_definition`) — jump to the declaration of the method or class under the cursor.
+- `mcp__plugin_oh-my-claudecode_t__lsp_document_symbols` (`get_active_location`) — list all symbols in the current file to map the class/method structure quickly.
+
+### 9. Test the fix
 
 1. Apply the code change.
 2. `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload` (or `mcp__plugin_flutter_flutter-ultra-runtime__hot_restart` if `initState` changed).
 3. Re-run the appropriate triage step to confirm the error is gone.
 4. `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` for before/after comparison.
+
+## Build and LSP tool reference
+
+| Action                    | Tool                                                              |
+| ------------------------- | ----------------------------------------------------------------- |
+| Static analysis           | `mcp__plugin_flutter_flutter-ultra-build__analyze`                |
+| Preview auto-fixes        | `mcp__plugin_flutter_flutter-ultra-build__fix_preview`            |
+| Apply auto-fixes          | `mcp__plugin_flutter_flutter-ultra-build__fix`                    |
+| Hover type/docs           | `mcp__plugin_oh-my-claudecode_t__lsp_hover`                       |
+| Go to definition          | `mcp__plugin_oh-my-claudecode_t__lsp_goto_definition`             |
+| List file symbols         | `mcp__plugin_oh-my-claudecode_t__lsp_document_symbols`            |
 
 ## Common patterns
 

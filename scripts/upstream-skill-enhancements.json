@@ -1,10 +1,22 @@
 {
   "add-integration-test": {
-    "description": "After writing the integration test, use these tools to launch the app and verify it:",
+    "description": "After writing the integration test, run it and verify it:",
     "tools": [
       {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_integration_tests",
+        "description": "Execute the integration test suite"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__poll_run_integration_tests",
+        "description": "Monitor integration test progress until completion"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__get_run_integration_tests_result",
+        "description": "Get detailed results with per-failure info"
+      },
+      {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__launch_app",
-        "description": "Launch the app with the integration test target"
+        "description": "Launch the app manually for interactive integration test verification"
       },
       {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__attach",
@@ -91,6 +103,10 @@
         "description": "Capture screenshots at each breakpoint"
       },
       {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__find_widget",
+        "description": "Locate a specific widget to verify it renders correctly at each breakpoint"
+      },
+      {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree",
         "description": "Inspect render tree for constraint issues"
       },
@@ -110,6 +126,18 @@
       {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree",
         "description": "Inspect render tree to see constraint propagation"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__audit_design",
+        "description": "Run all 10 design checks including layout_overflow and touch_targets"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__audit_responsive",
+        "description": "Test layout at compact/medium/expanded/large breakpoints"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__find_widget",
+        "description": "Locate the specific widget causing the layout issue"
       },
       {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__toggle_debug_paint",
@@ -179,6 +207,10 @@
         "description": "Add a new translation key to all ARB files"
       },
       {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__arb_remove_key",
+        "description": "Remove an obsolete translation key from all ARB files"
+      },
+      {
         "name": "mcp__plugin_flutter_flutter-ultra-build__arb_diff",
         "description": "Compare ARB files to find drift between locales"
       }
@@ -208,6 +240,10 @@
   "add-unit-test": {
     "description": "After writing the unit test, run and validate it:",
     "tools": [
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__test_filter",
+        "description": "Discover test files matching a name pattern before running"
+      },
       {
         "name": "mcp__plugin_flutter_flutter-ultra-build__start_run_unit_tests",
         "description": "Execute unit tests (supports `testNamePattern` and `coverage`)"
@@ -256,16 +292,24 @@
         "description": "Fetch active stack traces from the running app"
       },
       {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_logs",
+        "description": "View recent log output for context"
+      },
+      {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__evaluate",
-        "description": "Evaluate expressions in the running isolate"
+        "description": "Evaluate expressions in the running isolate to inspect live state"
+      },
+      {
+        "name": "mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree",
+        "description": "Inspect render tree for layout-related runtime errors"
       },
       {
         "name": "mcp__plugin_flutter_flutter-ultra-runtime__hot_reload",
         "description": "Hot reload after applying fix to verify immediately"
       },
       {
-        "name": "mcp__plugin_flutter_flutter-ultra-runtime__get_logs",
-        "description": "View recent log output for context"
+        "name": "mcp__plugin_oh-my-claudecode_t__lsp_hover",
+        "description": "Inspect type and docs of any expression at a given file:line:col (dart_hover)"
       }
     ]
   },
@@ -332,16 +376,24 @@
         "description": "Run dart analyze with full diagnostics"
       },
       {
-        "name": "mcp__plugin_flutter_flutter-ultra-build__fix",
-        "description": "Apply dart fix --apply for automated lint fixes"
-      },
-      {
         "name": "mcp__plugin_flutter_flutter-ultra-build__fix_preview",
         "description": "Preview fixes before applying"
       },
       {
+        "name": "mcp__plugin_flutter_flutter-ultra-build__fix",
+        "description": "Apply dart fix --apply for automated lint fixes"
+      },
+      {
         "name": "mcp__plugin_flutter_flutter-ultra-build__format",
         "description": "Format code after fixes"
+      },
+      {
+        "name": "mcp__plugin_oh-my-claudecode_t__lsp_hover",
+        "description": "Inspect type, inferred value, and docs of any expression at file:line:col (dart_hover)"
+      },
+      {
+        "name": "mcp__plugin_oh-my-claudecode_t__lsp_goto_definition",
+        "description": "Jump to declaration of any symbol under analysis (dart_go_to_definition)"
       }
     ]
   },

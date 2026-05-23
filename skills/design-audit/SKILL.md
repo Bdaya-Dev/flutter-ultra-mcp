@@ -184,6 +184,25 @@ Produce a markdown report with the following sections:
 | Tiny text              | Increase to ≥ 12 dp, or use `textTheme.labelSmall` (14 dp minimum by M3 spec)               |
 | Inconsistent spacing   | Use `const EdgeInsets.all(8)` / `16` / `24` — multiples of 4                                |
 
+## Tool reference
+
+| Action                    | Tool                                                                        |
+| ------------------------- | --------------------------------------------------------------------------- |
+| Attach                    | `mcp__plugin_flutter_flutter-ultra-runtime__attach`                         |
+| Screenshot                | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`                     |
+| Full design audit         | `mcp__plugin_flutter_flutter-ultra-runtime__audit_design`                   |
+| Responsive audit          | `mcp__plugin_flutter_flutter-ultra-runtime__audit_responsive`               |
+| Extract design tokens     | `mcp__plugin_flutter_flutter-ultra-runtime__extract_design_tokens`          |
+| Extract component inventory | `mcp__plugin_flutter_flutter-ultra-runtime__extract_component_inventory`  |
+| Widget tree               | `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree`                |
+| Find widget               | `mcp__plugin_flutter_flutter-ultra-runtime__find_widget`                    |
+| Widget details            | `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_details`             |
+| Count tree nodes          | `mcp__plugin_flutter_flutter-ultra-runtime__count_widget_tree_nodes`        |
+| Dump render tree          | `mcp__plugin_flutter_flutter-ultra-runtime__dump_render_tree`               |
+| Dump semantics tree       | `mcp__plugin_flutter_flutter-ultra-runtime__dump_semantics_tree`            |
+| Toggle debug paint        | `mcp__plugin_flutter_flutter-ultra-runtime__toggle_debug_paint`             |
+| Evaluate expression       | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`                       |
+
 ## See also
 
 - `flutter-debug` — triage runtime exceptions and layout overflows in detail

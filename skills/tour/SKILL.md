@@ -92,15 +92,26 @@ Write `tour-report.md` with a markdown table of all routes, screenshot paths, an
 | Attach                 | `mcp__plugin_flutter_flutter-ultra-runtime__attach`                       |
 | Evaluate Dart          | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`                     |
 | VM screenshot          | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`                   |
+| Widget tree            | `mcp__plugin_flutter_flutter-ultra-runtime__get_widget_tree`              |
 | Find widget            | `mcp__plugin_flutter_flutter-ultra-runtime__find_widget`                  |
 | Widget exists          | `mcp__plugin_flutter_flutter-ultra-runtime__widget_exists`                |
 | Platform override      | `mcp__plugin_flutter_flutter-ultra-runtime__set_platform_override`        |
 | Runtime errors         | `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`           |
+| Tap element            | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                          |
+| Swipe gesture          | `mcp__plugin_flutter_flutter-ultra-gesture__swipe`                        |
+| Scroll to element      | `mcp__plugin_flutter_flutter-ultra-gesture__scroll_to`                    |
+| Enter text             | `mcp__plugin_flutter_flutter-ultra-gesture__enter_text`                   |
+| Multi-touch actions    | `mcp__plugin_flutter_flutter-ultra-gesture__perform_actions`              |
 | Wait for settle        | `mcp__plugin_flutter_flutter-ultra-gesture__wait_for`                     |
 | Responsive shots       | `mcp__plugin_flutter_flutter-ultra-gesture__take_responsive_screenshots`  |
 | Screencast start       | `mcp__plugin_flutter_flutter-ultra-gesture__start_screencast`             |
 | Screencast stop        | `mcp__plugin_flutter_flutter-ultra-gesture__stop_screencast`              |
 | Browser screenshot     | `mcp__plugin_flutter_flutter-ultra-browser__screenshot`                   |
+| Browser navigate       | `mcp__plugin_flutter_flutter-ultra-browser__navigate`                     |
+| Browser click          | `mcp__plugin_flutter_flutter-ultra-browser__click`                        |
+| Browser fill           | `mcp__plugin_flutter_flutter-ultra-browser__fill`                         |
+| Browser press key      | `mcp__plugin_flutter_flutter-ultra-browser__press_key`                    |
+| Browser wait for URL   | `mcp__plugin_flutter_flutter-ultra-browser__wait_for_url`                 |
 | Browser launch         | `mcp__plugin_flutter_flutter-ultra-browser__launch_browser`               |
 | Connect CDP            | `mcp__plugin_flutter_flutter-ultra-browser__connect_over_cdp`             |
 | Device screenshot      | `mcp__plugin_flutter_flutter-ultra-native-mobile__take_device_screenshot` |

@@ -116,6 +116,7 @@ git stash pop  # if stash was created
 | List projects        | `mcp__plugin_flutter_flutter-ultra-build__list_projects`               |
 | Pub get              | `mcp__plugin_flutter_flutter-ultra-build__pub_get`                     |
 | Flutter clean        | `mcp__plugin_flutter_flutter-ultra-build__flutter_clean`               |
+| Static analysis      | `mcp__plugin_flutter_flutter-ultra-build__analyze`                     |
 | Build runner start   | `mcp__plugin_flutter_flutter-ultra-build__start_build_runner_build`    |
 | Build runner poll    | `mcp__plugin_flutter_flutter-ultra-build__poll_build_runner_job`       |
 | Build runner result  | `mcp__plugin_flutter_flutter-ultra-build__get_build_runner_result`     |
@@ -131,6 +132,7 @@ git stash pop  # if stash was created
 | Start patrol test    | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`          |
 | Poll patrol          | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`            |
 | Get patrol result    | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`          |
+| Hot restart          | `mcp__plugin_flutter_flutter-ultra-runtime__hot_restart`               |
 | Build (any platform) | `start_build_{platform}` via the build server                          |
 
 ## Output format

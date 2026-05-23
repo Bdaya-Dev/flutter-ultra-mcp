@@ -1,3 +1,21 @@
+# [1.14.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.13.0...v1.14.0) (2026-05-23)
+
+
+### Bug Fixes
+
+* address critic review findings — 3 bugs fixed ([26c8e36](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/26c8e369dd15a4b2ff7c66d5a2b9c86a24cf1add))
+* **ci:** add workflow_dispatch + self-trigger paths to E2E attach workflows ([0342581](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/0342581cc29a4a42d81bfa393aa4ca20364a5f0e))
+* **deps:** mark ssh2 as external in esbuild bundle ([d9d9f3b](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/d9d9f3b54ad2077344e3914c4649e8bf16de29c4))
+* **deps:** update package-lock.json for ssh2 dependency ([65b9659](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/65b965927aaeb90757aa6b7812afc5ace8864c22))
+* **vm-service-client:** use passthrough() for VM service schemas ([af62796](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/af62796b1d20b57d4ae22cd222049f6649d41f3f))
+
+
+### Features
+
+* implement all 14 gap issues ([#95](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/95)-[#108](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/108)) across 4 servers ([ac62ce9](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/ac62ce973651f8a629f3a8740583542616d68fe5))
+* **native-mobile:** file picker, notifications, share sheet, CCT/SVC driving ([#109](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/109)-[#112](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/112)) ([6996d01](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/6996d016f58c876a2499947c9f653f33a113769c))
+* **native-mobile:** SSH transport for remote iOS simulator and Android device testing ([f1af840](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/f1af840aaddad8d37af4ce3c232c58a66ab13e3d))
+
 # [1.13.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.12.0...v1.13.0) (2026-05-22)
 
 

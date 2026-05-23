@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.15.1...v1.16.0) (2026-05-23)
+
+
+### Features
+
+* **build,runtime:** add LSP tools and editor location awareness ([13c9da0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/13c9da0caed13883d760adc64b8a73637f70113f))
+
 ## [1.15.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.15.0...v1.15.1) (2026-05-23)
 
 

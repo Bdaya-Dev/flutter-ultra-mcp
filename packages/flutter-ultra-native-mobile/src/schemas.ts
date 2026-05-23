@@ -326,6 +326,170 @@ export const shakeDeviceSchema = z
   })
   .strict();
 
+// Notification tray tools.
+export const openNotificationTraySchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const listNotificationsSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const tapNotificationFinderSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('index'),
+      index: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe('Zero-based index of the notification row in the a11y tree.'),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('package'),
+      packageName: z
+        .string()
+        .min(1)
+        .describe('Android package name of the notifying app (e.g. com.example.app).'),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('text'),
+      text: z
+        .string()
+        .min(1)
+        .describe('Substring of the notification title or content description to match.'),
+    })
+    .strict(),
+]);
+
+export const tapNotificationSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    finder: tapNotificationFinderSchema,
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+export const dismissNotificationTraySchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+// Share sheet interaction.
+export const handleShareSheetSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    action: z
+      .enum(['inspect', 'select', 'dismiss'])
+      .describe(
+        'inspect: list available share targets without tapping. select: tap the named target. dismiss: close the share sheet.',
+      ),
+    target: z
+      .string()
+      .optional()
+      .describe('Share target label to tap (required when action=select).'),
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(8100)
+      .describe('iOS Simulator only: WebDriverAgent port (default 8100). Ignored for Android.'),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+// In-app browser (CCT / SVC) detection and interaction.
+export const detectInAppBrowserSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(8100)
+      .describe('iOS Simulator only: WebDriverAgent port (default 8100). Ignored for Android.'),
+    timeoutMs: z.number().int().positive().max(30_000).default(15_000),
+  })
+  .strict();
+
+export const interactInAppBrowserSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    action: z
+      .enum(['tap', 'fill', 'read_url', 'dismiss'])
+      .describe(
+        'tap: tap a web content element by text. fill: type into a focused field. read_url: read the current address bar URL. dismiss: close the in-app browser.',
+      ),
+    finder: z
+      .string()
+      .optional()
+      .describe('Text to match against web content a11y nodes (required for tap/fill).'),
+    text: z.string().optional().describe('Text to enter (required for fill).'),
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .default(8100)
+      .describe('iOS Simulator only: WebDriverAgent port (default 8100). Ignored for Android.'),
+    timeoutMs: z.number().int().positive().max(60_000).default(30_000),
+  })
+  .strict();
+
+// File picker / media staging.
+export const pickFileNativeSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    filePath: z
+      .string()
+      .min(1)
+      .describe('Absolute local path of the file to stage and select on the device.'),
+    targetType: z
+      .enum(['photo', 'video', 'audio', 'document'])
+      .describe(
+        'Media category — controls the Android scoped-storage directory (DCIM for photo/video, Music for audio, Download for document). iOS always uses Photos library.',
+      ),
+    wdaPort: z
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .optional()
+      .describe(
+        'iOS Simulator only: WebDriverAgent port for PHPicker a11y navigation (omit to stage only).',
+      ),
+    timeoutMs: z.number().int().positive().max(120_000).default(60_000),
+  })
+  .strict();
+
+export const addMediaToDeviceSchema = z
+  .object({
+    deviceId: deviceIdSchema,
+    filePath: z.string().min(1).describe('Absolute local path of the file to stage on the device.'),
+    mediaType: z
+      .enum(['photo', 'video', 'audio', 'document'])
+      .describe(
+        'Media category — controls Android destination directory. iOS always imports into Photos library regardless of type.',
+      ),
+    timeoutMs: z.number().int().positive().max(120_000).default(60_000),
+  })
+  .strict();
+
 // CCT OAuth composite tool (plan §5.5.1).
 export const solveOauthSchema = z
   .object({

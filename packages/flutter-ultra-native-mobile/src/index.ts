@@ -16,7 +16,10 @@
 //   set_device_location, clear_device_location,
 //   dispatch_deep_link,
 //   install_app, uninstall_app, clear_app_data, list_installed_apps,
-//   toggle_device_wifi, toggle_airplane_mode, shake_device.
+//   toggle_device_wifi, toggle_airplane_mode, shake_device,
+//   pick_file_native, add_media_to_device,
+//   handle_share_sheet,
+//   detect_in_app_browser, interact_in_app_browser.
 
 import { createServer } from '@flutter-ultra/mcp-runtime';
 import { createDeviceRegistry, type DeviceRegistry, type RegistryOptions } from './registry.js';
@@ -30,6 +33,10 @@ import { registerLocationTools } from './tools/location.js';
 import { registerDeepLinkTools } from './tools/deepLink.js';
 import { registerAppManagementTools } from './tools/appManagement.js';
 import { registerDeviceControlTools } from './tools/deviceControls.js';
+import { registerNotificationTools } from './tools/notifications.js';
+import { registerFilePickerTools } from './tools/filePicker.js';
+import { registerShareSheetTools } from './tools/shareSheet.js';
+import { registerInAppBrowserTools } from './tools/inAppBrowser.js';
 
 export const SERVER_NAME = 'flutter-ultra-native-mobile';
 export const SERVER_VERSION = '0.0.1';
@@ -59,6 +66,10 @@ export async function createNativeMobileServer(options: CreateNativeMobileServer
   registerDeepLinkTools({ server, registry });
   registerAppManagementTools({ server, registry });
   registerDeviceControlTools({ server, registry });
+  registerNotificationTools({ server, registry });
+  registerFilePickerTools({ server, registry });
+  registerShareSheetTools({ server, registry });
+  registerInAppBrowserTools({ server, registry });
 
   return {
     server,

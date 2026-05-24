@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const Ajv2020 = require('ajv/dist/2020') as { new (opts: Record<string, unknown>): AjvInstance };
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const addFormats = require('ajv-formats') as (ajv: AjvInstance) => void;
 
 interface AjvInstance {

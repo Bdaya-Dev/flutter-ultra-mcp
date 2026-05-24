@@ -3,6 +3,7 @@
 // Calls ext.flutter.driver.getText via the VM service extension protocol.
 // Falls back to interactiveElements resolution for server-side finders.
 
+import type { z } from 'zod';
 import { callUltraExtension, stringifyArgs } from '../extension.js';
 import { FinderSchema, toNativeMatcherJson } from '../finder.js';
 import type { SessionRegistry } from '../session.js';
@@ -15,7 +16,7 @@ const GetTextInput = SessionIdInput.extend({
 
 export function getTextTool(
   registry: SessionRegistry,
-): GestureTool<typeof GetTextInput, ReturnType<typeof import('zod').z.any>> {
+): GestureTool<typeof GetTextInput, ReturnType<typeof z.any>> {
   return defineTool({
     name: 'get_text',
     description:

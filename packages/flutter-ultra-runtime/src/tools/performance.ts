@@ -5,6 +5,7 @@
 // WebSocket connection and are NOT supported on web targets. Web perf tools
 // live in flutter-ultra-browser.
 
+import type { VmServiceClient, JsonValue } from '@flutter-ultra/vm-service-client';
 import { z } from 'zod';
 import {
   InvalidToolInputError,
@@ -21,7 +22,7 @@ export function registerPerformanceTools(opts: {
 
   async function resolveIsolate(sessionId: string): Promise<{
     isolateId: string;
-    client: import('@flutter-ultra/vm-service-client').VmServiceClient;
+    client: VmServiceClient;
     release: () => Promise<void>;
   }> {
     const { client, release } = await sessions.acquireClient(sessionId);
@@ -165,7 +166,7 @@ export function registerPerformanceTools(opts: {
 
         const raw = (await client.callServiceExtension('getCpuSamples', {
           isolateId,
-          args: extraArgs as Record<string, import('@flutter-ultra/vm-service-client').JsonValue>,
+          args: extraArgs as Record<string, JsonValue>,
         })) as Record<string, unknown>;
 
         const functions = Array.isArray(raw['functions'])
@@ -296,7 +297,7 @@ export function registerPerformanceTools(opts: {
           extraArgs['timeExtentMicros'] = String(args.timeExtentMicros);
 
         const raw = (await client.callServiceExtension('getVMTimeline', {
-          args: extraArgs as Record<string, import('@flutter-ultra/vm-service-client').JsonValue>,
+          args: extraArgs as Record<string, JsonValue>,
         })) as Record<string, unknown>;
 
         const traceEvents = Array.isArray(raw['traceEvents'])

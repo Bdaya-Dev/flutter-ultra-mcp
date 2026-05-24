@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import type { FlutterUltraServer } from '@flutter-ultra/mcp-runtime';
-import {
+import type {
   DeviceRouter,
-  ConnectSpec,
+  ConnectSpec} from '@flutter-ultra/device-router';
+import {
   type DeviceSummary,
   type DeviceProbeResult,
   type ExecResult,

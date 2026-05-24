@@ -1,5 +1,6 @@
 // Lifecycle tools: discover/attach/detach/list/launch/poll/stop, hot reload + restart.
 
+import type { JsonValue } from '@flutter-ultra/vm-service-client';
 import { z } from 'zod';
 import {
   InvalidToolInputError,
@@ -443,7 +444,7 @@ export function registerLifecycleTools(opts: {
           args.method,
           Object.keys(callParams).length > 0
             ? (callParams as {
-                [key: string]: import('@flutter-ultra/vm-service-client').JsonValue;
+                [key: string]: JsonValue;
               })
             : undefined,
         );

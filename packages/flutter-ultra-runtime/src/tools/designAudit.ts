@@ -4,6 +4,7 @@
 // such as touch target size, missing semantics, text overflow, layout overflow,
 // hardcoded colors, nested cards, and more.
 
+import type { VmServiceClient } from '@flutter-ultra/vm-service-client';
 import { z } from 'zod';
 import {
   InvalidToolInputError,
@@ -243,7 +244,7 @@ function runStaticChecks(
 // Richer checks that query the live Dart VM via evaluate().
 
 async function runEvaluateChecks(
-  client: import('@flutter-ultra/vm-service-client').VmServiceClient,
+  client: VmServiceClient,
   isolateId: string,
   enabledChecks: Set<CheckId>,
 ): Promise<DesignIssue[]> {
@@ -465,7 +466,7 @@ export function registerDesignAuditTools(opts: {
   async function resolveIsolate(sessionId: string): Promise<{
     isolateId: string;
     release: () => Promise<void>;
-    client: import('@flutter-ultra/vm-service-client').VmServiceClient;
+    client: VmServiceClient;
   }> {
     const { client, release } = await sessions.acquireClient(sessionId);
     try {

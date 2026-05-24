@@ -663,7 +663,7 @@ export class BrowserManager {
   }
 
   private async installRouteHandler(
-    page: import('playwright-core').Page,
+    page: Page,
     route: MockRoute,
   ): Promise<void> {
     const { pattern, status, headers, body, encoding } = route;

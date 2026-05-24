@@ -153,7 +153,7 @@ export class DartAnalysisServer {
   }
 
   private _drainBuffer(): void {
-    // eslint-disable-next-line no-constant-condition
+     
     while (true) {
       const result = tryParseMessage(this.rawBuf);
       if (!result) break;
@@ -551,7 +551,7 @@ import { dirname, join } from 'node:path';
  */
 function resolveWorkspaceRoot(filePath: string): string {
   let dir = dirname(filePath);
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     if (existsSync(join(dir, 'pubspec.yaml'))) return dir;
     const parent = dirname(dir);

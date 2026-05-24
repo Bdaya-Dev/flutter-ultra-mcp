@@ -192,7 +192,7 @@ export function registerFilePickerTools(opts: {
         }
 
         // Attempt WDA-based PHPicker navigation if wdaPort provided
-        let picked = false;
+        const picked = false;
         let pickerNote: string | undefined;
         if (args.wdaPort !== undefined) {
           try {

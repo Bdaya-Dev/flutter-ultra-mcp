@@ -55,13 +55,23 @@ describe('LSP tool registration', () => {
     const server = createServer();
     const tools = (server as unknown as { _registeredTools: Record<string, ToolEntry> })
       ._registeredTools;
-    for (const name of ['dart_hover', 'dart_signature_help', 'dart_workspace_symbols', 'dart_go_to_definition']) {
+    for (const name of [
+      'dart_hover',
+      'dart_signature_help',
+      'dart_workspace_symbols',
+      'dart_go_to_definition',
+    ]) {
       expect(tools[name]?.description.length, `${name} description empty`).toBeGreaterThan(0);
     }
   });
 
   it('tool names match [a-z][a-z0-9_]* pattern', () => {
-    for (const name of ['dart_hover', 'dart_signature_help', 'dart_workspace_symbols', 'dart_go_to_definition']) {
+    for (const name of [
+      'dart_hover',
+      'dart_signature_help',
+      'dart_workspace_symbols',
+      'dart_go_to_definition',
+    ]) {
       expect(name).toMatch(/^[a-z][a-z0-9_]*$/);
     }
   });
@@ -80,7 +90,9 @@ describe('dart_hover schema', () => {
   });
 
   it('accepts valid input', () => {
-    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 10, column: 5 }).success).toBe(true);
+    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 10, column: 5 }).success).toBe(
+      true,
+    );
   });
 
   it('rejects missing filePath', () => {
@@ -96,11 +108,15 @@ describe('dart_hover schema', () => {
   });
 
   it('rejects line 0 (must be 1-based)', () => {
-    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 0, column: 1 }).success).toBe(false);
+    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 0, column: 1 }).success).toBe(
+      false,
+    );
   });
 
   it('rejects column 0 (must be 1-based)', () => {
-    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 1, column: 0 }).success).toBe(false);
+    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 1, column: 0 }).success).toBe(
+      false,
+    );
   });
 
   it('rejects empty filePath', () => {
@@ -108,7 +124,9 @@ describe('dart_hover schema', () => {
   });
 
   it('rejects non-integer line', () => {
-    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 1.5, column: 1 }).success).toBe(false);
+    expect(schema?.safeParse({ filePath: '/tmp/main.dart', line: 1.5, column: 1 }).success).toBe(
+      false,
+    );
   });
 });
 
@@ -123,15 +141,21 @@ describe('dart_workspace_symbols schema', () => {
   });
 
   it('accepts valid input with defaults', () => {
-    expect(schema?.safeParse({ query: 'MyWidget', workspaceRoot: '/tmp/myapp' }).success).toBe(true);
+    expect(schema?.safeParse({ query: 'MyWidget', workspaceRoot: '/tmp/myapp' }).success).toBe(
+      true,
+    );
   });
 
   it('accepts explicit maxResults', () => {
-    expect(schema?.safeParse({ query: 'Foo', workspaceRoot: '/tmp/myapp', maxResults: 50 }).success).toBe(true);
+    expect(
+      schema?.safeParse({ query: 'Foo', workspaceRoot: '/tmp/myapp', maxResults: 50 }).success,
+    ).toBe(true);
   });
 
   it('rejects maxResults > 200', () => {
-    expect(schema?.safeParse({ query: 'Foo', workspaceRoot: '/tmp/myapp', maxResults: 201 }).success).toBe(false);
+    expect(
+      schema?.safeParse({ query: 'Foo', workspaceRoot: '/tmp/myapp', maxResults: 201 }).success,
+    ).toBe(false);
   });
 
   it('rejects missing workspaceRoot', () => {
@@ -154,7 +178,10 @@ describe('DartAnalysisServer', () => {
 
   it('dispose() is idempotent — no throw on double dispose', () => {
     const srv = new DartAnalysisServer();
-    expect(() => { srv.dispose(); srv.dispose(); }).not.toThrow();
+    expect(() => {
+      srv.dispose();
+      srv.dispose();
+    }).not.toThrow();
   });
 });
 
@@ -183,10 +210,7 @@ describe('LSP message framing', () => {
     // Multi-byte chars: byte length > char length.
     expect(byteLen).toBeGreaterThanOrEqual(charLen);
     const header = `Content-Length: ${byteLen}\r\n\r\n`;
-    const full = Buffer.concat([
-      Buffer.from(header, 'ascii'),
-      Buffer.from(json, 'utf8'),
-    ]);
+    const full = Buffer.concat([Buffer.from(header, 'ascii'), Buffer.from(json, 'utf8')]);
     const headerEnd = full.indexOf('\r\n\r\n');
     const bodySlice = full.slice(headerEnd + 4, headerEnd + 4 + byteLen).toString('utf8');
     expect(bodySlice).toBe(json);
@@ -249,9 +273,14 @@ describe('1-based to 0-based line/column conversion', () => {
 describe('LSP tools: file not found handling', () => {
   it('dart_hover returns isError=true when file does not exist', async () => {
     const server = createServer();
-    const tools = (server as unknown as {
-      _registeredTools: Record<string, { callback?: (args: unknown, extra: unknown) => Promise<unknown> }>;
-    })._registeredTools;
+    const tools = (
+      server as unknown as {
+        _registeredTools: Record<
+          string,
+          { callback?: (args: unknown, extra: unknown) => Promise<unknown> }
+        >;
+      }
+    )._registeredTools;
 
     const tool = tools['dart_hover'];
     if (!tool?.callback) {
@@ -267,10 +296,10 @@ describe('LSP tools: file not found handling', () => {
       _meta: {},
     };
 
-    const result = await tool.callback(
+    const result = (await tool.callback(
       { filePath: '/nonexistent/path/that/does/not/exist.dart', line: 1, column: 1 },
       fakeExtra,
-    ) as { isError?: boolean; content?: Array<{ text: string }> };
+    )) as { isError?: boolean; content?: Array<{ text: string }> };
 
     expect(result.isError).toBe(true);
     expect(result.content?.[0]?.text).toContain('not found');
@@ -291,7 +320,7 @@ describe('hover response parsing', () => {
     if (typeof contents === 'string') return contents;
     if (Array.isArray(contents)) {
       return (contents as Array<unknown>)
-        .map((c) => (typeof c === 'string' ? c : (c as Record<string, unknown>)['value'] ?? ''))
+        .map((c) => (typeof c === 'string' ? c : ((c as Record<string, unknown>)['value'] ?? '')))
         .filter(Boolean)
         .join('\n\n');
     }
@@ -323,8 +352,9 @@ describe('hover response parsing', () => {
   });
 
   it('formats MarkupContent object', () => {
-    expect(formatHoverResult({ contents: { kind: 'plaintext', value: 'Widget build(...)' } }))
-      .toBe('Widget build(...)');
+    expect(formatHoverResult({ contents: { kind: 'plaintext', value: 'Widget build(...)' } })).toBe(
+      'Widget build(...)',
+    );
   });
 });
 
@@ -332,10 +362,16 @@ describe('hover response parsing', () => {
 
 describe('workspace symbols parsing', () => {
   const SYMBOL_KIND_NAMES: Record<number, string> = {
-    5: 'Class', 6: 'Method', 12: 'Function', 13: 'Variable',
+    5: 'Class',
+    6: 'Method',
+    12: 'Function',
+    13: 'Variable',
   };
 
-  function formatWorkspaceSymbols(raw: unknown, maxResults: number): Array<Record<string, unknown>> {
+  function formatWorkspaceSymbols(
+    raw: unknown,
+    maxResults: number,
+  ): Array<Record<string, unknown>> {
     if (!Array.isArray(raw)) return [];
     return raw.slice(0, maxResults).map((sym) => {
       const s = sym as Record<string, unknown>;
@@ -371,7 +407,14 @@ describe('workspace symbols parsing', () => {
   });
 
   it('includes containerName when present', () => {
-    const raw = [{ name: 'build', kind: 6, containerName: 'MyWidget', location: { uri: 'file:///a.dart', range: {} } }];
+    const raw = [
+      {
+        name: 'build',
+        kind: 6,
+        containerName: 'MyWidget',
+        location: { uri: 'file:///a.dart', range: {} },
+      },
+    ];
     const result = formatWorkspaceSymbols(raw, 20);
     expect(result[0]?.containerName).toBe('MyWidget');
   });

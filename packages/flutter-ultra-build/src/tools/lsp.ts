@@ -153,7 +153,6 @@ export class DartAnalysisServer {
   }
 
   private _drainBuffer(): void {
-     
     while (true) {
       const result = tryParseMessage(this.rawBuf);
       if (!result) break;
@@ -180,7 +179,11 @@ export class DartAnalysisServer {
     // Notifications (no id) are silently ignored.
   }
 
-  private _sendRequest(method: string, params: unknown, timeoutMs = REQUEST_TIMEOUT_MS): Promise<unknown> {
+  private _sendRequest(
+    method: string,
+    params: unknown,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+  ): Promise<unknown> {
     const id = this.nextId++;
     const message = { jsonrpc: '2.0', id, method, params };
     return new Promise<unknown>((resolve, reject) => {
@@ -197,8 +200,14 @@ export class DartAnalysisServer {
       const originalResolve = resolve;
       const originalReject = reject;
       this.pending.set(id, {
-        resolve: (v) => { clearTimeout(timer); originalResolve(v); },
-        reject: (e) => { clearTimeout(timer); originalReject(e); },
+        resolve: (v) => {
+          clearTimeout(timer);
+          originalResolve(v);
+        },
+        reject: (e) => {
+          clearTimeout(timer);
+          originalReject(e);
+        },
       });
 
       const buf = encodeMessage(message);
@@ -273,7 +282,11 @@ export class DartAnalysisServer {
     }
     this.pending.clear();
     if (this.process) {
-      try { this.process.kill(); } catch { /* ignore */ }
+      try {
+        this.process.kill();
+      } catch {
+        /* ignore */
+      }
       this.process = null;
     }
   }
@@ -289,27 +302,22 @@ function getServer(): DartAnalysisServer {
 }
 
 // Clean up on process exit.
-process.on('exit', () => { _server?.dispose(); });
-process.on('SIGTERM', () => { _server?.dispose(); });
-process.on('SIGINT', () => { _server?.dispose(); });
+process.on('exit', () => {
+  _server?.dispose();
+});
+process.on('SIGTERM', () => {
+  _server?.dispose();
+});
+process.on('SIGINT', () => {
+  _server?.dispose();
+});
 
 // ─── Shared input schemas ────────────────────────────────────────────────────
 
 const filePositionSchema = {
-  filePath: z
-    .string()
-    .min(1)
-    .describe('Absolute path to the Dart/Flutter source file.'),
-  line: z
-    .number()
-    .int()
-    .min(1)
-    .describe('1-based line number.'),
-  column: z
-    .number()
-    .int()
-    .min(1)
-    .describe('1-based column number.'),
+  filePath: z.string().min(1).describe('Absolute path to the Dart/Flutter source file.'),
+  line: z.number().int().min(1).describe('1-based line number.'),
+  column: z.number().int().min(1).describe('1-based column number.'),
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -322,7 +330,7 @@ function formatHoverResult(raw: unknown): string {
   if (typeof contents === 'string') return contents;
   if (Array.isArray(contents)) {
     return contents
-      .map((c) => (typeof c === 'string' ? c : (c as Record<string, unknown>)['value'] ?? ''))
+      .map((c) => (typeof c === 'string' ? c : ((c as Record<string, unknown>)['value'] ?? '')))
       .filter(Boolean)
       .join('\n\n');
   }
@@ -345,10 +353,11 @@ function formatSignatureHelp(raw: unknown): Record<string, unknown> {
     signatures: signatures.map((sig) => ({
       label: sig['label'] ?? '',
       documentation: sig['documentation'] ?? null,
-      parameters: (sig['parameters'] as Array<Record<string, unknown>> | undefined)?.map((p) => ({
-        label: p['label'] ?? '',
-        documentation: p['documentation'] ?? null,
-      })) ?? [],
+      parameters:
+        (sig['parameters'] as Array<Record<string, unknown>> | undefined)?.map((p) => ({
+          label: p['label'] ?? '',
+          documentation: p['documentation'] ?? null,
+        })) ?? [],
     })),
   };
 }
@@ -362,12 +371,32 @@ interface SymbolInfo {
 }
 
 const SYMBOL_KIND_NAMES: Record<number, string> = {
-  1: 'File', 2: 'Module', 3: 'Namespace', 4: 'Package', 5: 'Class',
-  6: 'Method', 7: 'Property', 8: 'Field', 9: 'Constructor', 10: 'Enum',
-  11: 'Interface', 12: 'Function', 13: 'Variable', 14: 'Constant',
-  15: 'String', 16: 'Number', 17: 'Boolean', 18: 'Array', 19: 'Object',
-  20: 'Key', 21: 'Null', 22: 'EnumMember', 23: 'Struct', 24: 'Event',
-  25: 'Operator', 26: 'TypeParameter',
+  1: 'File',
+  2: 'Module',
+  3: 'Namespace',
+  4: 'Package',
+  5: 'Class',
+  6: 'Method',
+  7: 'Property',
+  8: 'Field',
+  9: 'Constructor',
+  10: 'Enum',
+  11: 'Interface',
+  12: 'Function',
+  13: 'Variable',
+  14: 'Constant',
+  15: 'String',
+  16: 'Number',
+  17: 'Boolean',
+  18: 'Array',
+  19: 'Object',
+  20: 'Key',
+  21: 'Null',
+  22: 'EnumMember',
+  23: 'Struct',
+  24: 'Event',
+  25: 'Operator',
+  26: 'TypeParameter',
 };
 
 function formatWorkspaceSymbols(raw: unknown, maxResults: number): SymbolInfo[] {
@@ -477,10 +506,7 @@ export function register(server: McpServer): void {
       'Returns name, kind, and location for each matching symbol.',
     inputSchema: {
       query: z.string().describe('Symbol name or prefix to search for.'),
-      workspaceRoot: z
-        .string()
-        .min(1)
-        .describe('Absolute path to the Flutter/Dart project root.'),
+      workspaceRoot: z.string().min(1).describe('Absolute path to the Flutter/Dart project root.'),
       maxResults: z
         .number()
         .int()
@@ -551,7 +577,7 @@ import { dirname, join } from 'node:path';
  */
 function resolveWorkspaceRoot(filePath: string): string {
   let dir = dirname(filePath);
-   
+
   while (true) {
     if (existsSync(join(dir, 'pubspec.yaml'))) return dir;
     const parent = dirname(dir);

@@ -167,26 +167,26 @@ Use this path when the demo must exactly match a test scenario for reproducibili
 
 ## Tool reference
 
-| Action                      | Tool                                                                        |
-| --------------------------- | --------------------------------------------------------------------------- |
-| Discover sessions           | `mcp__plugin_flutter_flutter-ultra-runtime__discover_sessions`              |
-| Runtime evaluate            | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`                       |
-| Find widget                 | `mcp__plugin_flutter_flutter-ultra-runtime__find_widget`                    |
-| Hot reload                  | `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload`                     |
-| Browser new context         | `mcp__plugin_flutter_flutter-ultra-browser__new_context`                    |
-| Browser screenshot          | `mcp__plugin_flutter_flutter-ultra-browser__screenshot`                     |
-| Browser navigate            | `mcp__plugin_flutter_flutter-ultra-browser__navigate`                       |
-| Browser click               | `mcp__plugin_flutter_flutter-ultra-browser__click`                          |
-| Browser fill                | `mcp__plugin_flutter_flutter-ultra-browser__fill`                           |
-| Browser start tracing       | `mcp__plugin_flutter_flutter-ultra-browser__start_tracing`                  |
-| Browser stop tracing        | `mcp__plugin_flutter_flutter-ultra-browser__stop_tracing`                   |
-| Browser close context       | `mcp__plugin_flutter_flutter-ultra-browser__close_context`                  |
-| Patrol start recording      | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_recording`          |
-| Patrol stop recording       | `mcp__plugin_flutter_flutter-ultra-patrol__stop_patrol_recording`           |
-| Patrol start test           | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`               |
-| Patrol poll                 | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`                 |
-| Patrol extract frame        | `mcp__plugin_flutter_flutter-ultra-patrol__extract_video_frame`             |
-| Convert recording           | `mcp__plugin_flutter_flutter-ultra-build__convert_recording`                |
+| Action                 | Tool                                                               |
+| ---------------------- | ------------------------------------------------------------------ |
+| Discover sessions      | `mcp__plugin_flutter_flutter-ultra-runtime__discover_sessions`     |
+| Runtime evaluate       | `mcp__plugin_flutter_flutter-ultra-runtime__evaluate`              |
+| Find widget            | `mcp__plugin_flutter_flutter-ultra-runtime__find_widget`           |
+| Hot reload             | `mcp__plugin_flutter_flutter-ultra-runtime__hot_reload`            |
+| Browser new context    | `mcp__plugin_flutter_flutter-ultra-browser__new_context`           |
+| Browser screenshot     | `mcp__plugin_flutter_flutter-ultra-browser__screenshot`            |
+| Browser navigate       | `mcp__plugin_flutter_flutter-ultra-browser__navigate`              |
+| Browser click          | `mcp__plugin_flutter_flutter-ultra-browser__click`                 |
+| Browser fill           | `mcp__plugin_flutter_flutter-ultra-browser__fill`                  |
+| Browser start tracing  | `mcp__plugin_flutter_flutter-ultra-browser__start_tracing`         |
+| Browser stop tracing   | `mcp__plugin_flutter_flutter-ultra-browser__stop_tracing`          |
+| Browser close context  | `mcp__plugin_flutter_flutter-ultra-browser__close_context`         |
+| Patrol start recording | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_recording` |
+| Patrol stop recording  | `mcp__plugin_flutter_flutter-ultra-patrol__stop_patrol_recording`  |
+| Patrol start test      | `mcp__plugin_flutter_flutter-ultra-patrol__start_patrol_test`      |
+| Patrol poll            | `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job`        |
+| Patrol extract frame   | `mcp__plugin_flutter_flutter-ultra-patrol__extract_video_frame`    |
+| Convert recording      | `mcp__plugin_flutter_flutter-ultra-build__convert_recording`       |
 
 ## Notes
 

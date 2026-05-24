@@ -87,22 +87,22 @@ Useful during:
 
 ## Tool reference
 
-| Action           | Tool                                                                  |
-| ---------------- | --------------------------------------------------------------------- |
-| Start server     | `mcp__plugin_flutter_flutter-ultra-devtools__start_panel_server`      |
-| Stop server      | `mcp__plugin_flutter_flutter-ultra-devtools__stop_panel_server`       |
-| Check status     | `mcp__plugin_flutter_flutter-ultra-devtools__panel_status`            |
-| Push event       | `mcp__plugin_flutter_flutter-ultra-devtools__push_event`              |
-| Wait for command | `mcp__plugin_flutter_flutter-ultra-devtools__panel_command`           |
-| Dump diagnostics | `mcp__plugin_flutter_flutter-ultra-devtools__dump_diagnostics`        |
-| Project info     | `mcp__plugin_flutter_flutter-ultra-build__project_info`               |
-| Add dependency   | `mcp__plugin_flutter_flutter-ultra-build__pub_add`                    |
-| Resolve deps     | `mcp__plugin_flutter_flutter-ultra-build__pub_get`                    |
-| Overrides set    | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set`      |
-| VM screenshot    | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`               |
-| Runtime errors   | `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`       |
-| Gesture tap      | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                      |
-| Patrol result    | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`         |
+| Action           | Tool                                                             |
+| ---------------- | ---------------------------------------------------------------- |
+| Start server     | `mcp__plugin_flutter_flutter-ultra-devtools__start_panel_server` |
+| Stop server      | `mcp__plugin_flutter_flutter-ultra-devtools__stop_panel_server`  |
+| Check status     | `mcp__plugin_flutter_flutter-ultra-devtools__panel_status`       |
+| Push event       | `mcp__plugin_flutter_flutter-ultra-devtools__push_event`         |
+| Wait for command | `mcp__plugin_flutter_flutter-ultra-devtools__panel_command`      |
+| Dump diagnostics | `mcp__plugin_flutter_flutter-ultra-devtools__dump_diagnostics`   |
+| Project info     | `mcp__plugin_flutter_flutter-ultra-build__project_info`          |
+| Add dependency   | `mcp__plugin_flutter_flutter-ultra-build__pub_add`               |
+| Resolve deps     | `mcp__plugin_flutter_flutter-ultra-build__pub_get`               |
+| Overrides set    | `mcp__plugin_flutter_flutter-ultra-build__pubspec_overrides_set` |
+| VM screenshot    | `mcp__plugin_flutter_flutter-ultra-runtime__screenshot`          |
+| Runtime errors   | `mcp__plugin_flutter_flutter-ultra-runtime__get_runtime_errors`  |
+| Gesture tap      | `mcp__plugin_flutter_flutter-ultra-gesture__tap`                 |
+| Patrol result    | `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_result`    |
 
 ## Event types reference
 

@@ -14,7 +14,10 @@ type SafeParseResult = { success: boolean };
 type SchemaLike = { safeParse: (v: unknown) => SafeParseResult };
 type ToolEntry = { description: string; inputSchema?: SchemaLike };
 
-function getSchema(registeredTools: Map<string, unknown>, toolName: string): SchemaLike | undefined {
+function getSchema(
+  registeredTools: Map<string, unknown>,
+  toolName: string,
+): SchemaLike | undefined {
   const tool = registeredTools.get(toolName) as ToolEntry | undefined;
   return tool?.inputSchema;
 }

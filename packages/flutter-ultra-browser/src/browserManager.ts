@@ -662,10 +662,7 @@ export class BrowserManager {
     return route;
   }
 
-  private async installRouteHandler(
-    page: Page,
-    route: MockRoute,
-  ): Promise<void> {
+  private async installRouteHandler(page: Page, route: MockRoute): Promise<void> {
     const { pattern, status, headers, body, encoding } = route;
     await page.route(pattern, async (r) => {
       const bodyBuffer =

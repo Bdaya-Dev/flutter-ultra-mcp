@@ -146,14 +146,14 @@ Use LSP tools for pinpoint navigation when reading unfamiliar call paths:
 
 ## Build and LSP tool reference
 
-| Action                    | Tool                                                              |
-| ------------------------- | ----------------------------------------------------------------- |
-| Static analysis           | `mcp__plugin_flutter_flutter-ultra-build__analyze`                |
-| Preview auto-fixes        | `mcp__plugin_flutter_flutter-ultra-build__fix_preview`            |
-| Apply auto-fixes          | `mcp__plugin_flutter_flutter-ultra-build__fix`                    |
-| Hover type/docs           | `mcp__plugin_oh-my-claudecode_t__lsp_hover`                       |
-| Go to definition          | `mcp__plugin_oh-my-claudecode_t__lsp_goto_definition`             |
-| List file symbols         | `mcp__plugin_oh-my-claudecode_t__lsp_document_symbols`            |
+| Action             | Tool                                                   |
+| ------------------ | ------------------------------------------------------ |
+| Static analysis    | `mcp__plugin_flutter_flutter-ultra-build__analyze`     |
+| Preview auto-fixes | `mcp__plugin_flutter_flutter-ultra-build__fix_preview` |
+| Apply auto-fixes   | `mcp__plugin_flutter_flutter-ultra-build__fix`         |
+| Hover type/docs    | `mcp__plugin_oh-my-claudecode_t__lsp_hover`            |
+| Go to definition   | `mcp__plugin_oh-my-claudecode_t__lsp_goto_definition`  |
+| List file symbols  | `mcp__plugin_oh-my-claudecode_t__lsp_document_symbols` |
 
 ## Common patterns
 

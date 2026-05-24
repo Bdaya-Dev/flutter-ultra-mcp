@@ -126,10 +126,7 @@ describe('PerformActionsInput schema', () => {
         actions: [
           {
             pointerId: 'stylus',
-            steps: [
-              { type: 'pointerDown', x: 0, y: 0 },
-              { type: 'pointerUp' },
-            ],
+            steps: [{ type: 'pointerDown', x: 0, y: 0 }, { type: 'pointerUp' }],
           },
         ],
       });

@@ -1,3 +1,10 @@
+## [1.16.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.1...v1.16.2) (2026-05-24)
+
+
+### Bug Fixes
+
+* resolve all eslint errors and warnings ([073fb72](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/073fb725c2b148fe38f0b9fd5ab6e95f00ab8b54))
+
 ## [1.16.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.0...v1.16.1) (2026-05-24)
 
 

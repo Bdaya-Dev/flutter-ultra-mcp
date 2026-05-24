@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.0...v1.16.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **browser,native-mobile:** use createRequire for playwright-core resolution ([9ecd8ad](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/9ecd8ad858497baf2bf1d57c9af1d24146421e05))
+
 # [1.16.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.15.1...v1.16.0) (2026-05-23)
 
 

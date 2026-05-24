@@ -63,6 +63,7 @@
   "files": [
     ".claude-plugin/",
     ".mcp.json",
+    "scripts/ensure-plugin-deps.js",
     "skills/",
     "packages/*/dist/",
     "packages/*/package.json",

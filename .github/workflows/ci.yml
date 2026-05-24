@@ -66,6 +66,87 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/plugin.json'));"
           node -e "JSON.parse(require('fs').readFileSync('.mcp.json'));"
 
+  plugin-runtime:
+    name: Plugin runtime isolation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/bundle.mjs
+      - name: Set up isolated plugin directories
+        shell: bash
+        run: |
+          mkdir -p /tmp/plugin-root/packages/flutter-ultra-browser/dist
+          mkdir -p /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist
+          mkdir -p /tmp/plugin-data
+          cp packages/flutter-ultra-browser/dist/bin.cjs /tmp/plugin-root/packages/flutter-ultra-browser/dist/
+          cp packages/flutter-ultra-native-mobile/dist/bin.cjs /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist/
+          cp package.json /tmp/plugin-root/
+          cp scripts/ensure-plugin-deps.js /tmp/plugin-root/
+      - name: Install deps via ensure-plugin-deps
+        shell: bash
+        env:
+          CLAUDE_PLUGIN_ROOT: /tmp/plugin-root
+          CLAUDE_PLUGIN_DATA: /tmp/plugin-data
+        run: node /tmp/plugin-root/ensure-plugin-deps.js
+      - name: Verify playwright-core resolves via NODE_PATH (browser)
+        shell: bash
+        env:
+          NODE_PATH: /tmp/plugin-data/node_modules
+        run: |
+          cd /tmp/plugin-root/packages/flutter-ultra-browser/dist
+          node -e "
+            const {createRequire} = require('node:module');
+            const {pathToFileURL} = require('node:url');
+            const r = createRequire(pathToFileURL(__filename).href);
+            const p = r.resolve('playwright-core');
+            if (!p.includes('plugin-data')) {
+              console.error('WRONG: resolved from', p, '(expected plugin-data)');
+              process.exit(1);
+            }
+            console.log('OK: playwright-core resolved from', p);
+          "
+      - name: Verify playwright-core resolves via NODE_PATH (native-mobile)
+        shell: bash
+        env:
+          NODE_PATH: /tmp/plugin-data/node_modules
+        run: |
+          cd /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist
+          node -e "
+            const {createRequire} = require('node:module');
+            const {pathToFileURL} = require('node:url');
+            const r = createRequire(pathToFileURL(__filename).href);
+            const p = r.resolve('playwright-core');
+            if (!p.includes('plugin-data')) {
+              console.error('WRONG: resolved from', p, '(expected plugin-data)');
+              process.exit(1);
+            }
+            console.log('OK: playwright-core resolved from', p);
+          "
+      - name: Regression guard — import() must NOT resolve here
+        shell: bash
+        env:
+          NODE_PATH: /tmp/plugin-data/node_modules
+        run: |
+          cd /tmp/plugin-root/packages/flutter-ultra-browser/dist
+          node -e "
+            import('playwright-core')
+              .then(() => { console.error('UNEXPECTED: import() resolved — regression'); process.exit(1); })
+              .catch(e => { console.log('CONFIRMED: import() fails with', e.code, '— createRequire is necessary'); });
+          "
+
   security:
     name: Security scanning
     runs-on: ubuntu-latest

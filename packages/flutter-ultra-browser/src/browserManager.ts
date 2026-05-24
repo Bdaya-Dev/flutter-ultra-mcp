@@ -5,6 +5,7 @@
 
 import type { Browser, BrowserContext, Page, BrowserType, ConsoleMessage } from 'playwright-core';
 import type * as PlaywrightCoreNs from 'playwright-core';
+import { createRequire } from 'node:module';
 import { log } from './logger.js';
 import { shortId } from './ids.js';
 import { stateAppendJsonl, stateWrite } from './state.js';
@@ -106,9 +107,9 @@ export class BrowserManager {
 
   async getPlaywright(): Promise<PlaywrightCore> {
     if (!this.playwrightCache) {
-      // Dynamic import keeps Playwright off the cold-start path until the
-      // first browser tool is called (per plan §17.0 keep-alive concerns).
-      this.playwrightCache = await import('playwright-core');
+      // createRequire so CJS bundle respects NODE_PATH (ESM import() does not).
+      const _require = createRequire(import.meta.url);
+      this.playwrightCache = _require('playwright-core') as PlaywrightCore;
     }
     return this.playwrightCache;
   }

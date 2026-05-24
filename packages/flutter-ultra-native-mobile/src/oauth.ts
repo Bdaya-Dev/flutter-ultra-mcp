@@ -7,6 +7,7 @@
 // today wraps `adb am start` / `simctl openurl` / `idb open`).
 
 import { mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import type * as PlaywrightCoreNs from 'playwright-core';
 import type { Browser, BrowserContext, BrowserType, Page } from 'playwright-core';
@@ -53,15 +54,16 @@ export interface SolveOauthResult {
 // unless this tool is actually called (helps cold-start). The PlaywrightCore
 // type alias at the top of the file gives a static handle without paying
 // the runtime cost up front.
-async function loadPlaywright(): Promise<PlaywrightCore> {
-  return await import('playwright-core');
+function loadPlaywright(): PlaywrightCore {
+  const _require = createRequire(import.meta.url);
+  return _require('playwright-core') as PlaywrightCore;
 }
 
 export async function solveOauthInCustomTab(opts: SolveOauthOptions): Promise<SolveOauthResult> {
   if (opts.signal.aborted) {
     throw opts.signal.reason instanceof Error ? opts.signal.reason : new Error('aborted');
   }
-  const pw = await loadPlaywright();
+  const pw = loadPlaywright();
   const chromium: BrowserType = pw.chromium;
 
   let browser: Browser | undefined;

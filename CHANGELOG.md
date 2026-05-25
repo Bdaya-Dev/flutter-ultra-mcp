@@ -1,3 +1,10 @@
+## [1.16.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.2...v1.16.3) (2026-05-25)
+
+
+### Bug Fixes
+
+* **deps:** install ssh2 at plugin runtime for native MCP servers ([#116](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/116)) ([8df08cd](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/8df08cd86e9d2867961f18247b17042be326ed65))
+
 ## [1.16.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.1...v1.16.2) (2026-05-24)
 
 

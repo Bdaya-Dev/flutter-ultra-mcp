@@ -4,7 +4,7 @@ description: >-
   extensions (gesture, screenshot, inspector, screencast, log collection)
   for the flutter-ultra-mcp Claude Code plugin. Composable with Sentry and
   other WidgetsFlutterBinding subclasses via the mixin form.
-version: 1.16.2
+version: 1.16.3
 homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 repository: https://github.com/Bdaya-Dev/flutter-ultra-mcp
 issue_tracker: https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues

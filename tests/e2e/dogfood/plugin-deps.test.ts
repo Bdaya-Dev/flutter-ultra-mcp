@@ -156,9 +156,7 @@ describe('plugin external deps (ssh2, playwright-core)', () => {
               clearTimeout(timer);
               if (code !== 0 && code !== null) {
                 reject(
-                  new Error(
-                    `Server exited with code ${code}. stderr: ${stderrLines.join('')}`,
-                  ),
+                  new Error(`Server exited with code ${code}. stderr: ${stderrLines.join('')}`),
                 );
               } else {
                 resolveWait();

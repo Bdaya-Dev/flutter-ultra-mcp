@@ -8,8 +8,9 @@
  *
  * Most dependencies are inlined. Exceptions:
  *   - playwright-core: too large / has dynamic requires of chromium-bidi.
- *     Servers that use it (browser, native-mobile) need `npm install playwright-core`
- *     at runtime OR the monorepo node_modules present.
+ *   - ssh2: native bindings (cpu-features).
+ *     Servers that use them (browser, native-mobile, native-desktop) resolve via
+ *     NODE_PATH=${CLAUDE_PLUGIN_DATA}/node_modules after ensure-plugin-deps.js.
  */
 
 import { build } from 'esbuild';

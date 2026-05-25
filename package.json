@@ -34,7 +34,8 @@
     "test:dogfood": "vitest run tests/e2e/dogfood/"
   },
   "dependencies": {
-    "playwright-core": "^1.49.0"
+    "playwright-core": "^1.49.0",
+    "ssh2": "^1.16.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

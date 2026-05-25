@@ -90,9 +90,11 @@ jobs:
         run: |
           mkdir -p /tmp/plugin-root/packages/flutter-ultra-browser/dist
           mkdir -p /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist
+          mkdir -p /tmp/plugin-root/packages/flutter-ultra-native-desktop/dist
           mkdir -p /tmp/plugin-data
           cp packages/flutter-ultra-browser/dist/bin.cjs /tmp/plugin-root/packages/flutter-ultra-browser/dist/
           cp packages/flutter-ultra-native-mobile/dist/bin.cjs /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist/
+          cp packages/flutter-ultra-native-desktop/dist/bin.cjs /tmp/plugin-root/packages/flutter-ultra-native-desktop/dist/
           cp package.json /tmp/plugin-root/
           cp scripts/ensure-plugin-deps.js /tmp/plugin-root/
       - name: Install deps via ensure-plugin-deps
@@ -134,6 +136,40 @@ jobs:
               process.exit(1);
             }
             console.log('OK: playwright-core resolved from', p);
+          "
+      - name: Verify ssh2 resolves via NODE_PATH (native-desktop)
+        shell: bash
+        env:
+          NODE_PATH: /tmp/plugin-data/node_modules
+        run: |
+          cd /tmp/plugin-root/packages/flutter-ultra-native-desktop/dist
+          node -e "
+            const {createRequire} = require('node:module');
+            const {pathToFileURL} = require('node:url');
+            const r = createRequire(pathToFileURL(__filename).href);
+            const p = r.resolve('ssh2');
+            if (!p.includes('plugin-data')) {
+              console.error('WRONG: resolved from', p, '(expected plugin-data)');
+              process.exit(1);
+            }
+            console.log('OK: ssh2 resolved from', p);
+          "
+      - name: Verify ssh2 resolves via NODE_PATH (native-mobile)
+        shell: bash
+        env:
+          NODE_PATH: /tmp/plugin-data/node_modules
+        run: |
+          cd /tmp/plugin-root/packages/flutter-ultra-native-mobile/dist
+          node -e "
+            const {createRequire} = require('node:module');
+            const {pathToFileURL} = require('node:url');
+            const r = createRequire(pathToFileURL(__filename).href);
+            const p = r.resolve('ssh2');
+            if (!p.includes('plugin-data')) {
+              console.error('WRONG: resolved from', p, '(expected plugin-data)');
+              process.exit(1);
+            }
+            console.log('OK: ssh2 resolved from', p);
           "
       - name: Regression guard — import() must NOT resolve here
         shell: bash

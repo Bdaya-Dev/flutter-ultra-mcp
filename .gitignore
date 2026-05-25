@@ -61,3 +61,16 @@ sidecars/*/obj/
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Python
+__pycache__/
+*.pyc
+
+# OMC orchestration session state — per-developer, not for the repo.
+.omc/
+**/.omc/
+.playwright-cli/
+.playwright-mcp/
+
+# Local audit / research scratch
+AUDIT_SUMMARY.txt

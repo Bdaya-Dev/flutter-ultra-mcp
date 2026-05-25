@@ -23,9 +23,7 @@ const cleaned = {
 const cleanedStr = JSON.stringify(cleaned, null, 2) + '\n';
 
 function allDepsInstalled(dataDir) {
-  return REQUIRED_DEPS.every((dep) =>
-    fs.existsSync(path.join(dataDir, 'node_modules', dep)),
-  );
+  return REQUIRED_DEPS.every((dep) => fs.existsSync(path.join(dataDir, 'node_modules', dep)));
 }
 
 const dstPath = path.join(pluginData, 'package.json');

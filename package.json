@@ -31,7 +31,8 @@
     "prepare": "npm run build --if-present || true",
     "test:e2e:web": "vitest run tests/e2e/web/",
     "test:e2e:oidc": "vitest run tests/e2e/oidc/",
-    "test:dogfood": "vitest run tests/e2e/dogfood/"
+    "test:dogfood": "vitest run tests/e2e/dogfood/",
+    "test:e2e:plugin-deps": "vitest run tests/e2e/dogfood/plugin-deps.test.ts"
   },
   "dependencies": {
     "playwright-core": "^1.49.0",

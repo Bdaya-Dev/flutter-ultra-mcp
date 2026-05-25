@@ -1,0 +1,57 @@
+name: E2E MCP Startup
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/e2e/dogfood/**'
+      - '.mcp.json'
+      - 'hooks/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-e2e-mcp-startup.yml'
+  push:
+    branches: [main, next, alpha, beta]
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/e2e/dogfood/**'
+      - '.mcp.json'
+      - 'hooks/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci-e2e-mcp-startup.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-mcp-startup-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-startup:
+    name: MCP server startup (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/bundle.mjs
+      - name: Plugin-deps E2E (isolated ssh2 + MCP initialize)
+        run: npm run test:e2e:plugin-deps
+      - name: Dogfood runtime smoke
+        run: npx vitest run tests/e2e/dogfood/smoke.test.ts

@@ -7,7 +7,65 @@ import type { DeviceRegistry } from '../registry.js';
 import { listDevicesSchema, dumpA11ySchema, waitForNativeElementSchema } from '../schemas.js';
 import { AndroidDevice } from '../android.js';
 import { IosSimDevice } from '../ios.js';
-import { findNode, parseUiautomatorXml, parseWdaSourceXml } from '../a11y.js';
+import { findNode, parseUiautomatorXml, parseWdaSourceXml, type A11yNode } from '../a11y.js';
+
+// ── Compact tree helpers ────────────────────────────────────────────────────
+
+/** Fields kept on each A11yNode when compact mode is active. */
+const A11Y_KEEP_FIELDS = new Set([
+  'resource-id', 'resourceId', 'text', 'content-desc', 'contentDesc',
+  'class', 'className', 'bounds', 'clickable', 'focusable', 'focused',
+  'checked', 'selected', 'children', 'path',
+]);
+
+/**
+ * Recursively compact an A11yNode tree:
+ * 1. Keep only fields in `keepFields` plus `children`.
+ * 2. Remove null / undefined / empty-string values.
+ * 3. Flatten nodes that carry no identifying info (only children + path).
+ */
+function compactA11yTree(node: A11yNode): A11yNode[] {
+  // Compact children first (depth-first).
+  const compactedChildren: A11yNode[] = [];
+  for (const child of node.children) {
+    compactedChildren.push(...compactA11yTree(child));
+  }
+
+  // Build a stripped copy keeping only allowed fields.
+  const stripped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'children') continue;
+    if (!A11Y_KEEP_FIELDS.has(key)) continue;
+    if (value === null || value === undefined || value === '') continue;
+    stripped[key] = value;
+  }
+  stripped.children = compactedChildren;
+
+  const result = stripped as unknown as A11yNode;
+  result.children = compactedChildren;
+
+  // If the node has no identifying info beyond path + children, flatten it
+  // by hoisting its children to the parent level.
+  const identifyingKeys = Object.keys(stripped).filter(
+    (k) => k !== 'children' && k !== 'path',
+  );
+  if (identifyingKeys.length === 0 && compactedChildren.length > 0) {
+    return compactedChildren;
+  }
+  // Drop nodes with zero identifying info AND zero children.
+  if (identifyingKeys.length === 0 && compactedChildren.length === 0) {
+    return [];
+  }
+
+  return [result];
+}
+
+function compactA11yRoot(root: A11yNode): A11yNode {
+  const results = compactA11yTree(root);
+  if (results.length === 1 && results[0]) return results[0];
+  // Multiple roots after flattening — wrap in synthetic root.
+  return { path: '', children: results };
+}
 
 export function registerInspectTools(opts: {
   server: FlutterUltraServer;
@@ -57,7 +115,7 @@ export function registerInspectTools(opts: {
         });
         sendProgress({ progress: 0.7, message: 'parsing UIAutomator XML' });
         const tree = parseUiautomatorXml(xml);
-        return { platform: 'android', deviceId: args.deviceId, tree };
+        return { platform: 'android', deviceId: args.deviceId, tree: args.compact ? compactA11yRoot(tree) : tree };
       }
       if (device instanceof IosSimDevice) {
         sendProgress({ progress: 0.2, message: 'fetching WDA /source from iOS Simulator' });
@@ -67,7 +125,7 @@ export function registerInspectTools(opts: {
         });
         sendProgress({ progress: 0.7, message: 'parsing WDA accessibility XML' });
         const tree = parseWdaSourceXml(xml);
-        return { platform: 'ios-sim', deviceId: args.deviceId, tree };
+        return { platform: 'ios-sim', deviceId: args.deviceId, tree: args.compact ? compactA11yRoot(tree) : tree };
       }
       throw new InvalidToolInputError(
         `dump_a11y_tree: device kind '${device.kind}' not supported.`,

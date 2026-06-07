@@ -89,4 +89,33 @@ describe('DevelopSessionManager', () => {
     rec.child = null;
     expect(m.get()).toBeNull();
   });
+
+  it('lastTestFile and lastRecordingPath start as null', () => {
+    const m = new DevelopSessionManager();
+    expect(m.lastTestFile).toBeNull();
+    expect(m.lastRecordingPath).toBeNull();
+  });
+
+  it('setTestFile stores and retrieves lastTestFile', () => {
+    const m = new DevelopSessionManager();
+    m.setTestFile('login_test.dart');
+    expect(m.lastTestFile).toBe('login_test.dart');
+  });
+
+  it('setRecordingPath stores and retrieves lastRecordingPath', () => {
+    const m = new DevelopSessionManager();
+    m.setRecordingPath('/tmp/recording.gif');
+    expect(m.lastRecordingPath).toBe('/tmp/recording.gif');
+  });
+
+  it('clear() resets lastTestFile and lastRecordingPath', () => {
+    const m = new DevelopSessionManager();
+    m.register(makeRecord());
+    m.setTestFile('login_test.dart');
+    m.setRecordingPath('/tmp/recording.gif');
+    m.clear();
+    expect(m.lastTestFile).toBeNull();
+    expect(m.lastRecordingPath).toBeNull();
+    expect(m.get()).toBeNull();
+  });
 });

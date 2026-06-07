@@ -1,6 +1,6 @@
 // Central MCP server wiring for flutter-ultra-patrol.
 //
-// Registers all 15 tools (13 original per plan §17B.1 + extract_video_frame + run_patrol_doctor), validates input through
+// Registers all 17 tools (13 original per plan §17B.1 + extract_video_frame + run_patrol_doctor + get_patrol_native_tree + patrol_session_status), validates input through
 // each tool's Zod schema, dispatches to the handler, and serialises the
 // return value into MCP CallToolResult shape. Throws are caught and
 // re-emitted as `{ isError: true, content: [{ type:'text', text:... }] }`
@@ -36,12 +36,14 @@ import { getPatrolBrowserErrorsTool } from './tools/get-patrol-browser-errors.js
 import { getPatrolWebDebuggerPortTool } from './tools/get-patrol-web-debugger-port.js';
 import { extractVideoFrameTool } from './tools/extract-video-frame.js';
 import { patrolDoctorTool } from './tools/patrol-doctor.js';
+import { getPatrolNativeTreeTool } from './tools/get-patrol-native-tree.js';
+import { patrolSessionStatusTool } from './tools/patrol-session-status.js';
 import type { PatrolTool, ToolContext } from './tools/types.js';
 
 export const SERVER_NAME = 'flutter-ultra-patrol';
 export const SERVER_VERSION = '0.0.0';
 
-// 15 tools: 13 original per plan §17B.1 + extract_video_frame (GitHub issue #43) + run_patrol_doctor (GitHub issue #83).
+// 17 tools: 13 original per plan §17B.1 + extract_video_frame (GitHub issue #43) + run_patrol_doctor (GitHub issue #83) + get_patrol_native_tree + patrol_session_status.
 export const TOOLS: ReadonlyArray<PatrolTool<ZodTypeAny>> = [
   listTestsTool,
   startPatrolTestTool,
@@ -58,6 +60,8 @@ export const TOOLS: ReadonlyArray<PatrolTool<ZodTypeAny>> = [
   getPatrolWebDebuggerPortTool,
   extractVideoFrameTool,
   patrolDoctorTool,
+  getPatrolNativeTreeTool,
+  patrolSessionStatusTool,
 ];
 
 export interface CreatePatrolServerOptions {

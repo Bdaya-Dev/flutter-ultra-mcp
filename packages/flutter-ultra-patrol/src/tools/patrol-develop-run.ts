@@ -24,7 +24,10 @@ export const patrolDevelopRunTool = defineTool({
         message: 'No warm develop session. Call start_patrol_develop first to spawn one.',
       };
     }
-    const sent = ctx.develop.send(`t ${input.testName}`);
+
+    const sameTest = ctx.develop.lastTestFile === input.testName;
+    const command = sameTest ? 'R' : `t ${input.testName}`;
+    const sent = ctx.develop.send(command);
     if (!sent) {
       return {
         ok: false,
@@ -32,8 +35,10 @@ export const patrolDevelopRunTool = defineTool({
         message: 'Develop session stdin is closed; the underlying process has likely exited.',
       };
     }
+    ctx.develop.setTestFile(input.testName);
     return {
       ok: true,
+      action: sameTest ? 'hot_restart' : 'run_test',
       taskId: session.id,
       dispatchedAt: ctx.now(),
       testName: input.testName,

@@ -15,9 +15,9 @@ function logLine(text: string, stream: 'stdout' | 'stderr' = 'stdout', ts = 0): 
   return { ts, stream, text };
 }
 
-// ─── AC-P1: All 15 patrol tools registered ──────────────────────────────────
+// ─── AC-P1: All 17 patrol tools registered ──────────────────────────────────
 
-describe('AC-P1: 15 patrol tools registered', () => {
+describe('AC-P1: 17 patrol tools registered', () => {
   const EXPECTED_NAMES = [
     'list_tests',
     'start_patrol_test',
@@ -34,10 +34,12 @@ describe('AC-P1: 15 patrol tools registered', () => {
     'get_patrol_web_debugger_port',
     'extract_video_frame',
     'run_patrol_doctor',
+    'get_patrol_native_tree',
+    'patrol_session_status',
   ] as const;
 
-  it('TOOLS array has exactly 15 entries', () => {
-    expect(TOOLS).toHaveLength(15);
+  it('TOOLS array has exactly 17 entries', () => {
+    expect(TOOLS).toHaveLength(17);
   });
 
   it('tool names are unique', () => {

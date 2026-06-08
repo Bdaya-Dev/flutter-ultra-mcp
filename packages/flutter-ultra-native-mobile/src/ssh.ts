@@ -10,6 +10,8 @@
 //   const result = await exec(['adb', 'devices']);
 
 import { readFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
 import { Client } from 'ssh2';
 import type { ClientChannel, SFTPWrapper, ClientErrorExtensions } from 'ssh2';
 import type { ShellResult, ShellOptions } from './device.js';
@@ -53,7 +55,10 @@ export class SshTransport {
   }
 
   private async createConnection(): Promise<Client> {
-    const privateKey = await readFile(this.config.privateKeyPath);
+    const keyPath = this.config.privateKeyPath.startsWith('~/')
+      ? resolve(homedir(), this.config.privateKeyPath.slice(2))
+      : this.config.privateKeyPath;
+    const privateKey = await readFile(keyPath);
     return new Promise<Client>((resolve, reject) => {
       const client = new Client();
       client

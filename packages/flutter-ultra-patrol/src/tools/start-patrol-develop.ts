@@ -7,6 +7,26 @@ import { z } from 'zod';
 import { defineTool } from './types.js';
 import { findFlutterProject } from '../runtime/project.js';
 import { buildPatrolInvocation } from '../runtime/patrol-cli.js';
+import type { PatrolJobRecord } from '../runtime/job-store.js';
+import type { DevelopSessionManager } from '../runtime/develop-session.js';
+
+const CDP_PORT_LINE = /\[patrol-web-debugger-port\]\s+(\d+)/i;
+
+async function pollForCdpPort(record: PatrolJobRecord, develop: DevelopSessionManager): Promise<void> {
+  const maxAttempts = 10;
+  const intervalMs = 3_000;
+  for (let i = 0; i < maxAttempts; i++) {
+    if (!record.child) return;
+    for (const line of record.logTail) {
+      const m = line.text.match(CDP_PORT_LINE);
+      if (m?.[1]) {
+        await develop.startCdpCapture(Number(m[1]));
+        return;
+      }
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+}
 
 export const startPatrolDevelopTool = defineTool({
   name: 'start_patrol_develop',
@@ -22,6 +42,12 @@ export const startPatrolDevelopTool = defineTool({
     dartDefineFromFile: z.array(z.string()).optional(),
     openDevtools: z.boolean().optional(),
     useRawCli: z.boolean().optional(),
+    autoCdpCapture: z
+      .boolean()
+      .optional()
+      .describe(
+        'Auto-attach a CDP WebSocket listener for structured console error capture. Defaults to true for web targets.',
+      ),
     extraArgs: z.array(z.string()).optional(),
   }),
   async handler(input, ctx) {
@@ -67,6 +93,10 @@ export const startPatrolDevelopTool = defineTool({
     });
     ctx.jobs.attachChild(record.id, child);
     ctx.develop.register(record);
+
+    if (input.autoCdpCapture !== false) {
+      void pollForCdpPort(record, ctx.develop).catch(() => {});
+    }
 
     return {
       taskId: record.id,

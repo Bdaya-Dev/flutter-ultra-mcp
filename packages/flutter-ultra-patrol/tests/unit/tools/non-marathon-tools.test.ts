@@ -721,6 +721,119 @@ describe('get_patrol_browser_errors', () => {
     expect(got.errors[0]!.message).toBe('new');
   });
 
+  it('merges CDP errors with stdout errors', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    rec.logTail.push(
+      { ts: 100, stream: 'stdout', text: '[browser-error] stdout-err-1' },
+      { ts: 300, stream: 'stdout', text: '[browser-error] stdout-err-2' },
+    );
+    develop.register(rec);
+
+    // Inject mock CDP errors via private field
+    const mockCapture = {
+      disconnect() {},
+      capturedErrors: [
+        { ts: 200, level: 'error' as const, message: 'cdp-err-1', source: 'cdp' as const },
+        { ts: 400, level: 'warning' as const, message: 'cdp-warn-1', source: 'cdp' as const },
+      ],
+    };
+    (develop as unknown as { cdpCapture: unknown }).cdpCapture = mockCapture;
+
+    const got = getPatrolBrowserErrorsTool.handler({ includeWarnings: true }, ctx) as {
+      ok: boolean;
+      count: number;
+      cdpConnected: boolean;
+      errors: { ts: number; message: string; source: string }[];
+    };
+    expect(got.ok).toBe(true);
+    expect(got.cdpConnected).toBe(true);
+    // All 4 entries: 2 stdout + 1 cdp error + 1 cdp warning
+    expect(got.count).toBe(4);
+    // Sorted by timestamp
+    expect(got.errors.map((e) => e.message)).toEqual([
+      'stdout-err-1',
+      'cdp-err-1',
+      'stdout-err-2',
+      'cdp-warn-1',
+    ]);
+    expect(got.errors.map((e) => e.source)).toEqual(['stdout', 'cdp', 'stdout', 'cdp']);
+  });
+
+  it('excludes CDP warnings by default', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    develop.register(rec);
+
+    const mockCapture = {
+      disconnect() {},
+      capturedErrors: [
+        { ts: 100, level: 'error' as const, message: 'cdp-err', source: 'cdp' as const },
+        { ts: 200, level: 'warning' as const, message: 'cdp-warn', source: 'cdp' as const },
+      ],
+    };
+    (develop as unknown as { cdpCapture: unknown }).cdpCapture = mockCapture;
+
+    const got = getPatrolBrowserErrorsTool.handler({}, ctx) as {
+      count: number;
+      errors: { message: string }[];
+    };
+    expect(got.count).toBe(1);
+    expect(got.errors[0]!.message).toBe('cdp-err');
+  });
+
+  it('deduplicates CDP and stdout errors with same message within 1s window', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    // stdout error at ts=1000
+    rec.logTail.push(
+      { ts: 1000, stream: 'stdout', text: '[browser-error] TypeError: foo is undefined' },
+    );
+    develop.register(rec);
+
+    // CDP error with same message at ts=1500 (within 1s dedup window of 1000)
+    const mockCapture = {
+      disconnect() {},
+      capturedErrors: [
+        { ts: 1500, level: 'error' as const, message: 'TypeError: foo is undefined', source: 'cdp' as const },
+      ],
+    };
+    (develop as unknown as { cdpCapture: unknown }).cdpCapture = mockCapture;
+
+    const got = getPatrolBrowserErrorsTool.handler({}, ctx) as {
+      count: number;
+      errors: { message: string; source: string }[];
+    };
+    // Same message within 1s window -- deduplicated to 1
+    expect(got.count).toBe(1);
+    expect(got.errors[0]!.source).toBe('stdout');
+  });
+
+  it('does not deduplicate errors with same message beyond 1s window', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    rec.logTail.push(
+      { ts: 1000, stream: 'stdout', text: '[browser-error] TypeError: foo is undefined' },
+    );
+    develop.register(rec);
+
+    // CDP error with same message at ts=2500 (>1s apart from 1000)
+    const mockCapture = {
+      disconnect() {},
+      capturedErrors: [
+        { ts: 2500, level: 'error' as const, message: 'TypeError: foo is undefined', source: 'cdp' as const },
+      ],
+    };
+    (develop as unknown as { cdpCapture: unknown }).cdpCapture = mockCapture;
+
+    const got = getPatrolBrowserErrorsTool.handler({}, ctx) as {
+      count: number;
+      errors: { message: string; source: string }[];
+    };
+    // >1s apart -- both kept
+    expect(got.count).toBe(2);
+  });
+
   it('falls back to the most recent terminal test job when no develop session', () => {
     const { ctx, jobs } = makeCtx();
     const earlier = jobs.create({

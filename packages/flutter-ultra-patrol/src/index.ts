@@ -13,6 +13,7 @@ export { SERVER_NAME, SERVER_VERSION, TOOLS, createPatrolServer } from './server
 export { readEnv } from './runtime/env.js';
 export { JobStore } from './runtime/job-store.js';
 export { DevelopSessionManager } from './runtime/develop-session.js';
+export { CdpConsoleCapture, type CdpError } from './runtime/cdp-console-capture.js';
 
 async function main(): Promise<void> {
   const { server, logger, recovered } = createPatrolServer();

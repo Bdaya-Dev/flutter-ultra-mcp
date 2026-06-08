@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach } from 'vitest';
 import { DevelopSessionManager } from '../../../src/runtime/develop-session.js';
+import { CdpConsoleCapture } from '../../../src/runtime/cdp-console-capture.js';
 import type { PatrolJobRecord } from '../../../src/runtime/job-store.js';
 
 function makeRecord(overrides: Partial<PatrolJobRecord> = {}): PatrolJobRecord {
@@ -128,5 +129,64 @@ describe('DevelopSessionManager', () => {
     m.register(makeRecord());
     expect(m.lastTestFile).toBeNull();
     expect(m.lastRecordingPath).toBeNull();
+  });
+
+  it('cdpErrors returns empty array when no capture started', () => {
+    const m = new DevelopSessionManager();
+    expect(m.cdpErrors).toEqual([]);
+  });
+
+  it('startCdpCapture stores capture and cdpErrors returns them', async () => {
+    const m = new DevelopSessionManager();
+    // Inject a mock CdpConsoleCapture via the public API by monkey-patching
+    // the prototype's connect to avoid needing a real WebSocket server.
+    const fakeErrors = [
+      { ts: 100, level: 'error' as const, message: 'boom', source: 'cdp' as const },
+    ];
+    const origConnect = CdpConsoleCapture.prototype.connect;
+    CdpConsoleCapture.prototype.connect = async function () {
+      // Simulate populating errors by directly pushing into the internal array
+      // via the public getter pattern -- we use Object.defineProperty instead.
+      Object.defineProperty(this, 'capturedErrors', { get: () => fakeErrors });
+    };
+    try {
+      await m.startCdpCapture(9999);
+      expect(m.cdpErrors).toHaveLength(1);
+      expect(m.cdpErrors[0]).toMatchObject({ message: 'boom', source: 'cdp' });
+    } finally {
+      CdpConsoleCapture.prototype.connect = origConnect;
+    }
+  });
+
+  it('clear() disconnects CDP capture', () => {
+    const m = new DevelopSessionManager();
+    let disconnected = false;
+    // Manually wire a mock capture via startCdpCapture's internal field
+    const mockCapture = {
+      disconnect() { disconnected = true; },
+      capturedErrors: [],
+    } as unknown as CdpConsoleCapture;
+    // Access private field to inject mock
+    (m as unknown as { cdpCapture: CdpConsoleCapture | null }).cdpCapture = mockCapture;
+    expect(m.cdpErrors).toEqual([]);
+
+    m.clear();
+    expect(disconnected).toBe(true);
+    expect(m.cdpErrors).toEqual([]);
+  });
+
+  it('register() disconnects existing CDP capture', () => {
+    const m = new DevelopSessionManager();
+    let disconnected = false;
+    const mockCapture = {
+      disconnect() { disconnected = true; },
+      capturedErrors: [],
+    } as unknown as CdpConsoleCapture;
+    (m as unknown as { cdpCapture: CdpConsoleCapture | null }).cdpCapture = mockCapture;
+
+    m.register(makeRecord());
+    expect(disconnected).toBe(true);
+    // After register, cdpCapture is nulled out
+    expect(m.cdpErrors).toEqual([]);
   });
 });

@@ -66,7 +66,9 @@ Covers all Flutter test layers: unit, widget, golden, and patrol E2E. For ad-hoc
   - `mcp__plugin_flutter_flutter-ultra-patrol__patrol_develop_run` to re-run a test.
   - `mcp__plugin_flutter_flutter-ultra-patrol__patrol_hot_reload` to reload after code changes.
 
-**Poll:** `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job` until done.
+**Poll:** `mcp__plugin_flutter_flutter-ultra-patrol__poll_patrol_job` until done, or use `mcp__plugin_flutter_flutter-ultra-patrol__patrol_session_status` for a combined view (test state + output + browser errors in one call).
+
+**Native UI inspection:** `mcp__plugin_flutter_flutter-ultra-patrol__get_patrol_native_tree` fetches the platform-native view hierarchy (Android/iOS) via Patrol's test server during a develop session. Supports `compact: true` (default) to strip non-essential fields.
 
 **Screenshots during run:** `mcp__plugin_flutter_flutter-ultra-patrol__take_patrol_screenshot` at key intervals.
 
@@ -104,7 +106,7 @@ After unit tests with `coverage: true`:
 1. **Compilation errors**: surface the exact error from the result. Usually a missing import or type mismatch.
 2. **Assertion failures**: show test name, expected/actual values, file:line.
 3. **Timeout failures**: check for `pumpAndSettle` waiting on an infinite animation.
-4. **Patrol E2E failures**: read `logContext` from `get_patrol_result`. Cross-reference with `get_patrol_browser_errors` for web.
+4. **Patrol E2E failures**: use `mcp__plugin_flutter_flutter-ultra-patrol__patrol_session_status` for a combined view of session state + browser errors. Cross-reference with `get_patrol_browser_errors` for web. Use `get_patrol_native_tree` to inspect the native UI hierarchy if Flutter widget tree doesn't explain the issue.
 5. **Screenshot on failure**: patrol captures screenshots automatically. For unit/widget failures, call `mcp__plugin_flutter_flutter-ultra-runtime__screenshot` if the app is running.
 6. **Network issues during E2E**: use `mcp__plugin_flutter_flutter-ultra-runtime__start_http_capture` + `mcp__plugin_flutter_flutter-ultra-runtime__get_http_events` to check API calls.
 7. **Flaky tests due to external API responses**: use `mcp__plugin_flutter_flutter-ultra-browser__mock_network_route` before running patrol web tests to stub non-deterministic endpoints and isolate the test from network variance.

@@ -10,10 +10,31 @@ import type { ToolContext } from './types.js';
 
 const BROWSER_ERROR_LINE = /\[browser-error\]\s+(.+)$/i;
 
+interface BrowserError {
+  ts: number;
+  level: 'error' | 'warning';
+  message: string;
+  source: 'stdout' | 'cdp';
+}
+
+function deduplicateErrors(errors: BrowserError[]): BrowserError[] {
+  errors.sort((a, b) => a.ts - b.ts);
+  const result: BrowserError[] = [];
+  for (const err of errors) {
+    const isDupe = result.some(
+      (existing) =>
+        Math.abs(existing.ts - err.ts) < 1_000 &&
+        existing.message === err.message,
+    );
+    if (!isDupe) result.push(err);
+  }
+  return result;
+}
+
 export const getPatrolBrowserErrorsTool = defineTool({
   name: 'get_patrol_browser_errors',
   description:
-    "Return CDP-captured browser console errors (incl. uncaught exceptions) from the active patrol develop session, or the most-recent completed test job if no develop session is active. Uses the Bdaya fork's b591a390 CDP error surface.",
+    "Return browser console errors (incl. uncaught exceptions) from the active patrol develop session, or the most-recent completed test job. Merges stdout-parsed [browser-error] lines with structured CDP WebSocket capture when available.",
   inputSchema: z.object({
     sinceMs: z
       .number()
@@ -21,12 +42,11 @@ export const getPatrolBrowserErrorsTool = defineTool({
       .nonnegative()
       .optional()
       .describe('Drop log entries with ts < sinceMs (epoch milliseconds).'),
-    /**
-     * When set, ignore the warm develop session and read from a specific
-     * test taskId. Useful for the typical "test failed; what did the
-     * browser say?" pattern.
-     */
     taskId: z.string().optional(),
+    includeWarnings: z
+      .boolean()
+      .optional()
+      .describe('Include warning-level entries from CDP capture. Defaults to false.'),
   }),
   handler(input, ctx) {
     const job = resolveSource(input.taskId, ctx);
@@ -34,17 +54,29 @@ export const getPatrolBrowserErrorsTool = defineTool({
       return { ok: false, reason: 'no_source_job' };
     }
     const since = input.sinceMs ?? 0;
-    const errors: { ts: number; message: string }[] = [];
+    const merged: BrowserError[] = [];
+
     for (const line of job.logTail) {
       if (line.ts < since) continue;
       const m = line.text.match(BROWSER_ERROR_LINE);
-      if (m && m[1]) errors.push({ ts: line.ts, message: m[1] });
+      if (m?.[1]) {
+        merged.push({ ts: line.ts, level: 'error', message: m[1], source: 'stdout' });
+      }
     }
+
+    for (const cdpErr of ctx.develop.cdpErrors) {
+      if (cdpErr.ts < since) continue;
+      if (cdpErr.level === 'warning' && !input.includeWarnings) continue;
+      merged.push({ ts: cdpErr.ts, level: cdpErr.level, message: cdpErr.message, source: 'cdp' });
+    }
+
+    const errors = deduplicateErrors(merged);
     return {
       ok: true,
       taskId: job.id,
       kind: job.kind,
       count: errors.length,
+      cdpConnected: ctx.develop.cdpErrors.length > 0 || merged.some((e) => e.source === 'cdp'),
       errors,
     };
   },

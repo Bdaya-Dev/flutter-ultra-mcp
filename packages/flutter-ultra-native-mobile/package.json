@@ -54,7 +54,7 @@
     "@flutter-ultra/mcp-runtime": "^0.0.1",
     "@flutter-ultra/state-store": "^0.0.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "fast-xml-parser": "^4.5.0",
+    "fast-xml-parser": "^5.8.0",
     "playwright-core": "^1.49.0",
     "ssh2": "^1.16.0",
     "zod": "^3.23.8"
@@ -63,7 +63,7 @@
     "@types/ssh2": "^1.15.0",
     "rimraf": "^6.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20"

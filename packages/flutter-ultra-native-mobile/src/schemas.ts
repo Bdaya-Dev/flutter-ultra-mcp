@@ -50,6 +50,12 @@ export const dumpA11ySchema = z
       .describe(
         'iOS Simulator only: port where WebDriverAgent is listening (default 8100). Ignored for Android.',
       ),
+    compact: z
+      .boolean()
+      .default(true)
+      .describe(
+        'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
+      ),
   })
   .strict();
 

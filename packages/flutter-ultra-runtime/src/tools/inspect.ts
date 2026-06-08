@@ -18,6 +18,105 @@ import { fetchSummaryTree, findInTree, summarizeNode, walkTree } from '../widget
 
 const GROUP_NAME = 'flutter-ultra-runtime';
 
+// ── Compact tree helpers ────────────────────────────────────────────────────
+
+/** Fields kept on each widget node when compact mode is active. */
+export const WIDGET_KEEP_FIELDS = new Set([
+  'description',
+  'type',
+  'hasChildren',
+  'children',
+  'valueId',
+  'createdByLocalProject',
+  'style',
+]);
+
+/**
+ * Recursively compact a structured widget tree node:
+ * 1. Keep only fields in keepFields plus 'children'.
+ * 2. Remove null / undefined / empty-string values.
+ * 3. Flatten nodes that carry no identifying info (only children).
+ */
+export function compactWidgetTree(node: Record<string, unknown>): Record<string, unknown>[] {
+  // Compact children first (depth-first).
+  const rawChildren = Array.isArray(node.children)
+    ? (node.children as Record<string, unknown>[])
+    : [];
+  const compactedChildren: Record<string, unknown>[] = [];
+  for (const child of rawChildren) {
+    compactedChildren.push(...compactWidgetTree(child));
+  }
+
+  // Build stripped copy.
+  const stripped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'children') continue;
+    if (!WIDGET_KEEP_FIELDS.has(key)) continue;
+    if (value === null || value === undefined || value === '') continue;
+    stripped[key] = value;
+  }
+  if (compactedChildren.length > 0) {
+    stripped.children = compactedChildren;
+  }
+
+  // If the node has no identifying info beyond children, flatten it.
+  const identifyingKeys = Object.keys(stripped).filter((k) => k !== 'children');
+  if (identifyingKeys.length === 0 && compactedChildren.length > 0) {
+    return compactedChildren;
+  }
+  if (identifyingKeys.length === 0 && compactedChildren.length === 0) {
+    return [];
+  }
+
+  return [stripped];
+}
+
+export function compactWidgetRoot(tree: unknown): unknown {
+  if (!tree || typeof tree !== 'object') return tree;
+  const node = tree as Record<string, unknown>;
+  const results = compactWidgetTree(node);
+  if (results.length === 1 && results[0]) return results[0];
+  return { children: results };
+}
+
+/**
+ * Compact a text-format tree dump (render tree, layer tree, semantics tree).
+ * - Remove lines that are only whitespace or box-drawing characters.
+ * - Remove lines containing only a RenderObject class name with no useful properties.
+ * - Trim excessive indentation to max 6 levels (each level = 2 spaces).
+ * - Keep lines with text content, sizes, constraints, semantics labels, offsets.
+ */
+export function compactTextDump(dump: string): string {
+  const lines = dump.split('\n');
+  const result: string[] = [];
+
+  // Box-drawing: lines composed entirely of whitespace + box chars (│├└─┌┐┘┤┬┴┼╎╏)
+  const boxOnly = /^[\s│├└─┌┐┘┤┬┴┼╎╏]*$/;
+  // A line with only a RenderObject class name and no properties after it.
+  // Matches e.g. "    RenderFlex" or "  RenderPositionedBox" with no ": ..." or "(" after.
+  const renderClassOnly = /^\s*Render\w+\s*$/;
+
+  const maxIndent = 6 * 2; // 6 levels, 2 spaces each
+
+  for (const line of lines) {
+    // Drop empty / box-only lines.
+    if (boxOnly.test(line)) continue;
+    // Drop lines that are just a RenderObject class name.
+    if (renderClassOnly.test(line)) continue;
+
+    // Trim excessive indentation.
+    const leadingSpaces = line.match(/^(\s*)/)?.[1]?.length ?? 0;
+    let trimmed = line;
+    if (leadingSpaces > maxIndent) {
+      trimmed = ' '.repeat(maxIndent) + line.slice(leadingSpaces);
+    }
+
+    result.push(trimmed);
+  }
+
+  return result.join('\n');
+}
+
 /**
  * Try an inspector extension, fall back to an ultra.* extension on failure
  * (typically on web where DWDS may not proxy inspector extensions).
@@ -78,6 +177,12 @@ export function registerInspectTools(opts: {
       inputShape: {
         sessionId: SessionIdSchema,
         groupName: z.string().default(GROUP_NAME),
+        compact: z
+          .boolean()
+          .default(true)
+          .describe(
+            'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
+          ),
       },
       timeoutClass: 'quick',
       annotations: { readOnlyHint: true, idempotentHint: true },
@@ -91,7 +196,7 @@ export function registerInspectTools(opts: {
               'ext.flutter.inspector.getRootWidgetTree',
               { isolateId, args: { groupName: args.groupName } },
             );
-            return { tree };
+            return { tree: args.compact ? compactWidgetRoot(tree) : tree };
           },
           async () => {
             const result = await client.callServiceExtension(
@@ -389,7 +494,15 @@ export function registerInspectTools(opts: {
       {
         name: tool,
         description: `${ext} → plain-text tree dump.`,
-        inputShape: { sessionId: SessionIdSchema },
+        inputShape: {
+          sessionId: SessionIdSchema,
+          compact: z
+            .boolean()
+            .default(true)
+            .describe(
+              'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
+            ),
+        },
         timeoutClass: 'long',
         ceilingMs: 60_000,
         annotations: { readOnlyHint: true, idempotentHint: true },
@@ -405,7 +518,7 @@ export function registerInspectTools(opts: {
             typeof result === 'string'
               ? result
               : ((result as { result?: string } | null)?.result ?? JSON.stringify(result));
-          return { dump };
+          return { dump: args.compact ? compactTextDump(dump) : dump };
         } finally {
           await release();
         }

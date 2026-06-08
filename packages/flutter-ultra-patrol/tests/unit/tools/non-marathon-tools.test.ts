@@ -19,6 +19,8 @@ import { stopPatrolRecordingTool } from '../../../src/tools/stop-patrol-recordin
 import { getPatrolBrowserErrorsTool } from '../../../src/tools/get-patrol-browser-errors.js';
 import { getPatrolWebDebuggerPortTool } from '../../../src/tools/get-patrol-web-debugger-port.js';
 import { patrolDoctorTool } from '../../../src/tools/patrol-doctor.js';
+import { getPatrolNativeTreeTool } from '../../../src/tools/get-patrol-native-tree.js';
+import { patrolSessionStatusTool } from '../../../src/tools/patrol-session-status.js';
 import type { ToolContext } from '../../../src/tools/types.js';
 
 function makeCtx(): {
@@ -562,6 +564,29 @@ describe('patrol_develop_run', () => {
     });
     expect(writes).toEqual(['t login flow\n']);
   });
+
+  it('sends t <name> again when same test re-dispatched', () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    const first = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
+    expect(first).toMatchObject({ ok: true });
+    expect(writes).toEqual(['t login\n']);
+
+    const second = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
+    expect(second).toMatchObject({ ok: true });
+    expect(writes).toEqual(['t login\n', 't login\n']);
+  });
+
+  it('sends t <name> for different test after first', () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    const first = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
+    expect(first).toMatchObject({ ok: true });
+
+    const second = patrolDevelopRunTool.handler({ testName: 'signup' }, ctx);
+    expect(second).toMatchObject({ ok: true });
+    expect(writes).toEqual(['t login\n', 't signup\n']);
+  });
 });
 
 describe('patrol_hot_reload', () => {
@@ -624,11 +649,39 @@ describe('start/stop_patrol_recording', () => {
     expect(writes).toEqual(['recording start webm 30 /tmp/r.webm\n']);
   });
 
-  it('stop sends `recording stop`', () => {
+  it('stop sends `recording stop`', async () => {
     const { ctx, develop, writes } = makeCtx();
     develop.register(fakeDevelopRecord(writes));
-    stopPatrolRecordingTool.handler({}, ctx);
+    await stopPatrolRecordingTool.handler({}, ctx);
     expect(writes).toEqual(['recording stop\n']);
+  });
+
+  it('stop returns ok with no base64 when returnBase64 not set', async () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    const result = (await stopPatrolRecordingTool.handler({}, ctx)) as Record<string, unknown>;
+    expect(result.ok).toBe(true);
+    expect(result.base64).toBeUndefined();
+  });
+
+  it('stop returns base64Error when returnBase64:true but no recording path', async () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    // lastRecordingPath is null by default — never called setRecordingPath
+    const result = (await stopPatrolRecordingTool.handler({ returnBase64: true }, ctx)) as Record<
+      string,
+      unknown
+    >;
+    expect(result.ok).toBe(true);
+    expect(result.base64).toBeNull();
+    expect(result.base64Error).toBe('no_recording_path');
+  });
+
+  it('stop schema accepts returnBase64 boolean', () => {
+    expect(stopPatrolRecordingTool.inputSchema.safeParse({ returnBase64: true }).success).toBe(
+      true,
+    );
+    expect(stopPatrolRecordingTool.inputSchema.safeParse({}).success).toBe(true);
   });
 });
 
@@ -807,5 +860,93 @@ describe('take_patrol_screenshot returnBase64 schema', () => {
     expect(result.ok).toBe(true);
     expect(result.base64).toBeNull();
     expect(result.base64Error).toBe('file_not_yet_written');
+  });
+});
+
+describe('get_patrol_native_tree', () => {
+  it('returns no_develop_session when no session active', async () => {
+    const { ctx } = makeCtx();
+    const result = await getPatrolNativeTreeTool.handler(
+      { testServerPort: 8081, compact: true },
+      ctx,
+    );
+    expect(result).toMatchObject({ ok: false, reason: 'no_develop_session' });
+  });
+
+  it('returns test_server_unreachable when server not running', async () => {
+    const { ctx, develop, writes } = makeCtx();
+    develop.register(fakeDevelopRecord(writes));
+    const result = await getPatrolNativeTreeTool.handler(
+      { testServerPort: 59999, compact: true },
+      ctx,
+    );
+    expect(result).toMatchObject({ ok: false, reason: 'test_server_unreachable', port: 59999 });
+  });
+
+  it('schema validates defaults', () => {
+    const parsed = getPatrolNativeTreeTool.inputSchema.safeParse({});
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.testServerPort).toBe(8081);
+      expect(parsed.data.compact).toBe(true);
+    }
+  });
+});
+
+describe('patrol_session_status', () => {
+  it('returns idle when no develop session', () => {
+    const { ctx } = makeCtx();
+    const result = patrolSessionStatusTool.handler({}, ctx);
+    expect(result).toMatchObject({
+      isDevelopRunning: false,
+      testState: 'idle',
+    });
+  });
+
+  it('returns running status for active session with browser errors', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    rec.logTail.push(
+      { ts: 1, stream: 'stdout', text: 'Booting up...' },
+      { ts: 2, stream: 'stdout', text: '[browser-error] TypeError: foo is undefined' },
+      { ts: 3, stream: 'stdout', text: 'Running test...' },
+      { ts: 4, stream: 'stdout', text: '[browser-error] ReferenceError: bar' },
+    );
+    rec.logTotal = 4;
+    rec.status = 'running';
+    develop.register(rec);
+    const result = patrolSessionStatusTool.handler({}, ctx) as {
+      isDevelopRunning: boolean;
+      testState: string;
+      browserErrors: { ts: number; message: string }[];
+      browserErrorCount: number;
+      recentOutput: { ts: number; stream: string; text: string }[];
+    };
+    expect(result.isDevelopRunning).toBe(true);
+    expect(result.testState).toBe('running');
+    expect(result.browserErrors).toHaveLength(2);
+    expect(result.browserErrors[0]!.message).toBe('TypeError: foo is undefined');
+    expect(result.browserErrors[1]!.message).toBe('ReferenceError: bar');
+    expect(result.browserErrorCount).toBe(2);
+    expect(result.recentOutput).toHaveLength(4);
+  });
+
+  it('caps recentOutput at 200 lines', () => {
+    const { ctx, develop, writes } = makeCtx();
+    const rec = fakeDevelopRecord(writes);
+    for (let i = 0; i < 250; i++) {
+      rec.logTail.push({ ts: i, stream: 'stdout', text: `line${i}` });
+    }
+    rec.logTotal = 250;
+    rec.status = 'running';
+    develop.register(rec);
+    const result = patrolSessionStatusTool.handler({}, ctx) as {
+      recentOutput: unknown[];
+    };
+    expect(result.recentOutput).toHaveLength(200);
+  });
+
+  it('schema accepts empty object', () => {
+    expect(patrolSessionStatusTool.inputSchema.safeParse({}).success).toBe(true);
   });
 });

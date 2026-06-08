@@ -51,7 +51,7 @@
     "@types/ws": "^8.5.13",
     "rimraf": "^6.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20"

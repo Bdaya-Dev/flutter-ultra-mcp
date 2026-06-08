@@ -15,6 +15,8 @@ import type { PatrolJobRecord } from './job-store.js';
 
 export class DevelopSessionManager {
   private current: PatrolJobRecord | null = null;
+  lastTestFile: string | null = null;
+  lastRecordingPath: string | null = null;
 
   /** Returns the current warm session, or null if none. */
   get(): PatrolJobRecord | null {
@@ -33,6 +35,8 @@ export class DevelopSessionManager {
       );
     }
     this.current = record;
+    this.lastTestFile = null;
+    this.lastRecordingPath = null;
   }
 
   /**
@@ -46,8 +50,18 @@ export class DevelopSessionManager {
     return child.stdin.write(payload);
   }
 
+  setTestFile(testFile: string): void {
+    this.lastTestFile = testFile;
+  }
+
+  setRecordingPath(path: string): void {
+    this.lastRecordingPath = path;
+  }
+
   /** Clears the current pointer (called by tool handlers on quit / exit). */
   clear(): void {
     this.current = null;
+    this.lastTestFile = null;
+    this.lastRecordingPath = null;
   }
 }

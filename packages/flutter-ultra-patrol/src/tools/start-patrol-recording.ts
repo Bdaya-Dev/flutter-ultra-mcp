@@ -20,6 +20,7 @@ export const startPatrolRecordingTool = defineTool({
     const fps = input.fps ?? 10;
     const sent = ctx.develop.send(`recording start ${format} ${fps} ${input.outputPath}`);
     if (!sent) return { ok: false, reason: 'stdin_closed' };
+    ctx.develop.setRecordingPath(input.outputPath);
     return {
       ok: true,
       taskId: session.id,

@@ -15,7 +15,7 @@ import { findNode, parseUiautomatorXml, parseWdaSourceXml, type A11yNode } from 
 const A11Y_KEEP_FIELDS = new Set([
   'resource-id', 'resourceId', 'text', 'content-desc', 'contentDesc',
   'class', 'className', 'bounds', 'clickable', 'focusable', 'focused',
-  'checked', 'selected', 'children', 'path',
+  'checked', 'selected', 'enabled', 'children', 'path',
 ]);
 
 /**
@@ -39,10 +39,16 @@ function compactA11yTree(node: A11yNode): A11yNode[] {
     if (value === null || value === undefined || value === '') continue;
     stripped[key] = value;
   }
-  stripped.children = compactedChildren;
+  if (compactedChildren.length > 0) {
+    stripped.children = compactedChildren;
+  }
 
   const result = stripped as unknown as A11yNode;
-  result.children = compactedChildren;
+  if (compactedChildren.length > 0) {
+    result.children = compactedChildren;
+  } else {
+    result.children = [];
+  }
 
   // If the node has no identifying info beyond path + children, flatten it
   // by hoisting its children to the parent level.

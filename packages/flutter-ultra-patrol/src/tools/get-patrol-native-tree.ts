@@ -87,8 +87,13 @@ function postJson(port: number, body: unknown): Promise<unknown> {
         const chunks: Buffer[] = [];
         res.on('data', (chunk: Buffer) => chunks.push(chunk));
         res.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf8');
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(`HTTP ${res.statusCode}: ${body.slice(0, 512)}`));
+            return;
+          }
           try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+            resolve(JSON.parse(body));
           } catch (err) {
             reject(new Error(`Failed to parse response JSON: ${(err as Error).message}`));
           }
@@ -150,7 +155,13 @@ export const getPatrolNativeTreeTool = defineTool({
 });
 
 function compactTree(raw: unknown): unknown {
-  if (Array.isArray(raw)) return raw.map((n) => trimNode(n as NativeNode));
-  if (raw !== null && typeof raw === 'object') return trimNode(raw as NativeNode);
+  if (Array.isArray(raw)) return flattenChildren(raw as NativeNode[]);
+  if (raw !== null && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    if (Array.isArray(obj.roots)) {
+      return { ...obj, roots: flattenChildren(obj.roots as NativeNode[]) };
+    }
+    return trimNode(raw as NativeNode);
+  }
   return raw;
 }

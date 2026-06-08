@@ -38,14 +38,15 @@ export const patrolSessionStatusTool = defineTool({
 
     const testState = deriveTestState(session);
     const tail = session.logTail;
-    const recentOutput = tail.slice(-200).map((l) => ({
+    const recentSlice = tail.slice(-200);
+    const recentOutput = recentSlice.map((l) => ({
       ts: l.ts,
       stream: l.stream,
       text: l.text,
     }));
 
     const browserErrors: { ts: number; message: string }[] = [];
-    for (const line of tail) {
+    for (const line of recentSlice) {
       const m = line.text.match(BROWSER_ERROR_LINE);
       if (m && m[1]) browserErrors.push({ ts: line.ts, message: m[1] });
     }

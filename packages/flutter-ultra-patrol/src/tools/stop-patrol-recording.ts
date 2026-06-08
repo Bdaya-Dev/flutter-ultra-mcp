@@ -1,6 +1,6 @@
 // stop_patrol_recording — finalize the active recording.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { z } from 'zod';
 import { defineTool } from './types.js';
 
@@ -11,15 +11,20 @@ function mimeTypeForExt(filePath: string): string {
   return 'application/octet-stream';
 }
 
-function waitForFile(filePath: string, timeoutMs: number, intervalMs: number): Promise<boolean> {
+function waitForFile(filePath: string, timeoutMs: number, intervalMs: number, afterMs?: number): Promise<boolean> {
+  const isFresh = (p: string): boolean => {
+    if (!existsSync(p)) return false;
+    if (afterMs === undefined) return true;
+    try { return statSync(p).mtimeMs >= afterMs; } catch { return false; }
+  };
   return new Promise((resolve) => {
-    if (existsSync(filePath)) {
+    if (isFresh(filePath)) {
       resolve(true);
       return;
     }
     const deadline = Date.now() + timeoutMs;
     const timer = setInterval(() => {
-      if (existsSync(filePath)) {
+      if (isFresh(filePath)) {
         clearInterval(timer);
         resolve(true);
       } else if (Date.now() >= deadline) {
@@ -45,6 +50,7 @@ export const stopPatrolRecordingTool = defineTool({
   async handler(input, ctx) {
     const session = ctx.develop.get();
     if (!session) return { ok: false, reason: 'no_develop_session' };
+    const stopRequestedAt = ctx.now();
     const sent = ctx.develop.send('recording stop');
     if (!sent) return { ok: false, reason: 'stdin_closed' };
 
@@ -57,8 +63,12 @@ export const stopPatrolRecordingTool = defineTool({
       dispatchedAt: ctx.now(),
     };
 
+    if (input.returnBase64 && !outputPath) {
+      return { ...base, base64: null, base64Error: 'no_recording_path' };
+    }
+
     if (input.returnBase64 && outputPath) {
-      const found = await waitForFile(outputPath, 10_000, 500);
+      const found = await waitForFile(outputPath, 10_000, 500, stopRequestedAt);
       if (found) {
         try {
           const data = readFileSync(outputPath);

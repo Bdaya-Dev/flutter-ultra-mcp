@@ -118,4 +118,15 @@ describe('DevelopSessionManager', () => {
     expect(m.lastRecordingPath).toBeNull();
     expect(m.get()).toBeNull();
   });
+
+  it('register() resets lastTestFile and lastRecordingPath', () => {
+    const m = new DevelopSessionManager();
+    m.setTestFile('old_test.dart');
+    m.setRecordingPath('/tmp/old_recording.gif');
+    // clear() the old session so register() doesn't throw "already active"
+    m.clear();
+    m.register(makeRecord());
+    expect(m.lastTestFile).toBeNull();
+    expect(m.lastRecordingPath).toBeNull();
+  });
 });

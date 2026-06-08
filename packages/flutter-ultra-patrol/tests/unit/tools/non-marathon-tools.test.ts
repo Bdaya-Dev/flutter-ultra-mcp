@@ -561,31 +561,30 @@ describe('patrol_develop_run', () => {
     develop.register(fakeDevelopRecord(writes));
     expect(patrolDevelopRunTool.handler({ testName: 'login flow' }, ctx)).toMatchObject({
       ok: true,
-      action: 'run_test',
     });
     expect(writes).toEqual(['t login flow\n']);
   });
 
-  it('sends hot restart R when same test re-dispatched', () => {
+  it('sends t <name> again when same test re-dispatched', () => {
     const { ctx, develop, writes } = makeCtx();
     develop.register(fakeDevelopRecord(writes));
     const first = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
-    expect(first).toMatchObject({ ok: true, action: 'run_test' });
+    expect(first).toMatchObject({ ok: true });
     expect(writes).toEqual(['t login\n']);
 
     const second = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
-    expect(second).toMatchObject({ ok: true, action: 'hot_restart' });
-    expect(writes).toEqual(['t login\n', 'R\n']);
+    expect(second).toMatchObject({ ok: true });
+    expect(writes).toEqual(['t login\n', 't login\n']);
   });
 
   it('sends t <name> for different test after first', () => {
     const { ctx, develop, writes } = makeCtx();
     develop.register(fakeDevelopRecord(writes));
     const first = patrolDevelopRunTool.handler({ testName: 'login' }, ctx);
-    expect(first).toMatchObject({ ok: true, action: 'run_test' });
+    expect(first).toMatchObject({ ok: true });
 
     const second = patrolDevelopRunTool.handler({ testName: 'signup' }, ctx);
-    expect(second).toMatchObject({ ok: true, action: 'run_test' });
+    expect(second).toMatchObject({ ok: true });
     expect(writes).toEqual(['t login\n', 't signup\n']);
   });
 });
@@ -665,7 +664,7 @@ describe('start/stop_patrol_recording', () => {
     expect(result.base64).toBeUndefined();
   });
 
-  it('stop returns no base64 field when returnBase64:true but no recording path', async () => {
+  it('stop returns base64Error when returnBase64:true but no recording path', async () => {
     const { ctx, develop, writes } = makeCtx();
     develop.register(fakeDevelopRecord(writes));
     // lastRecordingPath is null by default — never called setRecordingPath
@@ -674,7 +673,8 @@ describe('start/stop_patrol_recording', () => {
       unknown
     >;
     expect(result.ok).toBe(true);
-    expect(result.base64).toBeUndefined();
+    expect(result.base64).toBeNull();
+    expect(result.base64Error).toBe('no_recording_path');
   });
 
   it('stop schema accepts returnBase64 boolean', () => {

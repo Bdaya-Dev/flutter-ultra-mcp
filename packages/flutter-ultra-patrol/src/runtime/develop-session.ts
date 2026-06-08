@@ -35,6 +35,8 @@ export class DevelopSessionManager {
       );
     }
     this.current = record;
+    this.lastTestFile = null;
+    this.lastRecordingPath = null;
   }
 
   /**

@@ -25,9 +25,7 @@ export const patrolDevelopRunTool = defineTool({
       };
     }
 
-    const sameTest = ctx.develop.lastTestFile === input.testName;
-    const command = sameTest ? 'R' : `t ${input.testName}`;
-    const sent = ctx.develop.send(command);
+    const sent = ctx.develop.send(`t ${input.testName}`);
     if (!sent) {
       return {
         ok: false,
@@ -38,7 +36,6 @@ export const patrolDevelopRunTool = defineTool({
     ctx.develop.setTestFile(input.testName);
     return {
       ok: true,
-      action: sameTest ? 'hot_restart' : 'run_test',
       taskId: session.id,
       dispatchedAt: ctx.now(),
       testName: input.testName,

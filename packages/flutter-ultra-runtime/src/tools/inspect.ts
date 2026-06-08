@@ -194,7 +194,7 @@ export function registerInspectTools(opts: {
               { isolateId, args: {} },
             );
             return {
-              tree: args.compact ? compactWidgetRoot(result) : result,
+              tree: result,
               _fallback: 'ultra.interactiveElements',
               _note:
                 'Inspector widget tree unavailable on this target (web/DWDS). ' +

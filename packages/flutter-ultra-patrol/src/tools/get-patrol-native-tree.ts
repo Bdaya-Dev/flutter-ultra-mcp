@@ -123,7 +123,6 @@ export const getPatrolNativeTreeTool = defineTool({
       .boolean()
       .default(true)
       .describe('Strip non-essential fields and flatten anonymous wrapper nodes.'),
-    deviceId: z.string().optional().describe('Device ID for ADB port forwarding.'),
   }),
   async handler(input, ctx) {
     const session = ctx.develop.get();
@@ -145,14 +144,25 @@ export const getPatrolNativeTreeTool = defineTool({
       };
     }
 
-    if (!input.compact) {
-      return { ok: true, taskId: session.id, tree: raw };
+    const tree = input.compact ? compactTree(raw) : raw;
+
+    if (isEmptyTree(tree)) {
+      return { ok: false, reason: 'empty_tree', taskId: session.id };
     }
 
-    const tree = compactTree(raw);
     return { ok: true, taskId: session.id, tree };
   },
 });
+
+function isEmptyTree(tree: unknown): boolean {
+  if (tree == null) return true;
+  if (Array.isArray(tree)) return tree.length === 0;
+  if (typeof tree === 'object') {
+    const obj = tree as Record<string, unknown>;
+    if (Array.isArray(obj.roots)) return obj.roots.length === 0;
+  }
+  return false;
+}
 
 function compactTree(raw: unknown): unknown {
   if (Array.isArray(raw)) return flattenChildren(raw as NativeNode[]);

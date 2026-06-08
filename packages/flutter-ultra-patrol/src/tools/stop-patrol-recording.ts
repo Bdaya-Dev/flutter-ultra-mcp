@@ -1,6 +1,7 @@
 // stop_patrol_recording — finalize the active recording.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { z } from 'zod';
 import { defineTool } from './types.js';
 
@@ -68,11 +69,16 @@ export const stopPatrolRecordingTool = defineTool({
     }
 
     if (input.returnBase64 && outputPath) {
-      const found = await waitForFile(outputPath, 10_000, 500, stopRequestedAt);
+      const resolvedPath = resolve(outputPath);
+      const allowedExts = ['.gif', '.webm', '.mp4'];
+      if (!allowedExts.some((ext) => resolvedPath.toLowerCase().endsWith(ext))) {
+        return { ...base, base64: null, base64Error: 'invalid_file_extension' };
+      }
+      const found = await waitForFile(resolvedPath, 10_000, 500, stopRequestedAt);
       if (found) {
         try {
-          const data = readFileSync(outputPath);
-          return { ...base, base64: data.toString('base64'), mimeType: mimeTypeForExt(outputPath) };
+          const data = readFileSync(resolvedPath);
+          return { ...base, base64: data.toString('base64'), mimeType: mimeTypeForExt(resolvedPath) };
         } catch {
           return { ...base, base64: null, base64Error: 'read_failed' };
         }

@@ -12,11 +12,24 @@
 // existing one with kind='reused'.
 
 import type { PatrolJobRecord } from './job-store.js';
+import { CdpConsoleCapture, type CdpError } from './cdp-console-capture.js';
 
 export class DevelopSessionManager {
   private current: PatrolJobRecord | null = null;
+  private cdpCapture: CdpConsoleCapture | null = null;
   lastTestFile: string | null = null;
   lastRecordingPath: string | null = null;
+
+  get cdpErrors(): ReadonlyArray<CdpError> {
+    return this.cdpCapture?.capturedErrors ?? [];
+  }
+
+  async startCdpCapture(port: number): Promise<void> {
+    this.cdpCapture?.disconnect();
+    const capture = new CdpConsoleCapture();
+    await capture.connect(port);
+    this.cdpCapture = capture;
+  }
 
   /** Returns the current warm session, or null if none. */
   get(): PatrolJobRecord | null {
@@ -34,6 +47,8 @@ export class DevelopSessionManager {
         `develop session already active (job ${this.current.id}); call patrol_develop_quit first`,
       );
     }
+    this.cdpCapture?.disconnect();
+    this.cdpCapture = null;
     this.current = record;
     this.lastTestFile = null;
     this.lastRecordingPath = null;
@@ -60,6 +75,8 @@ export class DevelopSessionManager {
 
   /** Clears the current pointer (called by tool handlers on quit / exit). */
   clear(): void {
+    this.cdpCapture?.disconnect();
+    this.cdpCapture = null;
     this.current = null;
     this.lastTestFile = null;
     this.lastRecordingPath = null;

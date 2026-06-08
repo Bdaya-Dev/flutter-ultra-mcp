@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.3...v1.17.0) (2026-06-08)
+
+
+### Features
+
+* patrol_mcp audit — 6 new features ([#141](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/141)) ([ab76218](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/ab762186398e322b37bdc7addaeed6d7cdad20c1)), closes [#135](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/135) [#136](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/136) [#137](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/137) [#138](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/138) [#139](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/139) [#140](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/140) [#140](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/140) [135-#140](https://github.com/135-/issues/140) [#143](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/143)
+
 ## [1.16.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.2...v1.16.3) (2026-05-25)
 
 

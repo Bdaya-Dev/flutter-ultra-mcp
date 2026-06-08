@@ -678,7 +678,9 @@ describe('start/stop_patrol_recording', () => {
   });
 
   it('stop schema accepts returnBase64 boolean', () => {
-    expect(stopPatrolRecordingTool.inputSchema.safeParse({ returnBase64: true }).success).toBe(true);
+    expect(stopPatrolRecordingTool.inputSchema.safeParse({ returnBase64: true }).success).toBe(
+      true,
+    );
     expect(stopPatrolRecordingTool.inputSchema.safeParse({}).success).toBe(true);
   });
 });

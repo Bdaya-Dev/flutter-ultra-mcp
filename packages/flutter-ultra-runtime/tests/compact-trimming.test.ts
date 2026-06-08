@@ -57,10 +57,10 @@ describe('compactWidgetTree', () => {
     const node = {
       description: 'Scaffold',
       type: 'Scaffold',
-      style: '',           // empty string -> removed
-      valueId: null,       // null -> removed
+      style: '', // empty string -> removed
+      valueId: null, // null -> removed
       createdByLocalProject: undefined, // undefined -> removed
-      hasChildren: false,  // falsy but not null/undefined/'' -> kept
+      hasChildren: false, // falsy but not null/undefined/'' -> kept
     };
 
     const result = compactWidgetTree(node);
@@ -120,7 +120,7 @@ describe('compactWidgetTree', () => {
     // A wrapper node whose only kept fields are all null/empty, but has children.
     // Should be flattened: its children get promoted up.
     const tree = {
-      objectId: 'obj/wrapper',        // stripped (not in keep-fields)
+      objectId: 'obj/wrapper', // stripped (not in keep-fields)
       renderObject: { type: 'Flex' }, // stripped
       children: [
         { description: 'Text("A")', type: 'Text' },
@@ -153,9 +153,7 @@ describe('compactWidgetTree', () => {
       children: [
         {
           objectId: 'w2',
-          children: [
-            { description: 'Leaf', type: 'Text' },
-          ],
+          children: [{ description: 'Leaf', type: 'Text' }],
         },
       ],
     };
@@ -200,9 +198,7 @@ describe('compactWidgetRoot', () => {
       description: 'MaterialApp',
       type: 'MaterialApp',
       objectId: 'obj/1',
-      children: [
-        { description: 'Scaffold', type: 'Scaffold', objectId: 'obj/2' },
-      ],
+      children: [{ description: 'Scaffold', type: 'Scaffold', objectId: 'obj/2' }],
     };
 
     const result = compactWidgetRoot(tree) as Record<string, unknown>;
@@ -266,9 +262,7 @@ describe('compactTextDump', () => {
 
     const result = compactTextDump(dump);
     // Lines " │", " │ │", and "   ├└─┌┐┘┤┬┴┼" are box-only -> removed
-    expect(result).toBe(
-      'RenderView#abc12\n ├─child: RenderFlex#def34\n └─child: RenderText#ghi56',
-    );
+    expect(result).toBe('RenderView#abc12\n ├─child: RenderFlex#def34\n └─child: RenderText#ghi56');
   });
 
   it('filters lines that are only a RenderObject class name with no properties', () => {
@@ -281,9 +275,7 @@ describe('compactTextDump', () => {
 
     const result = compactTextDump(dump);
     // "  RenderFlex" and "    RenderPositionedBox" match renderClassOnly -> removed
-    expect(result).toBe(
-      '  RenderFlex(direction: horizontal)\n    RenderParagraph: "Hello"',
-    );
+    expect(result).toBe('  RenderFlex(direction: horizontal)\n    RenderParagraph: "Hello"');
   });
 
   it('trims deep indentation to max 6 levels (12 spaces)', () => {
@@ -350,8 +342,15 @@ describe('compactTextDump', () => {
 
 describe('WIDGET_KEEP_FIELDS', () => {
   it('contains the expected field set', () => {
-    const expected = ['description', 'type', 'hasChildren', 'children', 'valueId',
-      'createdByLocalProject', 'style'];
+    const expected = [
+      'description',
+      'type',
+      'hasChildren',
+      'children',
+      'valueId',
+      'createdByLocalProject',
+      'style',
+    ];
     for (const field of expected) {
       expect(WIDGET_KEEP_FIELDS.has(field)).toBe(true);
     }
@@ -359,9 +358,17 @@ describe('WIDGET_KEEP_FIELDS', () => {
   });
 
   it('does not include common noise fields', () => {
-    for (const noise of ['objectId', 'renderObject', 'parentRenderElement',
-      'locationId', 'locationFile', 'locationLine', 'locationColumn',
-      'stateful', 'widgetRuntimeType']) {
+    for (const noise of [
+      'objectId',
+      'renderObject',
+      'parentRenderElement',
+      'locationId',
+      'locationFile',
+      'locationLine',
+      'locationColumn',
+      'stateful',
+      'widgetRuntimeType',
+    ]) {
       expect(WIDGET_KEEP_FIELDS.has(noise)).toBe(false);
     }
   });

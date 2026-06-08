@@ -12,11 +12,20 @@ function mimeTypeForExt(filePath: string): string {
   return 'application/octet-stream';
 }
 
-function waitForFile(filePath: string, timeoutMs: number, intervalMs: number, afterMs?: number): Promise<boolean> {
+function waitForFile(
+  filePath: string,
+  timeoutMs: number,
+  intervalMs: number,
+  afterMs?: number,
+): Promise<boolean> {
   const isFresh = (p: string): boolean => {
     if (!existsSync(p)) return false;
     if (afterMs === undefined) return true;
-    try { return statSync(p).mtimeMs >= afterMs; } catch { return false; }
+    try {
+      return statSync(p).mtimeMs >= afterMs;
+    } catch {
+      return false;
+    }
   };
   return new Promise((resolve) => {
     if (isFresh(filePath)) {
@@ -78,7 +87,11 @@ export const stopPatrolRecordingTool = defineTool({
       if (found) {
         try {
           const data = readFileSync(resolvedPath);
-          return { ...base, base64: data.toString('base64'), mimeType: mimeTypeForExt(resolvedPath) };
+          return {
+            ...base,
+            base64: data.toString('base64'),
+            mimeType: mimeTypeForExt(resolvedPath),
+          };
         } catch {
           return { ...base, base64: null, base64Error: 'read_failed' };
         }

@@ -22,8 +22,13 @@ const GROUP_NAME = 'flutter-ultra-runtime';
 
 /** Fields kept on each widget node when compact mode is active. */
 export const WIDGET_KEEP_FIELDS = new Set([
-  'description', 'type', 'hasChildren', 'children', 'valueId',
-  'createdByLocalProject', 'style',
+  'description',
+  'type',
+  'hasChildren',
+  'children',
+  'valueId',
+  'createdByLocalProject',
+  'style',
 ]);
 
 /**
@@ -34,7 +39,9 @@ export const WIDGET_KEEP_FIELDS = new Set([
  */
 export function compactWidgetTree(node: Record<string, unknown>): Record<string, unknown>[] {
   // Compact children first (depth-first).
-  const rawChildren = Array.isArray(node.children) ? (node.children as Record<string, unknown>[]) : [];
+  const rawChildren = Array.isArray(node.children)
+    ? (node.children as Record<string, unknown>[])
+    : [];
   const compactedChildren: Record<string, unknown>[] = [];
   for (const child of rawChildren) {
     compactedChildren.push(...compactWidgetTree(child));
@@ -170,9 +177,12 @@ export function registerInspectTools(opts: {
       inputShape: {
         sessionId: SessionIdSchema,
         groupName: z.string().default(GROUP_NAME),
-        compact: z.boolean().default(true).describe(
-          'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
-        ),
+        compact: z
+          .boolean()
+          .default(true)
+          .describe(
+            'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
+          ),
       },
       timeoutClass: 'quick',
       annotations: { readOnlyHint: true, idempotentHint: true },
@@ -486,9 +496,12 @@ export function registerInspectTools(opts: {
         description: `${ext} → plain-text tree dump.`,
         inputShape: {
           sessionId: SessionIdSchema,
-          compact: z.boolean().default(true).describe(
-            'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
-          ),
+          compact: z
+            .boolean()
+            .default(true)
+            .describe(
+              'Strip non-essential fields and flatten empty wrapper nodes to reduce token usage for AI agents.',
+            ),
         },
         timeoutClass: 'long',
         ceilingMs: 60_000,

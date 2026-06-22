@@ -54,7 +54,7 @@
     "@flutter-ultra/mcp-runtime": "^0.0.1",
     "@flutter-ultra/state-store": "^0.0.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "fast-xml-parser": "^5.8.0",
+    "fast-xml-parser": "^5.9.3",
     "playwright-core": "^1.49.0",
     "ssh2": "^1.16.0",
     "zod": "^3.23.8"

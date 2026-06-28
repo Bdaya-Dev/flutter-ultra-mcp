@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.0...v1.17.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* **gesture:** emit object inputSchema for top-level union tools ([#156](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/156)) ([21b4c37](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/21b4c37297f7ee1f9b9ee00d33ea67fd25204d5f))
+
 # [1.17.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.16.3...v1.17.0) (2026-06-08)
 
 

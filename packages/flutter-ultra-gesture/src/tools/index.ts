@@ -1,6 +1,6 @@
 // Registers all 17 gesture tools per plan §5.3.
 
-import { zodToJsonSchema } from '../json-schema.js';
+import { toInputJsonSchema } from '../json-schema.js';
 import type { z } from 'zod';
 
 import type { SessionRegistry } from '../session.js';
@@ -33,7 +33,7 @@ export interface GestureTool<
   description: string;
   inputSchema: TInput;
   outputSchema?: TOutput;
-  inputJsonSchema: ReturnType<typeof zodToJsonSchema>;
+  inputJsonSchema: ReturnType<typeof toInputJsonSchema>;
   handler: (input: z.infer<TInput>) => Promise<unknown>;
 }
 
@@ -48,7 +48,7 @@ export function defineTool<TInput extends z.ZodTypeAny, TOutput extends z.ZodTyp
     name: spec.name,
     description: spec.description,
     inputSchema: spec.inputSchema,
-    inputJsonSchema: zodToJsonSchema(spec.inputSchema),
+    inputJsonSchema: toInputJsonSchema(spec.inputSchema),
     handler: spec.handler,
   };
   if (spec.outputSchema !== undefined) {

@@ -26,6 +26,31 @@ export function zodToJsonSchema(schema: ZodTypeAny): JsonSchema {
   return convert(schema, new WeakSet());
 }
 
+// Normalise a tool's top-level Zod schema into a JSON Schema that MCP accepts
+// as a tool `inputSchema`.
+//
+// MCP requires every tool's top-level `inputSchema` to be an object schema
+// (`type: "object"`); Claude Code's validator rejects anything else with
+// `expected "object"`. A tool whose input is a top-level union — e.g. `swipe`'s
+// coordinate-vs-element form via `z.union([...])` — otherwise serialises to a
+// bare `{ anyOf: [...] }` (or `{ oneOf: [...] }` for a discriminated union)
+// with no top-level `type`, which fails that check. We wrap such roots so the
+// schema advertises `type: "object"` while the branch constraints still apply:
+// a valid instance must be an object AND match one of the union branches.
+//
+// Applying this at the single `defineTool` chokepoint fixes every current and
+// future tool, not just the one that surfaced the bug.
+export function toInputJsonSchema(schema: ZodTypeAny): JsonSchema {
+  const json = zodToJsonSchema(schema);
+  if (json.type === 'object') return json;
+  // Top-level union (anyOf/oneOf) or any other rootless schema (e.g. a no-arg
+  // tool that converted to `{}`): present an object schema to MCP while keeping
+  // the original constraints.
+  const wrapped: JsonSchema = { type: 'object', ...json };
+  if (wrapped.properties === undefined) wrapped.properties = {};
+  return wrapped;
+}
+
 function convert(schema: ZodTypeAny, lazyBodies: WeakSet<object>): JsonSchema {
   const def = (schema as { _def: { typeName: string } })._def;
   switch (def.typeName) {

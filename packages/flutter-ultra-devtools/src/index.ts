@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { PanelServer } from './panelServer.js';
 import { EventBus } from './eventBus.js';
 
-const server = createServer({
+export const server = createServer({
   info: { name: 'flutter-ultra-devtools', version: '0.1.0' },
 });
 
@@ -150,21 +150,7 @@ server.defineTool(
   },
 );
 
-const isDirectInvocation =
-  process.argv[1] !== undefined &&
-  import.meta.url === new URL(`file://${process.argv[1].replace(/\\/g, '/')}`).href;
-
-if (isDirectInvocation) {
-  server.start().catch((err) => {
-    process.stderr.write(
-      JSON.stringify({
-        ts: new Date().toISOString(),
-        level: 'error',
-        server: 'flutter-ultra-devtools',
-        msg: 'fatal',
-        err: err instanceof Error ? err.stack : String(err),
-      }) + '\n',
-    );
-    process.exit(1);
-  });
-}
+// No main-module guard here: `import.meta.url` vs `process.argv[1]` diverges
+// when the bundle is spawned through a symlink/junction (Node resolves the main
+// module's realpath while argv[1] keeps the link path), making the process exit
+// 0 silently. The always-run entry lives in bin.ts, like the other servers.

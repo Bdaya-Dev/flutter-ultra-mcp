@@ -183,7 +183,10 @@ export function startJob(opts: StartJobOptions): StartedJob {
     cwd: opts.cwd,
     env: opts.env ?? process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: false,
+    // Node >=20.12.2 refuses to spawn .bat/.cmd without a shell (CVE-2024-27980
+    // hardening -> spawn EINVAL), and resolveCli returns flutter.bat/dart.bat
+    // on Windows. Non-batch commands keep shell-less spawn semantics.
+    shell: process.platform === 'win32' && /\.(bat|cmd)$/i.test(opts.cmd),
     windowsHide: true,
     detached: false, // managed within this process; cleanup on server exit
   });

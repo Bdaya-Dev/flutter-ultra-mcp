@@ -5,6 +5,7 @@ import { platform } from 'node:os';
 import { z } from 'zod';
 import { defineTool } from './types.js';
 import { findFlutterProject } from '../runtime/project.js';
+import { needsBatShell } from '../runtime/patrol-cli.js';
 
 interface DoctorCheck {
   name: string;
@@ -60,6 +61,7 @@ export const patrolDoctorTool = defineTool({
         cwd: project.root,
         env: { ...process.env },
         stdio: ['ignore', 'pipe', 'pipe'],
+        shell: needsBatShell(dartCmd),
         windowsHide: true,
       });
 

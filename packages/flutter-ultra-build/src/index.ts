@@ -102,23 +102,7 @@ export async function main(): Promise<void> {
   log.info('server started', { server: SERVER_NAME, version: SERVER_VERSION });
 }
 
-// `import.meta.url`-based main-module guard works under Node ESM.
-const invokedAsScript = (() => {
-  try {
-    const argv1 = process.argv[1];
-    if (!argv1) return false;
-    const argvUrl = new URL(`file://${argv1.replace(/\\/g, '/')}`).href;
-    return import.meta.url === argvUrl || import.meta.url.endsWith(argv1.replace(/\\/g, '/'));
-  } catch {
-    return false;
-  }
-})();
-
-if (invokedAsScript) {
-  main().catch((err: unknown) => {
-    log.error('fatal in main', {
-      err: err instanceof Error ? (err.stack ?? err.message) : String(err),
-    });
-    process.exit(1);
-  });
-}
+// No main-module guard here: `import.meta.url` vs `process.argv[1]` diverges
+// when the bundle is spawned through a symlink/junction (Node resolves the main
+// module's realpath while argv[1] keeps the link path), making the process exit
+// 0 silently. The always-run entry lives in bin.ts, like the other servers.

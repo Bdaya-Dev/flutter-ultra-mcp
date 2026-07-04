@@ -1,3 +1,10 @@
+## [1.17.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.2...v1.17.3) (2026-07-04)
+
+
+### Bug Fixes
+
+* **patrol:** await job-store recovery before connect; drop vestigial main-module guards ([#158](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/158)) ([2d84f83](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/2d84f83aa9e508823af08bad2f38a0e9a59fd2a6)), closes [#157](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/157)
+
 ## [1.17.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.1...v1.17.2) (2026-07-04)
 
 

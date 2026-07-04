@@ -1,3 +1,10 @@
+## [1.17.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.1...v1.17.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* junction-safe server entries + shell for .bat job spawns on Windows ([#157](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/157)) ([73a714f](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/73a714fba6482edcc853f0879ef109bfa5a037fa))
+
 ## [1.17.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.0...v1.17.1) (2026-06-28)
 
 

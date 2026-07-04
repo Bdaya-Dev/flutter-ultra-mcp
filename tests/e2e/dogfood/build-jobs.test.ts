@@ -41,28 +41,33 @@ describe.skipIf(!flutterOnPath)('build server start_* jobs (real flutter spawn)'
     client = undefined;
   });
 
-  it('start_run_unit_tests runs the counter-app suite to completion', { timeout: 300_000 }, async () => {
-    client = spawnMcpClient(BUILD_BIN, ROOT);
-    await client.initialize();
+  it(
+    'start_run_unit_tests runs the counter-app suite to completion',
+    { timeout: 300_000 },
+    async () => {
+      client = spawnMcpClient(BUILD_BIN, ROOT);
+      await client.initialize();
 
-    // Pre-fix this call itself errored with a synchronous `spawn EINVAL`.
-    const started = (await client.callTool('start_run_unit_tests', {
-      root: COUNTER_APP,
-    })) as StartResult;
-    expect(started.jobId).toBeTruthy();
+      // Pre-fix this call itself errored with a synchronous `spawn EINVAL`.
+      const started = (await client.callTool('start_run_unit_tests', {
+        root: COUNTER_APP,
+      })) as StartResult;
+      expect(started.jobId).toBeTruthy();
 
-    let last: PollResult = {};
-    const deadline = Date.now() + 240_000;
-    while (Date.now() < deadline) {
-      last = (await client.callTool('poll_run_unit_tests', {
-        jobId: started.jobId,
-      })) as PollResult;
-      if (last.status !== 'pending' && last.status !== 'running') break;
-      await new Promise((r) => setTimeout(r, 2000));
-    }
+      let last: PollResult = {};
+      const deadline = Date.now() + 240_000;
+      while (Date.now() < deadline) {
+        last = (await client.callTool('poll_run_unit_tests', {
+          jobId: started.jobId,
+        })) as PollResult;
+        if (last.status !== 'pending' && last.status !== 'running') break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
 
-    expect(last.status, `job ended ${last.status}: ${last.errorSummary ?? ''}\n${last.stdoutTail ?? ''}`).toBe(
-      'completed',
-    );
-  });
+      expect(
+        last.status,
+        `job ended ${last.status}: ${last.errorSummary ?? ''}\n${last.stdoutTail ?? ''}`,
+      ).toBe('completed');
+    },
+  );
 });

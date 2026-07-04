@@ -8,7 +8,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createPatrolServer, SERVER_NAME } from './server.js';
 
 async function main(): Promise<void> {
-  const { server, logger } = createPatrolServer();
+  const { server, logger, recovered } = createPatrolServer();
+  // Persisted jobs must be recovered before the first poll/get tool call,
+  // or a pre-restart jobId would spuriously resolve to "Unknown jobId".
+  await recovered;
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info('flutter-ultra-patrol ready');

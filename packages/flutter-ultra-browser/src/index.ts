@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-// flutter-ultra-browser MCP server entrypoint.
+// flutter-ultra-browser MCP server module (executable entry lives in bin.ts).
 //
 // Plan §5.4. Tool catalog: launch_browser, close_browser, new_context,
 // close_context, new_tab, navigate, intercept_redirect, wait_for_url, click,
@@ -341,7 +340,11 @@ export function buildToolRegistry(): Map<string, ToolDefErased> {
   return map;
 }
 
-async function main(): Promise<void> {
+// Server bootstrap — the single implementation, consumed by the bin.ts entry.
+// No main-module guard: importing this module never starts the server, and
+// guards comparing import.meta.url to argv[1] break under symlinked spawn
+// paths (Node realpath-resolves the main module).
+export async function main(): Promise<void> {
   const registry = buildToolRegistry();
   log.info('starting', { tools: registry.size });
 
@@ -418,19 +421,8 @@ async function main(): Promise<void> {
 
   process.on('SIGTERM', () => void cleanup('SIGTERM'));
   process.on('SIGINT', () => void cleanup('SIGINT'));
+  process.stdin.once('close', () => void cleanup('stdin-close'));
 
   await server.connect(transport);
   log.info('ready');
-}
-
-// Allow this file to be imported by tests without auto-starting the server.
-// In an ESM Node 22 entrypoint, import.meta.url === pathToFileURL(process.argv[1]).
-const isEntrypoint =
-  process.argv[1] && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`;
-
-if (isEntrypoint) {
-  main().catch((err) => {
-    log.error('fatal', { err: (err as Error).message, stack: (err as Error).stack });
-    process.exit(1);
-  });
 }

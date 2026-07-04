@@ -38,9 +38,15 @@ jobs:
       - name: Build TS servers
         run: npm run build
 
+      - name: Bundle MCP servers
+        run: node scripts/bundle.mjs
+
       - name: Flutter pub get (counter-app)
         working-directory: examples/counter-app
         run: flutter pub get
+
+      - name: Build-server job tools E2E (spawns flutter.bat)
+        run: npx vitest run tests/e2e/dogfood/build-jobs.test.ts
 
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop

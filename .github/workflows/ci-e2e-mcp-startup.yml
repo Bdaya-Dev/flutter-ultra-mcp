@@ -51,6 +51,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: node scripts/bundle.mjs
+      - name: Server startup E2E (all bundles, direct + symlinked spawn)
+        run: npx vitest run tests/e2e/dogfood/server-startup.test.ts
       - name: Plugin-deps E2E (isolated ssh2 + MCP initialize)
         run: npm run test:e2e:plugin-deps
       - name: Dogfood runtime smoke

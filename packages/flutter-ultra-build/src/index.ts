@@ -1,6 +1,5 @@
-#!/usr/bin/env node
 /**
- * flutter-ultra-build MCP server entrypoint.
+ * flutter-ultra-build MCP server module (executable entry lives in bin.ts).
  *
  * Bundles all build-time tools per plan §5.1 (~50 tools after rev-10 expansion):
  *   - Project meta:        list_projects, project_info, list_flavors, list_dart_defines

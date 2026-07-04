@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-// flutter-ultra-devtools MCP server entrypoint.
+// flutter-ultra-devtools MCP server module (executable entry lives in bin.ts).
 //
 // Plan §5.7. Tool catalog: start_panel_server, stop_panel_server,
 // panel_status, push_event, panel_command.

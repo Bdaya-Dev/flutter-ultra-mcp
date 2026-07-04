@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { z } from 'zod';
 import { defineTool } from './types.js';
 import { findFlutterProject } from '../runtime/project.js';
-import { buildPatrolInvocation } from '../runtime/patrol-cli.js';
+import { buildPatrolInvocation, needsBatShell } from '../runtime/patrol-cli.js';
 
 const dartDefineSchema = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
@@ -124,6 +124,7 @@ export const startPatrolTestTool = defineTool({
       cwd: project.root,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: needsBatShell(invocation.command),
       windowsHide: true,
     });
     ctx.jobs.attachChild(record.id, child);

@@ -48,6 +48,16 @@ const WRAPPER_NAMES_WINDOWS = ['run_patrol_web.ps1', 'run_patrol.ps1'];
 const WRAPPER_NAMES_POSIX = ['run_patrol_web.sh', 'run_patrol.sh'];
 
 /**
+ * Node >=20.12.2 refuses to spawn `.bat`/`.cmd` without a shell
+ * (CVE-2024-27980 hardening -> `spawn EINVAL`), and dart-run invocations
+ * resolve to `dart.bat` on Windows. Non-batch commands (pwsh wrappers)
+ * keep shell-less spawn semantics.
+ */
+export function needsBatShell(command: string): boolean {
+  return platform() === 'win32' && /\.(bat|cmd)$/i.test(command);
+}
+
+/**
  * Compute the spawn command + args for one patrol_cli invocation. Pure
  * over filesystem reads via {@link existsSync} so a `useRawCli` short-circuit
  * is the deterministic test path.

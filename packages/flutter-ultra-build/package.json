@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "flutter-ultra-build": "dist/index.js"
+    "flutter-ultra-build": "dist/bin.js"
   },
   "files": [
     "dist",

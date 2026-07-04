@@ -24,27 +24,21 @@ const root = resolve(__dirname, '..');
  * Packages that cannot be inlined because they have complex internal
  * dynamic requires or native bindings.
  */
-const ALWAYS_EXTERNAL = [
-  'playwright-core',
-  'playwright-core/*',
-  'ssh2',
-  'ssh2/*',
-  'cpu-features',
-];
+const ALWAYS_EXTERNAL = ['playwright-core', 'playwright-core/*', 'ssh2', 'ssh2/*', 'cpu-features'];
 
 /** Shim file that provides __importMetaUrl for CJS output. */
 const importMetaShim = resolve(__dirname, 'import-meta-shim.js');
 
 /** @type {Array<{ pkg: string; entry: string; out: string }>} */
 const servers = [
-  { pkg: 'flutter-ultra-build',          entry: 'src/index.ts', out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-runtime',        entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-gesture',        entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-browser',        entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-native-mobile',  entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-native-desktop', entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-devtools',       entry: 'src/index.ts', out: 'dist/bin.cjs' },
-  { pkg: 'flutter-ultra-patrol',         entry: 'src/bin.ts',   out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-build', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-runtime', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-gesture', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-browser', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-native-mobile', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-native-desktop', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-devtools', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
+  { pkg: 'flutter-ultra-patrol', entry: 'src/bin.ts', out: 'dist/bin.cjs' },
 ];
 
 const errors = [];

@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { z } from 'zod';
 import { defineTool } from './types.js';
 import { findFlutterProject } from '../runtime/project.js';
-import { buildPatrolInvocation } from '../runtime/patrol-cli.js';
+import { buildPatrolInvocation, needsBatShell } from '../runtime/patrol-cli.js';
 
 export const startPatrolDevelopTool = defineTool({
   name: 'start_patrol_develop',
@@ -63,6 +63,7 @@ export const startPatrolDevelopTool = defineTool({
       env,
       // develop accepts stdin commands (r=hot-reload, R=hot-restart, q=quit).
       stdio: ['pipe', 'pipe', 'pipe'],
+      shell: needsBatShell(invocation.command),
       windowsHide: true,
     });
     ctx.jobs.attachChild(record.id, child);

@@ -10,10 +10,18 @@
 //   const result = await exec(['adb', 'devices']);
 
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
-import { Client } from 'ssh2';
-import type { ClientChannel, SFTPWrapper, ClientErrorExtensions } from 'ssh2';
+// `ssh2` is an esbuild external (native bindings) resolved at runtime via
+// NODE_PATH=${CLAUDE_PLUGIN_DATA}/node_modules after ensure-plugin-deps.js.
+// It is imported for TYPES only here; the value is loaded lazily inside
+// createConnection() via createRequire so the MCP server still starts (and all
+// local-device tools stay usable) even when ssh2 has not been installed yet —
+// only the remote-SSH tools error, mirroring how the browser server lazily
+// requires playwright-core. A top-level value import would run require('ssh2')
+// at module load and crash the transport on connect.
+import type { Client, ClientChannel, SFTPWrapper, ClientErrorExtensions } from 'ssh2';
 import type { ShellResult, ShellOptions } from './device.js';
 
 const DEFAULT_EXEC_TIMEOUT_MS = 60_000;
@@ -59,6 +67,9 @@ export class SshTransport {
       ? resolve(homedir(), this.config.privateKeyPath.slice(2))
       : this.config.privateKeyPath;
     const privateKey = await readFile(keyPath);
+    // Lazy load so a missing ssh2 install only affects remote-SSH calls, not
+    // server startup. createRequire honors NODE_PATH; ESM import() would not.
+    const { Client } = createRequire(import.meta.url)('ssh2') as typeof import('ssh2');
     return new Promise<Client>((resolve, reject) => {
       const client = new Client();
       client

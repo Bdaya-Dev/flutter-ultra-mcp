@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sidecar-flaui-win-x64
           path: vendor/sidecar-flaui/bin/win-x64/
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sidecar-ax-swift-macos-universal
           path: vendor/sidecar-ax-swift/.build/release/
@@ -112,7 +112,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sidecar-atspi-linux-x64
           path: vendor/sidecar-atspi-python/dist/

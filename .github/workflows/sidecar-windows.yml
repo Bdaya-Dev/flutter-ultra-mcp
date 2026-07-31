@@ -52,7 +52,7 @@ jobs:
           $out = & bin/${{ matrix.rid }}/flutter-ultra-win-helper.exe --version
           if ($out -ne '0.1.0') { Write-Error "expected '0.1.0', got '$out'"; exit 1 }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: flutter-ultra-win-helper-${{ matrix.rid }}
           path: packages/flutter-ultra-native-desktop/sidecars/windows-flaui/bin/${{ matrix.rid }}/flutter-ultra-win-helper.exe

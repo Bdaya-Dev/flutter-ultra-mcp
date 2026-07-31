@@ -45,7 +45,7 @@ jobs:
           NODE_ENV: test
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chaos-results-${{ matrix.os }}
           path: chaos-results.xml

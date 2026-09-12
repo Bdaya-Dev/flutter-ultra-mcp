@@ -28,6 +28,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "bundle": "node scripts/bundle.mjs",
+    "emit:hermes": "node scripts/emit-hermes.mjs",
     "prepare": "npm run build --if-present || true",
     "test:e2e:web": "vitest run tests/e2e/web/",
     "test:e2e:oidc": "vitest run tests/e2e/oidc/",
@@ -93,5 +94,11 @@
     "CONTRIBUTING.md",
     "SECURITY.md",
     "CODE_OF_CONDUCT.md"
-  ]
+  ],
+  "allowScripts": {
+    "cpu-features@0.0.10": true,
+    "esbuild@0.28.0": true,
+    "protobufjs@7.6.2": true,
+    "ssh2@1.17.0": true
+  }
 }

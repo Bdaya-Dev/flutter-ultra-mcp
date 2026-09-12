@@ -74,3 +74,6 @@ __pycache__/
 
 # Local audit / research scratch
 AUDIT_SUMMARY.txt
+
+# Hermes emit intermediate
+scripts/probe-tools-output.json

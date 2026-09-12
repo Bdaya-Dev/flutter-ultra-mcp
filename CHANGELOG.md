@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.3...v1.18.0) (2026-09-12)
+
+
+### Features
+
+* emit Hermes native plugin from MCP server definitions ([#163](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/163)) ([b0b5e53](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/b0b5e5366e1c934bf996e3b8b2f25ece5eb980e3)), closes [#869](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/869) [#854](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/854)
+
 ## [1.17.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.2...v1.17.3) (2026-07-04)
 
 

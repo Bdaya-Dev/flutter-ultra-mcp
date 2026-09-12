@@ -201,6 +201,11 @@ jobs:
       - name: Dependency audit
         run: npm audit --audit-level=high
       - name: License compliance
+        # Run even if the audit above fails: a red audit gate must not leave
+        # License and OSV reporting permanently dark (issue #164). The audit
+        # step stays strict — no allowlist, no continue-on-error.
+        if: ${{ always() }}
         run: npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0;SSPL-1.0;EUPL-1.1;EUPL-1.2"
       - name: OSV vulnerability scan
+        if: ${{ always() }}
         run: npx --yes osv-scanner --lockfile=package-lock.json || true

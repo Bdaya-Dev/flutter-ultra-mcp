@@ -37,7 +37,22 @@ def _make_handler(tool_name: str):
     def handler(args: Any, **kwargs: Any) -> Dict[str, Any]:
         if _POOL is None:
             return {"error": "hermes-flutter-ultra: pool not initialized"}
-        arg_map = args if isinstance(args, dict) else {}
+        # Hermes passes a dict for tools with arguments and may pass None for
+        # a no-arg tool. Anything ELSE is a wire-shape surprise: coercing it to
+        # {} silently drops every argument, so the tool runs with no input and
+        # returns a confidently wrong result or an opaque Zod error. Refuse
+        # instead -- a loud error names the real problem.
+        if args is None:
+            arg_map: Dict[str, Any] = {}
+        elif isinstance(args, dict):
+            arg_map = args
+        else:
+            return {
+                "error": (
+                    "hermes-flutter-ultra: %s received arguments of type %s; "
+                    "expected an object or null" % (tool_name, type(args).__name__)
+                )
+            }
         try:
             result = _POOL.call(tool_name, arg_map)
             # MCP tools/call returns {content: [{type, text}]} — unwrap to text.
@@ -81,6 +96,17 @@ def register(ctx: Any) -> None:
     _MANIFEST = _load_manifest()
     _POOL = SubprocessPool(_MANIFEST)
 
+    # F3: refuse to advertise tools we cannot run. The availability check used
+    # to sit AFTER the loop, so all 286 tools registered, Hermes listed them as
+    # usable, and the first call raised deep in the bridge. A tool that cannot
+    # possibly work should not appear in the picker at all.
+    if not _POOL.available:
+        logger.error(
+            "hermes-flutter-ultra: repo root not found - set FLUTTER_ULTRA_REPO. "
+            "Registering NO tools; every one of them would fail on first call."
+        )
+        return
+
     registered = 0
     for pkg_name, info in _MANIFEST.get("packages", {}).items():
         toolset = info.get("toolset", pkg_name)
@@ -102,10 +128,6 @@ def register(ctx: Any) -> None:
                 )
 
     logger.info("hermes-flutter-ultra: registered %d tools", registered)
-    if not _POOL.available:
-        logger.warning(
-            "hermes-flutter-ultra: repo root not found — set FLUTTER_ULTRA_REPO env var"
-        )
 
 
 def unregister() -> None:

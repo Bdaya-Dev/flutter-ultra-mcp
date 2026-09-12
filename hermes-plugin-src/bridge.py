@@ -144,6 +144,13 @@ class McpSubprocess:
                             entry["event"].set()
         except Exception as e:
             logger.warning("hermes-flutter-ultra: reader for %s exited: %s", self.label, e)
+        finally:
+            # BOTH exit paths must land here, and the quiet one is the common
+            # case: when the subprocess dies, stdout reaches EOF and the `for`
+            # loop ends NORMALLY -- no exception is raised. Failing pending
+            # requests only in `except` would therefore miss the ordinary crash
+            # and leave every caller waiting out its full timeout.
+            self._fail_all_pending("subprocess reader exited")
 
     def call_tool(self, tool_name: str, arguments: dict, timeout: float = 120.0) -> Any:
         self.start()
@@ -152,6 +159,30 @@ class McpSubprocess:
             "arguments": arguments,
         }, timeout=timeout)
         return result
+
+    def _fail_all_pending(self, why: str) -> None:
+        """Resolve every in-flight request with an error and clear the map.
+
+        Without this, a subprocess that dies mid-call leaves each caller parked
+        on ``deadline.wait(timeout=...)`` -- up to 120s for ``tools/call`` --
+        because the reader thread that would have signalled them has already
+        exited. The requests do eventually fail, but only by timing out one at
+        a time, which reads as a hang rather than a crash. Failing them here
+        turns a silent stall into an immediate, accurate error.
+        """
+        with self._pending_cv:
+            pending = list(self._pending.items())
+            self._pending.clear()
+        for req_id, entry in pending:
+            entry["result"] = {
+                "error": {"code": -32000, "message": f"MCP {self.label}: {why}"}
+            }
+            entry["event"].set()
+        if pending:
+            logger.warning(
+                "MCP %s: failed %d in-flight request(s): %s",
+                self.label, len(pending), why,
+            )
 
     def stop(self) -> None:
         with self._lock:
@@ -166,6 +197,9 @@ class McpSubprocess:
                         pass
                 self.proc = None
                 self._started = False
+        # Outside the lock: callers waiting on _pending_cv must not contend
+        # with _lock, and a stopped subprocess can never answer them.
+        self._fail_all_pending("subprocess stopped")
 
 
 class SubprocessPool:

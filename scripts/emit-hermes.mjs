@@ -162,7 +162,9 @@ async function main() {
     'author: "Bdaya-Dev <https://github.com/Bdaya-Dev>"',
     'homepage: https://github.com/Bdaya-Dev/flutter-ultra-mcp',
     `provides_tools:`,
-    ...allToolNames.map((n) => `  - ${n}`),
+    // Quote tool names: a name containing a YAML indicator (`:` `#` `@` etc.)
+    // would otherwise silently corrupt the document rather than fail loudly.
+    ...allToolNames.map((n) => `  - ${JSON.stringify(n)}`),
     'pip_dependencies: []',
     '',
   ].join('\n');

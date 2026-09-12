@@ -1,3 +1,10 @@
+## [1.18.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.0...v1.18.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **security:** clear npm audit findings, decouple License/OSV gates ([#166](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/166)) ([3dc134b](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/3dc134b8f46981eff7d4652577aa500bebdb94c1)), closes [#164](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/164) [#164](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/164)
+
 # [1.18.0](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.17.3...v1.18.0) (2026-09-12)
 
 

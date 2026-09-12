@@ -107,13 +107,27 @@ class McpSubprocess:
 
     def _send_request(self, method: str, params: dict, timeout: float = 60.0) -> Any:
         assert self.proc
+        # ORDER IS LOAD-BEARING: allocate the id AND register the pending entry
+        # under ONE lock acquisition, and only THEN put the request on the wire.
+        #
+        # The previous order wrote to stdin first and registered afterwards,
+        # leaving a window in which the subprocess could answer before the
+        # reader thread had anything to match `msg_id` against. The reader
+        # discards an unmatched response, so the waiter then blocked for the
+        # FULL timeout -- 60s for `initialize`, 120s for `tools/call` -- on a
+        # request that had in fact already been answered in milliseconds.
+        #
+        # The window is tight but genuinely reachable: `initialize` is the very
+        # first request against a just-spawned process, and concurrent
+        # `tools/call` invocations widen it under load. The symptom is the
+        # confusing kind -- an inexplicable two-minute hang on a tool that
+        # normally returns instantly.
+        deadline = threading.Event()
         with self._pending_cv:
             req_id = self._next_id
             self._next_id += 1
-        self._send_raw({"jsonrpc": "2.0", "id": req_id, "method": method, "params": params})
-        deadline = threading.Event()
-        with self._pending_cv:
             self._pending[req_id] = {"event": deadline, "result": None}
+        self._send_raw({"jsonrpc": "2.0", "id": req_id, "method": method, "params": params})
         deadline.wait(timeout=timeout)
         with self._pending_cv:
             entry = self._pending.pop(req_id, None)

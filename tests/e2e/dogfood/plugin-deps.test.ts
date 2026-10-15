@@ -94,6 +94,92 @@ describe('plugin external deps (ssh2, playwright-core)', () => {
     });
   }
 
+  // Resilience: a fresh install (SessionStart ensure-plugin-deps.js has not run
+  // yet) or an offline / failed npm install leaves ssh2 ABSENT. The server must
+  // still start on stdio and complete the MCP handshake — ssh2 backs only the
+  // optional remote-SSH device feature, so its absence must degrade per-tool,
+  // not crash the transport (regression: top-level `import { Client } from 'ssh2'`
+  // ran require('ssh2') at module load and exited with MODULE_NOT_FOUND on connect).
+  describe('starts with ssh2 ABSENT (no ensure-plugin-deps / offline)', () => {
+    let isoRoot: string;
+    let emptyNodePath: string;
+    const isoBin: Record<string, string> = {};
+
+    beforeAll(() => {
+      // Copy each bin.cjs OUTSIDE the monorepo so node's default resolution
+      // cannot walk up to the hoisted root node_modules/ssh2. Combined with an
+      // empty NODE_PATH this makes ssh2 genuinely unresolvable — the fresh /
+      // offline install state.
+      isoRoot = join(tmpdir(), `flutter-ultra-ssh2-absent-${process.pid}`);
+      emptyNodePath = join(isoRoot, 'empty-node-modules');
+      rmSync(isoRoot, { recursive: true, force: true });
+      mkdirSync(emptyNodePath, { recursive: true });
+      for (const server of SERVERS) {
+        const dir = join(isoRoot, server.name);
+        mkdirSync(dir, { recursive: true });
+        const dst = join(dir, 'bin.cjs');
+        cpSync(server.bin, dst);
+        isoBin[server.name] = dst;
+      }
+    });
+
+    for (const server of SERVERS) {
+      describe(`${server.name} bin.cjs`, () => {
+        let proc: ChildProcess | undefined;
+
+        afterEach(() => {
+          proc?.stdin?.end();
+          proc?.kill('SIGTERM');
+          proc = undefined;
+        });
+
+        it('starts and responds to MCP initialize without MODULE_NOT_FOUND', async () => {
+          // Isolated bin + empty NODE_PATH → ssh2 is unresolvable, exactly as
+          // on a fresh/offline install before deps are populated.
+          proc = spawnMcpServer(isoBin[server.name]!, emptyNodePath);
+
+          const stderrLines: string[] = [];
+          proc.stderr?.on('data', (c: Buffer) => stderrLines.push(c.toString()));
+
+          await new Promise<void>((resolveWait, reject) => {
+            const timer = setTimeout(resolveWait, 1500);
+            proc!.once('exit', (code) => {
+              clearTimeout(timer);
+              if (code !== 0 && code !== null) {
+                reject(
+                  new Error(`Server exited with code ${code}. stderr: ${stderrLines.join('')}`),
+                );
+              } else {
+                resolveWait();
+              }
+            });
+          });
+
+          expect(stderrLines.join('')).not.toMatch(/Cannot find module 'ssh2'/);
+          expect(proc.exitCode).toBeNull();
+
+          proc.stdin!.write(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'initialize',
+              params: {
+                protocolVersion: '2024-11-05',
+                capabilities: {},
+                clientInfo: { name: 'ssh2-absent-test', version: '0.0.0' },
+              },
+            }) + '\n',
+          );
+
+          const [initResp] = await collectResponses(proc, 1, 15_000);
+          expect(initResp!.error).toBeUndefined();
+          const result = initResp!.result as { serverInfo?: { name?: string } };
+          expect(result.serverInfo?.name).toBe(server.serverInfoName);
+        }, 30_000);
+      });
+    }
+  });
+
   describe('isolated plugin-data install via ensure-plugin-deps.js', () => {
     let pluginRoot: string;
     let pluginData: string;

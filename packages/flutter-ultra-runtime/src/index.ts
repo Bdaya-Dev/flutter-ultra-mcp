@@ -15,7 +15,7 @@ import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
 import { registerPerformanceTools } from './tools/performance.js';
-import { killPid } from './portCleanup.js';
+import { killProcessTreeVerified } from './processTree.js';
 
 export const SERVER_NAME = 'flutter-ultra-runtime';
 export const SERVER_VERSION = '0.0.1';
@@ -46,6 +46,7 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
         device: payload.device,
         ...(payload.appName !== undefined ? { appName: payload.appName } : {}),
         ...(payload.pid !== undefined ? { pid: payload.pid } : {}),
+        ...(payload.pidStartKey !== undefined ? { pidStartKey: payload.pidStartKey } : {}),
       });
       return session.id;
     },
@@ -54,7 +55,24 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
       sessions.findActiveByTarget(projectDir, device),
     stopLiveSession: async (session) => {
       if (session.pid !== undefined) {
-        await killPid(session.pid);
+        // hac#545: `session.pid` can be from a PREVIOUS MCP server process
+        // (a new sitting restarts the server) — there is no stdin handle
+        // to that old process to ask Flutter's own daemon to quit
+        // gracefully (that channel only exists in-process; see
+        // launchApp.ts's `stop()`, which tries 'q' on stdin first for a
+        // launch this SAME process is still tracking). On Windows,
+        // `session.pid` is cmd.exe's PID (launchApp.ts spawns with
+        // `shell: true`), not the real Flutter tool's — a bare
+        // `process.kill(pid)` never cascades to its descendants
+        // (`frontend_server`, the Dart VM) on ANY platform, which is
+        // exactly how hac#545 recurred. `killProcessTreeVerified` snapshots
+        // the WHOLE tree atomically before killing anything (killing the
+        // root first would orphan its children — and on POSIX an orphan
+        // gets reparented, changing the very ppid links a later sweep
+        // would need), verifies each PID against its recorded start
+        // identity before touching it, and kills bottom-up. Never
+        // `taskkill /T`, never by image name.
+        await killProcessTreeVerified(session.pid, session.pidStartKey);
       }
       try {
         await sessions.detach(

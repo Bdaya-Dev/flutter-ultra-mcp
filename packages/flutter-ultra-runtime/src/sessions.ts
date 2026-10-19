@@ -27,6 +27,10 @@ export interface AttachOptions {
   uri: string;
   source: SessionSource;
   pid?: number;
+  // hac#545: recorded alongside `pid` so a later dedup/supersede can verify
+  // the PID is still the SAME OS process before killing it (see
+  // processTree.ts). Never trust a persisted `pid` alone across a restart.
+  pidStartKey?: string;
   projectRoot?: string;
   device?: string;
   appName?: string;
@@ -46,10 +50,11 @@ export interface SessionRegistry {
   /**
    * hac#545: the live (non-terminated) session, if any, that was launched
    * for this exact project + device pair. Resolves both sides with
-   * `path.resolve` so a caller doesn't have to pre-normalize. Structured
-   * lookup against our own registry — never command-line text matching.
-   * When more than one session matches (should not happen once callers use
-   * this before every launch), the most recently attached one wins.
+   * `normalizeProjectRoot` (`path.win32`-based, host-platform-independent)
+   * so a caller doesn't have to pre-normalize. Structured lookup against
+   * our own registry — never command-line text matching. When more than
+   * one session matches (should not happen once callers use this before
+   * every launch), the most recently attached one wins.
    */
   findActiveByTarget(projectRoot: string, device: string): Promise<Session | undefined>;
   markStatus(id: SessionId, status: Session['status'], reason?: string): Promise<Session>;
@@ -150,6 +155,7 @@ export function createSessionRegistry(opts: {
       status: 'attaching',
       ...(attachOpts.rawVmUri !== undefined ? { rawVmUri: attachOpts.rawVmUri } : {}),
       ...(attachOpts.pid !== undefined ? { pid: attachOpts.pid } : {}),
+      ...(attachOpts.pidStartKey !== undefined ? { pidStartKey: attachOpts.pidStartKey } : {}),
       ...(attachOpts.projectRoot !== undefined ? { projectRoot: attachOpts.projectRoot } : {}),
       ...(attachOpts.device !== undefined ? { device: attachOpts.device } : {}),
       ...(attachOpts.appName !== undefined ? { appName: attachOpts.appName } : {}),

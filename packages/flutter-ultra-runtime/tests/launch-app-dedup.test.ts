@@ -24,10 +24,48 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // them from the same module at import time (never invoked on this path —
 // device 'windows' is not a web device, so freePort/CDP discovery are
 // skipped — but an unmocked destructure would otherwise be `undefined`).
+//
+// IMPORTANT: a stubbed `exec: vi.fn()` with no implementation never calls
+// its callback, so anything that `promisify()`s it (processTree.ts's
+// `listAllProcesses`, used by the verified tree-kill below) hangs forever,
+// not just fails fast — hence also mocking processTree.js itself, below.
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
   execFile: vi.fn(),
   exec: vi.fn(),
+}));
+
+// hac#545 follow-up (PR #167 review): the real `killProcessTreeVerified`
+// enumerates the OS process table (see processTree.ts) to kill a launch's
+// WHOLE descendant tree, not just one PID — correctness for that is covered
+// separately by launch-app-dedup-real-process.test.ts, which spawns REAL
+// processes and does NOT mock this module. Here, `FakeChildProcess` is a
+// flat PID with no real OS process behind it at all, so the real
+// implementation would hang (see above) or find nothing to kill; this
+// suite is about the DEDUP DECISION (which session gets superseded), so
+// stand in with the same single-PID behavior `killPid` used to have,
+// routed through the real, spied `process.kill` so the existing assertion
+// on exactly what got signalled still holds. `fakeKillRegistry` (declared
+// via `vi.hoisted` so this factory can close over it) also triggers the
+// matching `FakeChildProcess`'s own `kill()` — a real OS `process.kill`
+// against a real PID makes Node's ChildProcess wrapper emit a real `'exit'`
+// near-instantly; without mirroring that here, `stop()`'s wait-for-exit
+// would stall for its full escalation timeout waiting on a PID nothing is
+// actually attached to.
+const { fakeKillRegistry } = vi.hoisted(() => ({
+  fakeKillRegistry: new Map<number, () => void>(),
+}));
+vi.mock('../src/processTree.js', () => ({
+  getProcessStartKey: vi.fn(async () => undefined),
+  killProcessTreeVerified: vi.fn(async (rootPid: number) => {
+    try {
+      process.kill(rootPid, 'SIGKILL');
+    } catch {
+      return [];
+    }
+    fakeKillRegistry.get(rootPid)?.();
+    return [rootPid];
+  }),
 }));
 
 // The attach path (sessions.ts) opens a REAL WebSocket to the VM service to
@@ -59,6 +97,7 @@ class FakeChildProcess extends EventEmitter {
   constructor(pid: number) {
     super();
     this.pid = pid;
+    fakeKillRegistry.set(pid, () => this.kill('SIGKILL'));
   }
 
   kill(signal?: NodeJS.Signals): boolean {
@@ -111,6 +150,7 @@ describe('launch_app dedup (hac#545)', () => {
 
   afterEach(() => {
     killSpy.mockRestore();
+    fakeKillRegistry.clear();
     if (prevDataDir === undefined) delete process.env.FLUTTER_ULTRA_DATA_DIR;
     else process.env.FLUTTER_ULTRA_DATA_DIR = prevDataDir;
     rmSync(dir, { recursive: true, force: true });

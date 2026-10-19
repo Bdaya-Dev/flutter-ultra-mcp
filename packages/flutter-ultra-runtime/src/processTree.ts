@@ -16,10 +16,7 @@
 // ppid chain, and kill bottom-up (deepest first) so a parent never gets a
 // chance to orphan a not-yet-killed child onto a different parent mid-sweep.
 
-import { execFile as execFileCb } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execFile = promisify(execFileCb);
+import { spawn } from 'node:child_process';
 
 // Bounds every process-table read. This must never hang a caller — a dedup
 // kill or stop() escalation has to make progress either way. 20s is well
@@ -27,6 +24,62 @@ const execFile = promisify(execFileCb);
 // `ps` well under that) and still fails fast relative to a stuck test or a
 // stuck launch.
 const LIST_TIMEOUT_MS = 20_000;
+
+/**
+ * Runs `command` and collects stdout, with stdin explicitly NOT a pipe.
+ *
+ * `child_process.exec`/`execFile` always create a pipe for the child's
+ * stdin (confirmed empirically: passing `stdio: ['ignore', ...]` to
+ * `execFile` has no effect — `child.stdin` is still a connected Socket) —
+ * and NEVER close or write to it, since neither API exposes a way to. A
+ * pipe's write end stays open until something closes it; a child that
+ * ever tries to read its own stdin blocks forever waiting for EOF that
+ * never arrives. This is a documented Node.js/Windows-process hang class
+ * (nodejs/node#25645 — `exec`/`execFile`/`spawn` of `powershell.exe` never
+ * returning; fixed upstream in nodejs/citgm@595dcf64 by setting
+ * `stdio: ['ignore', 'pipe', 'ignore']` on the `spawn()` call). `spawn()`
+ * is the one API that actually honors a per-fd `stdio` override, so it's
+ * used here instead, with stdin set to `'ignore'` (connected to the OS
+ * null device, which reads as immediate EOF rather than blocking) so the
+ * child can never wait on input we were never going to provide anyway.
+ */
+function runCommand(command: string, args: string[]): Promise<{ stdout: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+      timeout: LIST_TIMEOUT_MS,
+      killSignal: 'SIGKILL',
+    });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
+    child.on('close', (code, signal) => {
+      if (settled) return;
+      settled = true;
+      if (code !== 0) {
+        reject(
+          new Error(
+            `${command} ${args.join(' ')} exited code=${code ?? 'null'} signal=${signal ?? 'null'}: ${stderr}`,
+          ),
+        );
+        return;
+      }
+      resolve({ stdout });
+    });
+  });
+}
 
 export interface ProcessSnapshot {
   pid: number;
@@ -52,26 +105,31 @@ export async function listAllProcesses(): Promise<ProcessSnapshot[]> {
 // `CreationDate.ToFileTimeUtc()` is a stable integer identity for "this
 // exact process instance" — cheap to compare, no datetime parsing needed.
 //
-// Uses `execFile` (never `exec`) with the script passed via
-// `-EncodedCommand` (base64 UTF-16LE) — PowerShell's own documented
-// mechanism for this — so there is NO shell-quoting layer at all: no
-// cmd.exe reinterpreting embedded quotes, no risk of a malformed command
-// line falling back to an interactive prompt that would hang forever
-// instead of erroring. (A plain `exec('powershell ... -Command "..."')`
-// goes through cmd.exe AND PowerShell's own argument parsing stacked on
-// top of each other; confirmed on GitHub Actions windows-latest CI runners
-// — every test touching this hung the full test timeout, while the exact
-// same construction worked locally. `-EncodedCommand` removes that layer
-// entirely rather than trying to out-escape it.)
+// The script is passed via `-EncodedCommand` (base64 UTF-16LE) — the
+// mechanism PowerShell's own docs name for commands needing "complex
+// quotation marks or curly braces" — so there's no shell-quoting layer:
+// no cmd.exe reinterpreting embedded quotes, no risk of a malformed
+// command line. `-NonInteractive` + `-EncodedCommand` (as opposed to
+// `-Command -`, the one documented stdin-reading form — see
+// about_PowerShell_exe) means nothing here is DOCUMENTED to read stdin;
+// `runCommand`'s `stdio: ['ignore', ...]` closes the specific gap found
+// on GitHub Actions windows-latest CI — every `processTree.test.ts` test
+// and the real e2e test hung for their full timeout there, reproducing
+// GREEN only after this (confirmed empirically: `execFile`'s own
+// `stdio: ['ignore', ...]` override is silently ignored for the stdin
+// slot — ruled out as a fix for that reason).
 async function listAllWindows(): Promise<ProcessSnapshot[]> {
   const script =
     "Get-CimInstance Win32_Process | ForEach-Object { $_.ProcessId.ToString() + '|' + $_.ParentProcessId.ToString() + '|' + $_.CreationDate.ToFileTimeUtc().ToString() }";
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
-  const { stdout } = await execFile(
-    'powershell.exe',
-    ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded],
-    { maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: LIST_TIMEOUT_MS },
-  );
+  const { stdout } = await runCommand('powershell.exe', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-EncodedCommand',
+    encoded,
+  ]);
   const out: ProcessSnapshot[] = [];
   for (const line of stdout.split(/\r?\n/)) {
     if (!line) continue;
@@ -91,10 +149,7 @@ async function listAllWindows(): Promise<ProcessSnapshot[]> {
 // and BSD (macOS) `ps`, unlike `etimes` which keeps ticking. See the
 // `startKey` doc comment above for its resolution caveat.
 async function listAllUnix(): Promise<ProcessSnapshot[]> {
-  const { stdout } = await execFile('ps', ['-eo', 'pid=,ppid=,lstart='], {
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: LIST_TIMEOUT_MS,
-  });
+  const { stdout } = await runCommand('ps', ['-eo', 'pid=,ppid=,lstart=']);
   const out: ProcessSnapshot[] = [];
   for (const rawLine of stdout.split('\n')) {
     const line = rawLine.trim();

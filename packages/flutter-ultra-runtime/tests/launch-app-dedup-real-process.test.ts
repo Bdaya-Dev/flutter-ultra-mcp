@@ -56,6 +56,32 @@ function isAlive(pid: number): boolean {
   }
 }
 
+// Windows can hold a just-killed process's cwd/file handles open for a
+// brief moment after the kill call returns, making an immediate rmdir fail
+// with EBUSY/EPERM — a release-timing gap, not a real failure. Retry
+// bounded, keyed off the typed `err.code` (never message text), matching
+// the pattern already used for this exact class of Windows flake in
+// shared/state-store/src/store.ts's `renameWithRetry`.
+const RM_RETRYABLE_CODES = new Set(['EBUSY', 'EPERM']);
+
+async function rmWithRetry(path: string, maxAttempts = 5): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      rmSync(path, { recursive: true, force: true });
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (!code || !RM_RETRYABLE_CODES.has(code) || attempt >= maxAttempts) {
+        // Leftover temp dir, not a test failure — the OS temp cleaner
+        // reclaims it eventually.
+        console.error('[cleanup] giving up removing', path, ':', String(err));
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 200 * attempt));
+    }
+  }
+}
+
 describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () => {
   let dataDir: string;
   let scriptDir: string;
@@ -121,36 +147,30 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
   });
 
   afterEach(async () => {
-    for (const pid of realPidsToCleanUp.splice(0)) {
+    const pids = realPidsToCleanUp.splice(0);
+    for (const pid of pids) {
       try {
         process.kill(pid, 'SIGKILL');
       } catch {
         // Already gone — the point of the test.
       }
     }
+    // Confirm they're actually dead BEFORE touching the directory tree
+    // their cwd/file handles may still reference — this is what actually
+    // prevents the EBUSY/EPERM below, not just a retry loop papering over
+    // it. Bounded; `rmWithRetry` is still the backstop if the OS is slow
+    // to release a handle even after the process itself is confirmed gone.
+    try {
+      await waitFor(() => pids.every((pid) => !isAlive(pid)), 5_000, 100);
+    } catch {
+      // Proceed anyway — rmWithRetry below is the backstop.
+    }
     if (prevDataDir === undefined) delete process.env.FLUTTER_ULTRA_DATA_DIR;
     else process.env.FLUTTER_ULTRA_DATA_DIR = prevDataDir;
     if (prevFlutter === undefined) delete process.env.FLUTTER;
     else process.env.FLUTTER = prevFlutter;
-    rmSync(dataDir, { recursive: true, force: true });
-    // Windows can hold a just-killed process's cwd/file handles open for a
-    // brief moment after the kill call returns, making an immediate rmdir
-    // fail with EBUSY — not a real failure, just a release-timing gap.
-    // Retry briefly rather than letting that flake the whole test.
-    for (let attempt = 1; ; attempt++) {
-      try {
-        rmSync(scriptDir, { recursive: true, force: true });
-        break;
-      } catch (err) {
-        if (attempt >= 5) {
-          // Leftover temp dir, not a test failure — the OS temp cleaner
-          // reclaims it eventually.
-          console.error('[cleanup] giving up removing scriptDir:', String(err));
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 200 * attempt));
-      }
-    }
+    await rmWithRetry(dataDir);
+    await rmWithRetry(scriptDir);
   });
 
   async function launchOneRealTree(

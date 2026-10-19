@@ -1,3 +1,10 @@
+## [1.18.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.1...v1.18.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* **runtime:** launch_app stops the previous live session for the same project+device ([#167](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/167)) ([c0eec83](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/c0eec836365b01bdaf61cf0d2bd6d20073042ce1)), closes [hac#545](https://github.com/hac/issues/545) [hac#545](https://github.com/hac/issues/545) [nodejs/node#25645](https://github.com/nodejs/node/issues/25645) [microsoft/dcp#274](https://github.com/microsoft/dcp/issues/274) [#278](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/278)
+
 ## [1.18.1](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.0...v1.18.1) (2026-09-12)
 
 

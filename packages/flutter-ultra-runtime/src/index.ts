@@ -15,6 +15,7 @@ import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
 import { registerPerformanceTools } from './tools/performance.js';
+import { killPid } from './portCleanup.js';
 
 export const SERVER_NAME = 'flutter-ultra-runtime';
 export const SERVER_VERSION = '0.0.1';
@@ -47,6 +48,22 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
         ...(payload.pid !== undefined ? { pid: payload.pid } : {}),
       });
       return session.id;
+    },
+    // hac#545: never hold two `flutter run` trees for one project+device.
+    findLiveSessionForTarget: (projectDir, device) =>
+      sessions.findActiveByTarget(projectDir, device),
+    stopLiveSession: async (session) => {
+      if (session.pid !== undefined) {
+        await killPid(session.pid);
+      }
+      try {
+        await sessions.detach(
+          session.id,
+          'launch_app: superseded by a new launch for the same project+device',
+        );
+      } catch {
+        // Already terminated — nothing left to do.
+      }
     },
   });
 

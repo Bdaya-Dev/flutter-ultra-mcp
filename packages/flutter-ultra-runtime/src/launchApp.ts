@@ -121,12 +121,32 @@ export interface LaunchService {
   shutdown(): Promise<void>;
 }
 
+export interface LiveSessionHandle {
+  id: string;
+  // `| undefined` (not just `?:`) so a Session straight from the registry
+  // (whose zod-inferred `pid` is `number | undefined`) assigns cleanly under
+  // exactOptionalPropertyTypes.
+  pid?: number | undefined;
+}
+
 export function createLaunchService(opts: {
   logger: Logger;
   onSessionReady: (
     jobId: string,
     payload: { uri: string; projectRoot: string; device: string; appName?: string; pid?: number },
   ) => Promise<string>;
+  /**
+   * hac#545 / flutter-ultra-mcp#545: looked up BEFORE spawning so a lane that
+   * calls `launch_app` twice for the same project+device never ends up with
+   * two live `flutter run` trees. Backed by the MCP's own session registry
+   * (sessions.json), never by command-line text matching.
+   */
+  findLiveSessionForTarget?: (
+    projectDir: string,
+    device: string,
+  ) => Promise<LiveSessionHandle | undefined>;
+  /** Kills the previous session's process + detaches it from the registry. */
+  stopLiveSession?: (session: LiveSessionHandle) => Promise<void>;
 }): LaunchService {
   const logger = opts.logger.child({ component: 'launchApp' });
 
@@ -260,6 +280,33 @@ export function createLaunchService(opts: {
   async function start(input: LaunchAppInput): Promise<LaunchJob> {
     const jobId = randomUUID();
     const projectDir = resolvePath(input.projectDir);
+
+    // hac#545: a lane must never hold two `flutter run` trees for one
+    // project+device. Stop whatever the registry says is still live for
+    // this (projectDir, device) pair BEFORE spawning — never after, so
+    // there is no window where both processes run at once.
+    if (opts.findLiveSessionForTarget) {
+      const existing = await opts.findLiveSessionForTarget(projectDir, input.device);
+      if (existing) {
+        logger.info('launch_app: superseding previous live session for same project+device', {
+          projectDir,
+          device: input.device,
+          previousSessionId: existing.id,
+          previousPid: existing.pid,
+        });
+        if (opts.stopLiveSession) {
+          try {
+            await opts.stopLiveSession(existing);
+          } catch (err) {
+            logger.warn('stopLiveSession threw; proceeding with new launch anyway', {
+              previousSessionId: existing.id,
+              err: String(err),
+            });
+          }
+        }
+      }
+    }
+
     const vscodeCfg = input.importLaunchJsonConfig
       ? await importVscodeConfig(projectDir, input.importLaunchJsonConfig)
       : null;

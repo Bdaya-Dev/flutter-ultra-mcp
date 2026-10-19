@@ -61,7 +61,8 @@
   },
   "overrides": {
     "hono": ">=4.12.21",
-    "vite": ">=6.4.2"
+    "vite": ">=6.4.2",
+    "npm": "11.21.1"
   },
   "publishConfig": {
     "access": "public",
@@ -97,8 +98,8 @@
   ],
   "allowScripts": {
     "cpu-features@0.0.10": true,
-    "esbuild@0.28.0": true,
-    "protobufjs@7.6.2": true,
+    "esbuild@0.28.2": true,
+    "protobufjs@7.6.6": true,
     "ssh2@1.17.0": true
   }
 }

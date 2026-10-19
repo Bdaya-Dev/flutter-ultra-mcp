@@ -1,3 +1,10 @@
+## [1.18.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.2...v1.18.3) (2026-10-19)
+
+
+### Bug Fixes
+
+* **security:** clear 19 of 20 npm audit advisories (deps only) ([#168](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/168)) ([1d83430](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/1d8343043d8365c598432066e84120d5ec0916ad)), closes [#167](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/167) [hermes-agent-cluster#564](https://github.com/hermes-agent-cluster/issues/564)
+
 ## [1.18.2](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.1...v1.18.2) (2026-10-19)
 
 

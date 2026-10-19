@@ -19,11 +19,15 @@
 import { spawn } from 'node:child_process';
 
 // Bounds every process-table read. This must never hang a caller — a dedup
-// kill or stop() escalation has to make progress either way. 20s is well
-// above any observed real invocation (local: Windows CIM ~0.5-1s, POSIX
-// `ps` well under that) and still fails fast relative to a stuck test or a
-// stuck launch.
-const LIST_TIMEOUT_MS = 20_000;
+// kill or stop() escalation has to make progress either way. 60s covers
+// the slowest case MEASURED live on GitHub Actions windows-latest CI: the
+// `powershell.exe` (Windows PowerShell 5.1) fallback path below took
+// 23-37s just to start and run ANY script (even `Write-Output 1`), while
+// `pwsh` (PowerShell 7) ran the identical invocations in under a second —
+// see `listAllWindows`'s doc comment. POSIX `ps` and the `pwsh` path are
+// both well under 1s locally; this bound exists for the rare host that
+// lacks `pwsh` and hits that slow path.
+const LIST_TIMEOUT_MS = 60_000;
 
 /**
  * Runs `command` and collects stdout, with stdin explicitly NOT a pipe.
@@ -42,6 +46,10 @@ const LIST_TIMEOUT_MS = 20_000;
  * used here instead, with stdin set to `'ignore'` (connected to the OS
  * null device, which reads as immediate EOF rather than blocking) so the
  * child can never wait on input we were never going to provide anyway.
+ * This closes that specific gap but turned out NOT to be the cause of the
+ * GitHub Actions windows-latest CI timeouts on its own — see
+ * `listAllWindows`'s doc comment for the measured actual cause. Kept
+ * regardless: it's still a real, documented hang class worth closing.
  */
 function runCommand(command: string, args: string[]): Promise<{ stdout: string }> {
   return new Promise((resolve, reject) => {
@@ -109,27 +117,47 @@ export async function listAllProcesses(): Promise<ProcessSnapshot[]> {
 // mechanism PowerShell's own docs name for commands needing "complex
 // quotation marks or curly braces" — so there's no shell-quoting layer:
 // no cmd.exe reinterpreting embedded quotes, no risk of a malformed
-// command line. `-NonInteractive` + `-EncodedCommand` (as opposed to
-// `-Command -`, the one documented stdin-reading form — see
-// about_PowerShell_exe) means nothing here is DOCUMENTED to read stdin;
-// `runCommand`'s `stdio: ['ignore', ...]` closes the specific gap found
-// on GitHub Actions windows-latest CI — every `processTree.test.ts` test
-// and the real e2e test hung for their full timeout there, reproducing
-// GREEN only after this (confirmed empirically: `execFile`'s own
-// `stdio: ['ignore', ...]` override is silently ignored for the stdin
-// slot — ruled out as a fix for that reason).
+// command line.
+//
+// Prefers `pwsh` (PowerShell 7, preinstalled on GitHub's windows-latest
+// image since ~2020) over `powershell.exe` (Windows PowerShell 5.1),
+// falling back to the latter only when `pwsh` isn't on PATH — this tool
+// also runs on real end-user Windows machines outside CI, where `pwsh`
+// isn't guaranteed. MEASURED live on GitHub Actions windows-latest CI
+// (both Node 20 and 22, run 39291426471): `powershell.exe` took
+// 23191-36653ms to run EITHER a trivial `Write-Output 1` OR this exact
+// CIM query — both equally slow, which is what shows the cost is
+// `powershell.exe`'s own startup (its stderr carries a
+// "Preparing modules for first use" progress record — first-use module
+// discovery/caching), not the CIM/WMI call itself. `pwsh` ran the
+// IDENTICAL CIM query on the same runner in 687ms. This was the real
+// cause of every `processTree.test.ts` test timing out at its own budget
+// there — not a hang (every run DID complete, with `code=0`), and not the
+// stdin-pipe gap `runCommand` already closes (that was real but
+// insufficient on its own, confirmed by this same measurement still
+// being slow after it landed).
 async function listAllWindows(): Promise<ProcessSnapshot[]> {
   const script =
     "Get-CimInstance Win32_Process | ForEach-Object { $_.ProcessId.ToString() + '|' + $_.ParentProcessId.ToString() + '|' + $_.CreationDate.ToFileTimeUtc().ToString() }";
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
-  const { stdout } = await runCommand('powershell.exe', [
+  const args = [
     '-NoProfile',
     '-NonInteractive',
     '-ExecutionPolicy',
     'Bypass',
     '-EncodedCommand',
     encoded,
-  ]);
+  ];
+  let stdout: string;
+  try {
+    ({ stdout } = await runCommand('pwsh', args));
+  } catch (err) {
+    // ENOENT = pwsh isn't installed on this host — fall back. Any other
+    // error (a real pwsh failure) is NOT papered over by silently
+    // retrying under a different shell; it propagates as-is.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+    ({ stdout } = await runCommand('powershell.exe', args));
+  }
   const out: ProcessSnapshot[] = [];
   for (const line of stdout.split(/\r?\n/)) {
     if (!line) continue;

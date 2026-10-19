@@ -119,7 +119,13 @@ describe('SessionRegistry.findActiveByTarget', () => {
     expect(found).toBeUndefined();
   });
 
-  it('normalizes path separators / "." segments before comparing projectRoot', async () => {
+  // This must hold on every host this suite runs on (the CI matrix is
+  // ubuntu + macos + windows), not only on Windows: comparing a path with
+  // forward slashes against the "same" path spelled with backslashes is
+  // the normalization contract, independent of `process.platform`. A
+  // naive `path.resolve` only normalizes `\` on Windows (it delegates to
+  // `path.posix` elsewhere), so this is the regression guard for that.
+  it('normalizes path separators / "." segments before comparing projectRoot, on every host OS', async () => {
     await seed([
       makeSession({ id: 'session-a', pid: 111, projectRoot: 'C:/proj/.', device: 'chrome' }),
     ]);

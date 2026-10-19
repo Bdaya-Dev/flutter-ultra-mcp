@@ -6,7 +6,7 @@
 // parallel tool calls share one WebSocket per AC-R3 / §17.10.
 
 import { randomUUID } from 'node:crypto';
-import { resolve as resolvePath } from 'node:path';
+import { win32 as pathWin32 } from 'node:path';
 import {
   emptySessionsFile,
   makeClientName,
@@ -60,6 +60,25 @@ export interface SessionRegistry {
 interface ResourceEntry {
   resource: SessionResource<VmServiceClient>;
   clientName: string;
+}
+
+/**
+ * Normalizes a project-root path for comparison, by design independent of
+ * `process.platform` (host-platform-correct, not just "correct on Windows").
+ *
+ * `path.resolve` (the platform-default) delegates to `path.win32` on
+ * Windows and `path.posix` elsewhere. POSIX's resolver only treats `/` as a
+ * separator, so a Windows-style root (`C:\proj`, the common shape for this
+ * tool) and an equivalent path spelled with forward slashes (`C:/proj/.`)
+ * resolve to two different strings when this process happens to run on
+ * Linux/macOS (e.g. this package's own CI matrix, or a non-Windows host).
+ * `path.win32`'s resolver understands BOTH separators and still normalizes
+ * a plain POSIX absolute path correctly, so using it unconditionally keeps
+ * the comparison correct on every host without needing a `process.platform`
+ * branch.
+ */
+function normalizeProjectRoot(p: string): string {
+  return pathWin32.resolve(p);
 }
 
 export function createSessionRegistry(opts: {
@@ -239,13 +258,13 @@ export function createSessionRegistry(opts: {
     projectRoot: string,
     device: string,
   ): Promise<Session | undefined> {
-    const wantRoot = resolvePath(projectRoot);
+    const wantRoot = normalizeProjectRoot(projectRoot);
     const file = await readFile();
     const matches = file.sessions.filter(
       (s) =>
         s.status !== 'terminated' &&
         s.projectRoot !== undefined &&
-        resolvePath(s.projectRoot) === wantRoot &&
+        normalizeProjectRoot(s.projectRoot) === wantRoot &&
         s.device === device,
     );
     if (matches.length === 0) return undefined;

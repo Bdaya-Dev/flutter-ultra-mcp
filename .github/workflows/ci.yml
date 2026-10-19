@@ -199,11 +199,23 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        # Scans the FULL tree, production and dev — nothing is omitted.
+        # npm has no built-in way to accept one specific advisory while
+        # still failing on every other high/critical finding, so this runs
+        # scripts/audit-gate.mjs, which re-implements --audit-level=high
+        # and subtracts ONLY the advisories listed in audit-exceptions.json
+        # — and only while each entry's reviewBy date hasn't passed. See
+        # audit-exceptions.json for the current exception (braces,
+        # GHSA-vfj7-8cjw-p6xm — verified no patched release exists) and
+        # scripts/audit-gate.test.mjs (run first here) for the matching
+        # rules' spec, including a test that an unrelated advisory the
+        # exceptions file doesn't mention still fails the gate.
+        run: npm run audit:gate
       - name: License compliance
         # Run even if the audit above fails: a red audit gate must not leave
         # License and OSV reporting permanently dark (issue #164). The audit
-        # step stays strict — no allowlist, no continue-on-error.
+        # step stays strict — no allowlist beyond the one expiring,
+        # per-advisory exception documented above, and no continue-on-error.
         if: ${{ always() }}
         run: npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0;SSPL-1.0;EUPL-1.1;EUPL-1.2"
       - name: OSV vulnerability scan

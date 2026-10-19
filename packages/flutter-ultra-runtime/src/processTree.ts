@@ -16,16 +16,31 @@
 // ppid chain, and kill bottom-up (deepest first) so a parent never gets a
 // chance to orphan a not-yet-killed child onto a different parent mid-sweep.
 
-import { exec as execCb } from 'node:child_process';
+import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
 
-const exec = promisify(execCb);
+const execFile = promisify(execFileCb);
+
+// Bounds every process-table read. This must never hang a caller — a dedup
+// kill or stop() escalation has to make progress either way. 20s is well
+// above any observed real invocation (local: Windows CIM ~0.5-1s, POSIX
+// `ps` well under that) and still fails fast relative to a stuck test or a
+// stuck launch.
+const LIST_TIMEOUT_MS = 20_000;
 
 export interface ProcessSnapshot {
   pid: number;
   ppid: number;
   // Opaque per-platform "this is still the SAME process" identity — never
-  // parsed as a date, only ever compared for equality.
+  // parsed as a date, only ever compared for equality. Resolution varies:
+  // sub-microsecond on Windows (CIM `CreationDate`), ONE SECOND on POSIX
+  // (`ps`'s `lstart` — both GNU and BSD `ps` cap out there). Two processes
+  // that happen to start within the same calendar second on POSIX will
+  // compare equal here even though they're different processes — a
+  // deliberate, accepted trade-off: the threat this guards against is a
+  // PID recorded possibly minutes/hours earlier being reused by an
+  // unrelated process, and that unrelated process landing in the EXACT
+  // SAME SECOND as the original recording is not a realistic collision.
   startKey: string;
 }
 
@@ -36,13 +51,27 @@ export async function listAllProcesses(): Promise<ProcessSnapshot[]> {
 // Windows: PowerShell CIM (WMIC is deprecated / removed on newer builds).
 // `CreationDate.ToFileTimeUtc()` is a stable integer identity for "this
 // exact process instance" — cheap to compare, no datetime parsing needed.
+//
+// Uses `execFile` (never `exec`) with the script passed via
+// `-EncodedCommand` (base64 UTF-16LE) — PowerShell's own documented
+// mechanism for this — so there is NO shell-quoting layer at all: no
+// cmd.exe reinterpreting embedded quotes, no risk of a malformed command
+// line falling back to an interactive prompt that would hang forever
+// instead of erroring. (A plain `exec('powershell ... -Command "..."')`
+// goes through cmd.exe AND PowerShell's own argument parsing stacked on
+// top of each other; confirmed on GitHub Actions windows-latest CI runners
+// — every test touching this hung the full test timeout, while the exact
+// same construction worked locally. `-EncodedCommand` removes that layer
+// entirely rather than trying to out-escape it.)
 async function listAllWindows(): Promise<ProcessSnapshot[]> {
   const script =
     "Get-CimInstance Win32_Process | ForEach-Object { $_.ProcessId.ToString() + '|' + $_.ParentProcessId.ToString() + '|' + $_.CreationDate.ToFileTimeUtc().ToString() }";
-  const { stdout } = await exec(`powershell -NoProfile -Command "${script.replace(/"/g, '\\"')}"`, {
-    maxBuffer: 64 * 1024 * 1024,
-    windowsHide: true,
-  });
+  const encoded = Buffer.from(script, 'utf16le').toString('base64');
+  const { stdout } = await execFile(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded],
+    { maxBuffer: 64 * 1024 * 1024, windowsHide: true, timeout: LIST_TIMEOUT_MS },
+  );
   const out: ProcessSnapshot[] = [];
   for (const line of stdout.split(/\r?\n/)) {
     if (!line) continue;
@@ -59,9 +88,13 @@ async function listAllWindows(): Promise<ProcessSnapshot[]> {
 // POSIX: `lstart` is each `ps` implementation's own fixed "process started
 // at" rendering (absolute, not elapsed) — stable between two `ps` calls
 // unless the process actually restarted, and available on both GNU (Linux)
-// and BSD (macOS) `ps`, unlike `etimes` which keeps ticking.
+// and BSD (macOS) `ps`, unlike `etimes` which keeps ticking. See the
+// `startKey` doc comment above for its resolution caveat.
 async function listAllUnix(): Promise<ProcessSnapshot[]> {
-  const { stdout } = await exec('ps -eo pid=,ppid=,lstart=', { maxBuffer: 64 * 1024 * 1024 });
+  const { stdout } = await execFile('ps', ['-eo', 'pid=,ppid=,lstart='], {
+    maxBuffer: 64 * 1024 * 1024,
+    timeout: LIST_TIMEOUT_MS,
+  });
   const out: ProcessSnapshot[] = [];
   for (const rawLine of stdout.split('\n')) {
     const line = rawLine.trim();

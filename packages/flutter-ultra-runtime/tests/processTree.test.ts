@@ -6,7 +6,11 @@
 
 import { spawn } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getProcessStartKey, killProcessTreeVerified, listAllProcesses } from '../src/processTree.js';
+import {
+  getProcessStartKey,
+  killProcessTreeVerified,
+  listAllProcesses,
+} from '../src/processTree.js';
 
 function spawnIdleChild(): { pid: number; kill: () => void } {
   const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1_000_000_000)'], {
@@ -60,12 +64,29 @@ describe('processTree', () => {
     // B's pid paired with A's startKey — a mismatched-but-both-real pair,
     // simulating "the PID we recorded got reused by someone else" — and
     // confirm B survives untouched.
+    //
+    // The POSIX `startKey` is `ps`'s `lstart` field, which only has
+    // SECOND resolution on both GNU (Linux) and BSD (macOS) ps — spawning
+    // A and B back-to-back can land them in the SAME second, making their
+    // real startKeys coincidentally equal and defeating the very guard
+    // this test exists to prove (confirmed live on ubuntu-latest/
+    // macos-latest CI: `lstart` collided, the guard treated B as "the same
+    // process" as A, and killed it). A >1s gap guarantees their `lstart`
+    // values differ — matching the real-world threat model this guards
+    // against anyway (a PID recorded possibly minutes/hours earlier being
+    // reused by an unrelated process in the SAME calendar second as that
+    // original recording is not a realistic collision; two helpers spawned
+    // milliseconds apart in a tight test loop is the unrealistic one).
     const a = spawnIdleChild();
+    await new Promise((r) => setTimeout(r, 1_100));
     const b = spawnIdleChild();
     cleanup.push(a.kill, b.kill);
 
     const aKey = await getProcessStartKey(a.pid);
+    const bKey = await getProcessStartKey(b.pid);
     expect(aKey).toBeTruthy();
+    expect(bKey).toBeTruthy();
+    expect(aKey).not.toBe(bKey);
 
     const killed = await killProcessTreeVerified(b.pid, aKey);
     expect(killed).toEqual([]);

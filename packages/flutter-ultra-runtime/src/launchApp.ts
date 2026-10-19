@@ -518,7 +518,11 @@ export function createLaunchService(opts: {
           const t2 = setTimeout(
             () => {
               if (handle.child.exitCode === null) {
-                void killHandleTree(handle).finally(finish);
+                void killHandleTree(handle)
+                  .catch((err: unknown) => {
+                    logger.warn('escalated killHandleTree failed', { jobId, err: String(err) });
+                  })
+                  .finally(finish);
               } else {
                 finish();
               }

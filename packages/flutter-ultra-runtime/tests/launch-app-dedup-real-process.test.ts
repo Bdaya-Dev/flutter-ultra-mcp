@@ -120,7 +120,7 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
     process.env.FLUTTER = flutterBinBase;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const pid of realPidsToCleanUp.splice(0)) {
       try {
         process.kill(pid, 'SIGKILL');
@@ -133,7 +133,24 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
     if (prevFlutter === undefined) delete process.env.FLUTTER;
     else process.env.FLUTTER = prevFlutter;
     rmSync(dataDir, { recursive: true, force: true });
-    rmSync(scriptDir, { recursive: true, force: true });
+    // Windows can hold a just-killed process's cwd/file handles open for a
+    // brief moment after the kill call returns, making an immediate rmdir
+    // fail with EBUSY — not a real failure, just a release-timing gap.
+    // Retry briefly rather than letting that flake the whole test.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        rmSync(scriptDir, { recursive: true, force: true });
+        break;
+      } catch (err) {
+        if (attempt >= 5) {
+          // Leftover temp dir, not a test failure — the OS temp cleaner
+          // reclaims it eventually.
+          console.error('[cleanup] giving up removing scriptDir:', String(err));
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 200 * attempt));
+      }
+    }
   });
 
   async function launchOneRealTree(
@@ -159,44 +176,36 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
     return { rootPid, grandchildPid };
   }
 
-  it(
-    'a second launch for the SAME project+device kills the first tree down to the grandchild',
-    async () => {
-      const { createRuntimeServer } = await import('../src/index.js');
-      const srv = await createRuntimeServer({ keepAliveIntervalMs: 0 });
-      try {
-        const projectDir = join(scriptDir, 'proj');
-        mkdirSync(projectDir, { recursive: true });
+  it('a second launch for the SAME project+device kills the first tree down to the grandchild', async () => {
+    const { createRuntimeServer } = await import('../src/index.js');
+    const srv = await createRuntimeServer({ keepAliveIntervalMs: 0 });
+    try {
+      const projectDir = join(scriptDir, 'proj');
+      mkdirSync(projectDir, { recursive: true });
 
-        const first = await launchOneRealTree(
-          srv,
-          projectDir,
-          join(scriptDir, 'grandchild1.pid'),
-        );
-        expect(isAlive(first.rootPid)).toBe(true);
+      const first = await launchOneRealTree(srv, projectDir, join(scriptDir, 'grandchild1.pid'));
+      expect(isAlive(first.rootPid)).toBe(true);
 
-        // Give the session-attach path (which persists `pid`/`pidStartKey`
-        // onto the session record findActiveByTarget reads) a moment to
-        // land before the second launch's dedup lookup runs.
-        await waitFor(async () => {
-          const list = await srv.sessions.list();
-          return list.some((s) => s.pid === first.rootPid);
-        }, 10_000);
+      // Give the session-attach path (which persists `pid`/`pidStartKey`
+      // onto the session record findActiveByTarget reads) a moment to
+      // land before the second launch's dedup lookup runs.
+      await waitFor(async () => {
+        const list = await srv.sessions.list();
+        return list.some((s) => s.pid === first.rootPid);
+      }, 10_000);
 
-        // SAME project+device — this must supersede (kill) the first tree
-        // BEFORE spawning the second.
-        await launchOneRealTree(srv, projectDir, join(scriptDir, 'grandchild2.pid'));
+      // SAME project+device — this must supersede (kill) the first tree
+      // BEFORE spawning the second.
+      await launchOneRealTree(srv, projectDir, join(scriptDir, 'grandchild2.pid'));
 
-        // The whole first tree must be gone — root AND grandchild. A
-        // single-PID kill of `first.rootPid` alone (the pre-fix behavior)
-        // kills the root (cmd.exe is directly targeted) but never reaches
-        // `first.grandchildPid`, which is the leak hac#545 reports.
-        await waitFor(() => !isAlive(first.rootPid), 5_000);
-        await waitFor(() => !isAlive(first.grandchildPid), 5_000);
-      } finally {
-        await srv.stop();
-      }
-    },
-    30_000,
-  );
+      // The whole first tree must be gone — root AND grandchild. A
+      // single-PID kill of `first.rootPid` alone (the pre-fix behavior)
+      // kills the root (cmd.exe is directly targeted) but never reaches
+      // `first.grandchildPid`, which is the leak hac#545 reports.
+      await waitFor(() => !isAlive(first.rootPid), 5_000);
+      await waitFor(() => !isAlive(first.grandchildPid), 5_000);
+    } finally {
+      await srv.stop();
+    }
+  }, 30_000);
 });

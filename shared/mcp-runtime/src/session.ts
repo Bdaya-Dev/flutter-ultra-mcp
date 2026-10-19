@@ -42,7 +42,7 @@ export const SessionSchema = z
         'hac#545: opaque platform-stable "this is still the same OS process" identity ' +
           'for `pid`, recorded at launch time. Verified against the live process table ' +
           'before killing on a dedup/supersede — never trust a persisted `pid` alone, ' +
-          "since it can be reused by an unrelated process after the original one exits.",
+          'since it can be reused by an unrelated process after the original one exits.',
       ),
     projectRoot: z.string().optional(),
     device: z

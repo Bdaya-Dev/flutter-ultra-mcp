@@ -29,6 +29,37 @@ async function ensureDir(path: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Windows can transiently refuse to replace a file via `rename` with
+// EPERM/EACCES/EBUSY even when nothing in THIS process still holds it open
+// (e.g. Defender/an indexer briefly scanning the just-written tmp file, or a
+// concurrent reader's handle not yet released by the OS) — the same
+// condition `graceful-fs` retries on for exactly this reason. Bounded
+// exponential backoff, keyed off the typed `err.code` (never message text:
+// CLAUDE.md "no regex for meaning" applies here too — a fixed error-code
+// check is the structured signal, a string match on err.message is not).
+const RENAME_RETRYABLE_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
+const RENAME_MAX_ATTEMPTS = 5;
+const RENAME_BASE_DELAY_MS = 10;
+
+async function renameWithRetry(from: string, to: string): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await rename(from, to);
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (!code || !RENAME_RETRYABLE_CODES.has(code) || attempt >= RENAME_MAX_ATTEMPTS) {
+        throw err;
+      }
+      await delay(RENAME_BASE_DELAY_MS * 2 ** (attempt - 1));
+    }
+  }
+}
+
 export async function stateRead<T>(
   path: string,
   defaultValue: T,
@@ -56,7 +87,7 @@ export async function stateWriteAtomic<T>(
   const text = JSON.stringify(validated, null, 2);
   const tmp = `${path}.tmp.${process.pid}.${Date.now()}`;
   await writeFile(tmp, text, 'utf8');
-  await rename(tmp, path);
+  await renameWithRetry(tmp, path);
 }
 
 // Take a lock, read, mutate, write back, release. Returns the post-mutation

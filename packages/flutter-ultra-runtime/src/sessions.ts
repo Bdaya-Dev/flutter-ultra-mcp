@@ -6,6 +6,7 @@
 // parallel tool calls share one WebSocket per AC-R3 / §17.10.
 
 import { randomUUID } from 'node:crypto';
+import { win32 as pathWin32 } from 'node:path';
 import {
   emptySessionsFile,
   makeClientName,
@@ -26,6 +27,10 @@ export interface AttachOptions {
   uri: string;
   source: SessionSource;
   pid?: number;
+  // hac#545: recorded alongside `pid` so a later dedup/supersede can verify
+  // the PID is still the SAME OS process before killing it (see
+  // processTree.ts). Never trust a persisted `pid` alone across a restart.
+  pidStartKey?: string;
   projectRoot?: string;
   device?: string;
   appName?: string;
@@ -42,6 +47,16 @@ export interface SessionRegistry {
   detach(id: SessionId, reason?: string): Promise<void>;
   get(id: SessionId): Promise<Session>;
   list(): Promise<Session[]>;
+  /**
+   * hac#545: the live (non-terminated) session, if any, that was launched
+   * for this exact project + device pair. Resolves both sides with
+   * `normalizeProjectRoot` (`path.win32`-based, host-platform-independent)
+   * so a caller doesn't have to pre-normalize. Structured lookup against
+   * our own registry — never command-line text matching. When more than
+   * one session matches (should not happen once callers use this before
+   * every launch), the most recently attached one wins.
+   */
+  findActiveByTarget(projectRoot: string, device: string): Promise<Session | undefined>;
   markStatus(id: SessionId, status: Session['status'], reason?: string): Promise<Session>;
   acquireClient(id: SessionId): Promise<AcquiredClient>;
   shutdown(): Promise<void>;
@@ -50,6 +65,25 @@ export interface SessionRegistry {
 interface ResourceEntry {
   resource: SessionResource<VmServiceClient>;
   clientName: string;
+}
+
+/**
+ * Normalizes a project-root path for comparison, by design independent of
+ * `process.platform` (host-platform-correct, not just "correct on Windows").
+ *
+ * `path.resolve` (the platform-default) delegates to `path.win32` on
+ * Windows and `path.posix` elsewhere. POSIX's resolver only treats `/` as a
+ * separator, so a Windows-style root (`C:\proj`, the common shape for this
+ * tool) and an equivalent path spelled with forward slashes (`C:/proj/.`)
+ * resolve to two different strings when this process happens to run on
+ * Linux/macOS (e.g. this package's own CI matrix, or a non-Windows host).
+ * `path.win32`'s resolver understands BOTH separators and still normalizes
+ * a plain POSIX absolute path correctly, so using it unconditionally keeps
+ * the comparison correct on every host without needing a `process.platform`
+ * branch.
+ */
+function normalizeProjectRoot(p: string): string {
+  return pathWin32.resolve(p);
 }
 
 export function createSessionRegistry(opts: {
@@ -121,6 +155,7 @@ export function createSessionRegistry(opts: {
       status: 'attaching',
       ...(attachOpts.rawVmUri !== undefined ? { rawVmUri: attachOpts.rawVmUri } : {}),
       ...(attachOpts.pid !== undefined ? { pid: attachOpts.pid } : {}),
+      ...(attachOpts.pidStartKey !== undefined ? { pidStartKey: attachOpts.pidStartKey } : {}),
       ...(attachOpts.projectRoot !== undefined ? { projectRoot: attachOpts.projectRoot } : {}),
       ...(attachOpts.device !== undefined ? { device: attachOpts.device } : {}),
       ...(attachOpts.appName !== undefined ? { appName: attachOpts.appName } : {}),
@@ -225,6 +260,23 @@ export function createSessionRegistry(opts: {
     return (await readFile()).sessions;
   }
 
+  async function findActiveByTarget(
+    projectRoot: string,
+    device: string,
+  ): Promise<Session | undefined> {
+    const wantRoot = normalizeProjectRoot(projectRoot);
+    const file = await readFile();
+    const matches = file.sessions.filter(
+      (s) =>
+        s.status !== 'terminated' &&
+        s.projectRoot !== undefined &&
+        normalizeProjectRoot(s.projectRoot) === wantRoot &&
+        s.device === device,
+    );
+    if (matches.length === 0) return undefined;
+    return matches.reduce((newest, s) => (s.attachedAt > newest.attachedAt ? s : newest));
+  }
+
   async function acquireClient(id: SessionId): Promise<AcquiredClient> {
     const session = await get(id);
     let entry = resources.get(id);
@@ -250,5 +302,5 @@ export function createSessionRegistry(opts: {
     resources.clear();
   }
 
-  return { attach, detach, get, list, markStatus, acquireClient, shutdown };
+  return { attach, detach, get, list, findActiveByTarget, markStatus, acquireClient, shutdown };
 }

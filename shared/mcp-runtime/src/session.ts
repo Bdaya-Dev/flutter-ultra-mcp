@@ -35,6 +35,15 @@ export const SessionSchema = z
       .int()
       .optional()
       .describe('PID of the dartvm.exe / dart hosting the isolate, if known.'),
+    pidStartKey: z
+      .string()
+      .optional()
+      .describe(
+        'hac#545: opaque platform-stable "this is still the same OS process" identity ' +
+          'for `pid`, recorded at launch time. Verified against the live process table ' +
+          'before killing on a dedup/supersede — never trust a persisted `pid` alone, ' +
+          'since it can be reused by an unrelated process after the original one exits.',
+      ),
     projectRoot: z.string().optional(),
     device: z
       .string()

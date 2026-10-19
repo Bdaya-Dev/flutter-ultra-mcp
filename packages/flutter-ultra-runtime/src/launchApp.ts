@@ -25,6 +25,12 @@ import type { Logger } from '@flutter-ultra/mcp-runtime';
 import { jobFilePath, stateRead, stateUpdate } from '@flutter-ultra/state-store';
 import { freePort } from './portCleanup.js';
 import { enumerateProcesses, findChromeCdpPort } from './discovery.js';
+import {
+  getProcessStartKey,
+  killProcessTreeVerified,
+  PreviousTreeNotConfirmedDeadError,
+  type KillTreeResult,
+} from './processTree.js';
 
 export const LaunchStageSchema = z.enum([
   'pending',
@@ -103,6 +109,13 @@ interface LaunchProcessHandle {
   appId?: string;
   pendingRequests: Map<number, PendingRequest>;
   nextRequestId: number;
+  // hac#545: the OS "start identity" of `child.pid`, captured right after
+  // spawn. On Windows `child.pid` is cmd.exe's PID (we spawn with
+  // `shell: true`), not the real Flutter tool's — this is what lets a later
+  // dedup/supersede verify it's still the SAME cmd.exe before killing its
+  // (by-then-formed) descendant tree, instead of trusting a raw PID that
+  // may have been reused. See processTree.ts.
+  pidStartKey?: string;
 }
 
 const PROCESSES = new Map<string, LaunchProcessHandle>();
@@ -121,12 +134,41 @@ export interface LaunchService {
   shutdown(): Promise<void>;
 }
 
+export interface LiveSessionHandle {
+  id: string;
+  // `| undefined` (not just `?:`) so a Session straight from the registry
+  // (whose zod-inferred `pid` is `number | undefined`) assigns cleanly under
+  // exactOptionalPropertyTypes.
+  pid?: number | undefined;
+  // hac#545: see processTree.ts — verified before a dedup kill touches `pid`.
+  pidStartKey?: string | undefined;
+}
+
 export function createLaunchService(opts: {
   logger: Logger;
   onSessionReady: (
     jobId: string,
-    payload: { uri: string; projectRoot: string; device: string; appName?: string; pid?: number },
+    payload: {
+      uri: string;
+      projectRoot: string;
+      device: string;
+      appName?: string;
+      pid?: number;
+      pidStartKey?: string;
+    },
   ) => Promise<string>;
+  /**
+   * hac#545 / flutter-ultra-mcp#545: looked up BEFORE spawning so a lane that
+   * calls `launch_app` twice for the same project+device never ends up with
+   * two live `flutter run` trees. Backed by the MCP's own session registry
+   * (sessions.json), never by command-line text matching.
+   */
+  findLiveSessionForTarget?: (
+    projectDir: string,
+    device: string,
+  ) => Promise<LiveSessionHandle | undefined>;
+  /** Kills the previous session's process + detaches it from the registry. */
+  stopLiveSession?: (session: LiveSessionHandle) => Promise<void>;
 }): LaunchService {
   const logger = opts.logger.child({ component: 'launchApp' });
 
@@ -260,6 +302,45 @@ export function createLaunchService(opts: {
   async function start(input: LaunchAppInput): Promise<LaunchJob> {
     const jobId = randomUUID();
     const projectDir = resolvePath(input.projectDir);
+
+    // hac#545: a lane must never hold two `flutter run` trees for one
+    // project+device. Stop whatever the registry says is still live for
+    // this (projectDir, device) pair BEFORE spawning — never after, so
+    // there is no window where both processes run at once.
+    if (opts.findLiveSessionForTarget) {
+      const existing = await opts.findLiveSessionForTarget(projectDir, input.device);
+      if (existing) {
+        logger.info('launch_app: superseding previous live session for same project+device', {
+          projectDir,
+          device: input.device,
+          previousSessionId: existing.id,
+          previousPid: existing.pid,
+        });
+        if (opts.stopLiveSession) {
+          try {
+            await opts.stopLiveSession(existing);
+          } catch (err) {
+            if (err instanceof PreviousTreeNotConfirmedDeadError) {
+              // hac#545's exact symptom is two live trees for one
+              // project+device — never risk creating a second one while
+              // we cannot CONFIRM the first is dead. `stopLiveSession`
+              // already retried once internally; refuse this launch
+              // rather than silently proceeding.
+              logger.error('refusing to launch: cannot confirm previous session is dead', {
+                previousSessionId: existing.id,
+                err: String(err),
+              });
+              throw err;
+            }
+            logger.warn('stopLiveSession threw; proceeding with new launch anyway', {
+              previousSessionId: existing.id,
+              err: String(err),
+            });
+          }
+        }
+      }
+    }
+
     const vscodeCfg = input.importLaunchJsonConfig
       ? await importVscodeConfig(projectDir, input.importLaunchJsonConfig)
       : null;
@@ -331,6 +412,28 @@ export function createLaunchService(opts: {
     }) as ChildProcessByStdio<Writable, Readable, Readable>;
 
     PROCESSES.set(jobId, { child, jobId, pendingRequests: new Map(), nextRequestId: 1 });
+
+    // hac#545: capture the spawned PID's start identity NOW, while it's
+    // definitely still ours — not later (by the time `app.started` fires,
+    // the PID could theoretically have been reused if the process died and
+    // raced an unrelated process for the same PID in between). Best-effort
+    // and NON-blocking: enumerating the process table costs real wall time
+    // (measured ~0.5-1s via PowerShell CIM on Windows) and `start()` must
+    // return fast regardless. A miss here only means a later dedup kill on
+    // this session can't cross-verify the PID before killing its tree —
+    // `killProcessTreeVerified` still walks and kills the tree without it,
+    // just without the reuse guard (see processTree.ts).
+    if (child.pid !== undefined) {
+      const pid = child.pid;
+      void getProcessStartKey(pid)
+        .then((startKey) => {
+          const handleNow = PROCESSES.get(jobId);
+          if (handleNow && startKey !== undefined) handleNow.pidStartKey = startKey;
+        })
+        .catch((err: unknown) => {
+          logger.debug('getProcessStartKey failed', { jobId, err: String(err) });
+        });
+    }
 
     child.on('error', (err) => {
       void (async () => {
@@ -406,36 +509,94 @@ export function createLaunchService(opts: {
     return readJob(jobId);
   }
 
+  // hac#545: the FINAL kill, wherever stop() lands on one, must free the
+  // whole tree the launch spawned, not just `handle.child` (on Windows
+  // that's cmd.exe — see processTree.ts) — `handle.child.kill('SIGKILL')`
+  // alone leaves Flutter's real tool / frontend_server / Dart VM running.
+  async function killHandleTree(handle: LaunchProcessHandle): Promise<KillTreeResult> {
+    if (handle.child.pid === undefined) {
+      handle.child.kill('SIGKILL');
+      return { killed: [], confident: false };
+    }
+    return killProcessTreeVerified(handle.child.pid, handle.pidStartKey);
+  }
+
   async function stop(jobId: string, stopOptions: { force?: boolean } = {}): Promise<LaunchJob> {
     const handle = PROCESSES.get(jobId);
     if (handle) {
       try {
-        if (stopOptions.force) {
-          // Force: immediate SIGKILL, no grace period.
-          handle.child.kill('SIGKILL');
-        } else {
-          // Machine-mode flutter accepts 'q' on stdin to stop gracefully.
-          handle.child.stdin.write('q\n');
-        }
-        // Wait for exit (with escalation timeouts for graceful path).
         await new Promise<void>((resolveExit) => {
+          let settled = false;
           const t1 = stopOptions.force
             ? undefined
             : setTimeout(() => {
-                if (handle.child.exitCode === null) handle.child.kill('SIGTERM');
+                if (handle.child.exitCode !== null) return;
+                if (process.platform === 'win32') {
+                  // On Windows, `handle.child` is cmd.exe (spawned with
+                  // `shell: true`) — Node maps EVERY signal to
+                  // `TerminateProcess` there, so a plain SIGTERM would
+                  // kill only the shell. Its 'exit' event would then fire
+                  // `finish()` below on a false "exited" signal, and the
+                  // t2 tree-kill escalation would never run — leaving
+                  // frontend_server / the Dart VM (the shell's
+                  // descendants) running forever. Escalate straight to
+                  // the verified tree kill instead: it kills bottom-up,
+                  // so the shell (the tree's root) is the LAST thing to
+                  // die, and by the time ITS 'exit' event lands, the
+                  // whole tree is confirmed gone too.
+                  void killHandleTree(handle).catch((err: unknown) => {
+                    logger.warn('win32 escalation-stage tree kill failed', {
+                      jobId,
+                      err: String(err),
+                    });
+                  });
+                } else {
+                  // POSIX: `handle.child` IS the real tool (no shell
+                  // wrapper — `shell: win32` only), and SIGTERM is a real,
+                  // catchable signal well-behaved tooling can act on to
+                  // shut down (and forward to its own children) more
+                  // cleanly than a hard kill. The t2 tree-kill below is
+                  // still the backstop if this doesn't fully land.
+                  handle.child.kill('SIGTERM');
+                }
               }, 2_000);
           const t2 = setTimeout(
             () => {
-              if (handle.child.exitCode === null) handle.child.kill('SIGKILL');
-              resolveExit();
+              if (handle.child.exitCode === null) {
+                void killHandleTree(handle)
+                  .catch((err: unknown) => {
+                    logger.warn('escalated killHandleTree failed', { jobId, err: String(err) });
+                  })
+                  .finally(finish);
+              } else {
+                finish();
+              }
             },
             stopOptions.force ? 2_000 : 5_000,
           );
-          handle.child.once('exit', () => {
+          const finish = (): void => {
+            if (settled) return;
+            settled = true;
             if (t1) clearTimeout(t1);
             clearTimeout(t2);
             resolveExit();
-          });
+          };
+          // Attach the exit listener BEFORE triggering any kill below.
+          // `killHandleTree`'s real OS `process.kill` on the ACTUAL PID
+          // makes Node's ChildProcess wrapper emit 'exit' near-instantly —
+          // if that emit happened before a listener existed, this would
+          // wait out the full escalation timeout for nothing.
+          handle.child.once('exit', finish);
+
+          if (stopOptions.force) {
+            // Force: immediate verified-tree kill, no grace period.
+            void killHandleTree(handle).catch((err: unknown) => {
+              logger.warn('force killHandleTree failed', { jobId, err: String(err) });
+            });
+          } else {
+            // Machine-mode flutter accepts 'q' on stdin to stop gracefully.
+            handle.child.stdin.write('q\n');
+          }
         });
       } catch (err) {
         logger.warn('stop threw', { jobId, err: String(err) });
@@ -530,7 +691,14 @@ function setupStdoutParser(
   patchJob: (jobId: string, patch: Partial<LaunchJob>) => Promise<LaunchJob>,
   onSessionReady: (
     jobId: string,
-    payload: { uri: string; projectRoot: string; device: string; appName?: string; pid?: number },
+    payload: {
+      uri: string;
+      projectRoot: string;
+      device: string;
+      appName?: string;
+      pid?: number;
+      pidStartKey?: string;
+    },
   ) => Promise<string>,
   logger: Logger,
 ): void {
@@ -587,6 +755,7 @@ function setupStdoutParser(
         device,
         ...(handle.appId ? { appName: handle.appId } : {}),
         ...(child.pid !== undefined ? { pid: child.pid } : {}),
+        ...(handle.pidStartKey !== undefined ? { pidStartKey: handle.pidStartKey } : {}),
       });
       await patchJob(jobId, { sessionId });
     } catch (err) {

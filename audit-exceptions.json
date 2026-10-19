@@ -1,0 +1,13 @@
+{
+  "$schema": "./scripts/audit-exceptions.schema.json",
+  "exceptions": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "reason": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns. No patched release exists: `gh api advisories/GHSA-vfj7-8cjw-p6xm` returns first_patched_version: null, and npm's own latest published braces is still 3.0.3 (the version resolved here). Reachable only through the semantic-release devDependency release-tooling chain (semantic-release -> @semantic-release/{commit-analyzer,git,github,npm,release-notes-generator} -> micromatch -> braces) and never shipped in the 8 published MCP server packages a Hermes lane runs. See hermes-agent-cluster#564.",
+      "addedOn": "2026-10-19",
+      "addedBy": "https://github.com/Bdaya-Dev/flutter-ultra-mcp/pull/168",
+      "reviewBy": "2026-12-19"
+    }
+  ]
+}

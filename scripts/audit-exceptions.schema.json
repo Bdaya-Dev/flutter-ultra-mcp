@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "npm audit-gate exceptions",
+  "description": "Expiring, per-advisory exceptions for scripts/audit-gate.mjs. Every entry MUST name the exact GHSA id it covers and carry a reviewBy date; once that date passes, audit-gate.mjs treats the advisory as blocking again regardless of this file.",
+  "type": "object",
+  "required": ["exceptions"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "package", "reason", "addedOn", "reviewBy"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$",
+            "description": "Exact GitHub Security Advisory id this exception covers. Matched by equality against the advisory url npm audit --json reports — never a package name or a range."
+          },
+          "package": {
+            "type": "string",
+            "description": "The package the advisory is published against (for humans reviewing this file; audit-gate.mjs matches on id, not this field)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Why this advisory cannot be fixed by upgrading right now, with the evidence cited (e.g. first_patched_version: null)."
+          },
+          "addedOn": { "type": "string", "format": "date" },
+          "addedBy": { "type": "string" },
+          "reviewBy": {
+            "type": "string",
+            "format": "date",
+            "description": "Once today's date passes this, audit-gate.mjs stops honoring the exception and the advisory fails the gate again until this file is updated."
+          }
+        }
+      }
+    }
+  }
+}

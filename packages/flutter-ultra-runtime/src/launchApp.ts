@@ -25,7 +25,12 @@ import type { Logger } from '@flutter-ultra/mcp-runtime';
 import { jobFilePath, stateRead, stateUpdate } from '@flutter-ultra/state-store';
 import { freePort } from './portCleanup.js';
 import { enumerateProcesses, findChromeCdpPort } from './discovery.js';
-import { getProcessStartKey, killProcessTreeVerified } from './processTree.js';
+import {
+  getProcessStartKey,
+  killProcessTreeVerified,
+  PreviousTreeNotConfirmedDeadError,
+  type KillTreeResult,
+} from './processTree.js';
 
 export const LaunchStageSchema = z.enum([
   'pending',
@@ -315,6 +320,18 @@ export function createLaunchService(opts: {
           try {
             await opts.stopLiveSession(existing);
           } catch (err) {
+            if (err instanceof PreviousTreeNotConfirmedDeadError) {
+              // hac#545's exact symptom is two live trees for one
+              // project+device — never risk creating a second one while
+              // we cannot CONFIRM the first is dead. `stopLiveSession`
+              // already retried once internally; refuse this launch
+              // rather than silently proceeding.
+              logger.error('refusing to launch: cannot confirm previous session is dead', {
+                previousSessionId: existing.id,
+                err: String(err),
+              });
+              throw err;
+            }
             logger.warn('stopLiveSession threw; proceeding with new launch anyway', {
               previousSessionId: existing.id,
               err: String(err),
@@ -496,12 +513,12 @@ export function createLaunchService(opts: {
   // whole tree the launch spawned, not just `handle.child` (on Windows
   // that's cmd.exe — see processTree.ts) — `handle.child.kill('SIGKILL')`
   // alone leaves Flutter's real tool / frontend_server / Dart VM running.
-  async function killHandleTree(handle: LaunchProcessHandle): Promise<void> {
+  async function killHandleTree(handle: LaunchProcessHandle): Promise<KillTreeResult> {
     if (handle.child.pid === undefined) {
       handle.child.kill('SIGKILL');
-      return;
+      return { killed: [], confident: false };
     }
-    await killProcessTreeVerified(handle.child.pid, handle.pidStartKey);
+    return killProcessTreeVerified(handle.child.pid, handle.pidStartKey);
   }
 
   async function stop(jobId: string, stopOptions: { force?: boolean } = {}): Promise<LaunchJob> {
@@ -513,7 +530,35 @@ export function createLaunchService(opts: {
           const t1 = stopOptions.force
             ? undefined
             : setTimeout(() => {
-                if (handle.child.exitCode === null) handle.child.kill('SIGTERM');
+                if (handle.child.exitCode !== null) return;
+                if (process.platform === 'win32') {
+                  // On Windows, `handle.child` is cmd.exe (spawned with
+                  // `shell: true`) — Node maps EVERY signal to
+                  // `TerminateProcess` there, so a plain SIGTERM would
+                  // kill only the shell. Its 'exit' event would then fire
+                  // `finish()` below on a false "exited" signal, and the
+                  // t2 tree-kill escalation would never run — leaving
+                  // frontend_server / the Dart VM (the shell's
+                  // descendants) running forever. Escalate straight to
+                  // the verified tree kill instead: it kills bottom-up,
+                  // so the shell (the tree's root) is the LAST thing to
+                  // die, and by the time ITS 'exit' event lands, the
+                  // whole tree is confirmed gone too.
+                  void killHandleTree(handle).catch((err: unknown) => {
+                    logger.warn('win32 escalation-stage tree kill failed', {
+                      jobId,
+                      err: String(err),
+                    });
+                  });
+                } else {
+                  // POSIX: `handle.child` IS the real tool (no shell
+                  // wrapper — `shell: win32` only), and SIGTERM is a real,
+                  // catchable signal well-behaved tooling can act on to
+                  // shut down (and forward to its own children) more
+                  // cleanly than a hard kill. The t2 tree-kill below is
+                  // still the backstop if this doesn't fully land.
+                  handle.child.kill('SIGTERM');
+                }
               }, 2_000);
           const t2 = setTimeout(
             () => {

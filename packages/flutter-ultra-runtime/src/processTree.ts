@@ -18,6 +18,27 @@
 
 import { spawn } from 'node:child_process';
 
+/**
+ * Thrown by a caller that needs CERTAINTY a previous launch's process
+ * tree is dead before doing anything else — specifically the dedup
+ * supersede in `launchApp.ts`'s `start()`, which must never spawn a
+ * SECOND tree while the first might still be alive (hac#545's exact
+ * symptom). Distinguishes "we tried, twice, and still can't confirm it"
+ * from any other unexpected error, so that specific caller can refuse to
+ * proceed instead of logging a warning and launching anyway.
+ */
+export class PreviousTreeNotConfirmedDeadError extends Error {
+  constructor(
+    public readonly pid: number,
+    reason: string,
+  ) {
+    super(
+      `could not confirm the previous launch's process tree (root pid ${pid}) is dead: ${reason}`,
+    );
+    this.name = 'PreviousTreeNotConfirmedDeadError';
+  }
+}
+
 // Bounds every process-table read. This must never hang a caller — a dedup
 // kill or stop() escalation has to make progress either way. 60s covers
 // the slowest case MEASURED live on GitHub Actions windows-latest CI: the
@@ -103,6 +124,11 @@ export interface ProcessSnapshot {
   // unrelated process, and that unrelated process landing in the EXACT
   // SAME SECOND as the original recording is not a realistic collision.
   startKey: string;
+  // Comparable epoch-ish milliseconds, used ONLY for ORDERING (never for
+  // identity — that's `startKey`): see `collectDescendants`'s stale-ppid
+  // guard. `NaN` when unknown/unparseable, which that guard treats as
+  // "cannot verify" and excludes.
+  startTimeMs: number;
 }
 
 export async function listAllProcesses(): Promise<ProcessSnapshot[]> {
@@ -138,7 +164,7 @@ export async function listAllProcesses(): Promise<ProcessSnapshot[]> {
 // being slow after it landed).
 async function listAllWindows(): Promise<ProcessSnapshot[]> {
   const script =
-    "Get-CimInstance Win32_Process | ForEach-Object { $_.ProcessId.ToString() + '|' + $_.ParentProcessId.ToString() + '|' + $_.CreationDate.ToFileTimeUtc().ToString() }";
+    "Get-CimInstance Win32_Process | ForEach-Object { $_.ProcessId.ToString() + '|' + $_.ParentProcessId.ToString() + '|' + $_.CreationDate.ToFileTimeUtc().ToString() + '|' + ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds().ToString() }";
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
   const args = [
     '-NoProfile',
@@ -162,11 +188,14 @@ async function listAllWindows(): Promise<ProcessSnapshot[]> {
   for (const line of stdout.split(/\r?\n/)) {
     if (!line) continue;
     const parts = line.split('|');
-    if (parts.length !== 3) continue;
+    if (parts.length !== 4) continue;
     const pid = Number(parts[0]);
     const ppid = Number(parts[1]);
     const startKey = parts[2]!;
-    if (Number.isFinite(pid) && Number.isFinite(ppid)) out.push({ pid, ppid, startKey });
+    const startTimeMs = Number(parts[3]);
+    if (Number.isFinite(pid) && Number.isFinite(ppid)) {
+      out.push({ pid, ppid, startKey, startTimeMs });
+    }
   }
   return out;
 }
@@ -190,7 +219,16 @@ async function listAllUnix(): Promise<ProcessSnapshot[]> {
     if (secondSpace < 0) continue;
     const ppid = Number(rest.slice(0, secondSpace));
     const startKey = rest.slice(secondSpace + 1).trim();
-    if (Number.isFinite(pid) && Number.isFinite(ppid)) out.push({ pid, ppid, startKey });
+    // `lstart`'s own rendering (e.g. "Mon Oct 19 20:14:57 2026", the
+    // common ctime-style format both GNU and BSD `ps` use) is one of the
+    // legacy formats `Date.parse` is built to accept — used ONLY to get a
+    // comparable ordering value; `startKey` above stays the untouched raw
+    // string for identity. `NaN` on an unrecognized rendering is handled
+    // by the ordering guard that reads this (fail-safe: treated as
+    // "unknown", never as "equal" or "earlier").
+    const startTimeMs = Date.parse(startKey);
+    if (Number.isFinite(pid) && Number.isFinite(ppid))
+      out.push({ pid, ppid, startKey, startTimeMs });
   }
   return out;
 }
@@ -200,7 +238,40 @@ export async function getProcessStartKey(pid: number): Promise<string | undefine
   return all.find((p) => p.pid === pid)?.startKey;
 }
 
-function collectDescendants(all: ProcessSnapshot[], rootPid: number): ProcessSnapshot[] {
+/**
+ * Walks the live ppid chain from `rootPid` to collect its descendants —
+ * guarded against the two failure modes a stale/reused PID creates on a
+ * platform (Windows) that never reparents orphans, per Microsoft's own
+ * .NET Aspire orchestrator (DCP) fixing exactly this in its process-tree
+ * code: "PIDs are reusable. On Windows, a stale parent PID can point at
+ * an unrelated process and create a cycle during process-tree traversal,
+ * causing resource shutdown to hang and potentially selecting the wrong
+ * process for termination." (microsoft/dcp#274, "Windows PID reuse can
+ * hang resource shutdown"). Their fix, matched here:
+ *
+ * 1. A VISITED SET, so a cycle (A's stale ParentProcessId points at B,
+ *    B's points back at A — both now unrelated to the pids they used to
+ *    mean) terminates the walk instead of looping forever.
+ * 2. "Check process creation times to reject stale parent relationships"
+ *    (same issue) — a process can never predate its own parent, so a
+ *    candidate child is accepted only when `child.startTimeMs >=
+ *    parent.startTimeMs`. Per #274 itself: "A cycle guard alone is
+ *    insufficient: it could still leave unrelated processes in the list
+ *    to kill" — the ordering check is what actually rejects an unrelated
+ *    process X whose ParentProcessId field still shows our root's PID
+ *    only because that number got reused after X's REAL (different,
+ *    long-exited) parent held it. Landed upstream in microsoft/dcp#278
+ *    ("Make process handling PID-reuse safe and remove gopsutil" —
+ *    "build process trees from platform snapshots while validating
+ *    parent/child creation order, duplicate or ambiguous PIDs, and
+ *    ancestry cycles").
+ *
+ * An unparseable/unknown `startTimeMs` (`NaN`) fails SAFE: excluded, same
+ * as a provably-too-old one — better to leave a real descendant unkilled
+ * in a rare edge case than kill an unrelated process on an unverifiable
+ * guess.
+ */
+export function collectDescendants(all: ProcessSnapshot[], rootPid: number): ProcessSnapshot[] {
   const byPpid = new Map<number, ProcessSnapshot[]>();
   for (const p of all) {
     const list = byPpid.get(p.ppid);
@@ -210,12 +281,22 @@ function collectDescendants(all: ProcessSnapshot[], rootPid: number): ProcessSna
   const root = all.find((p) => p.pid === rootPid);
   if (!root) return [];
   const result: ProcessSnapshot[] = [root];
-  const queue: number[] = [rootPid];
+  const visited = new Set<number>([rootPid]);
+  const queue: ProcessSnapshot[] = [root];
   while (queue.length > 0) {
-    const pid = queue.shift()!;
-    for (const child of byPpid.get(pid) ?? []) {
+    const parent = queue.shift()!;
+    for (const child of byPpid.get(parent.pid) ?? []) {
+      if (visited.has(child.pid)) continue; // cycle guard
+      if (
+        Number.isNaN(child.startTimeMs) ||
+        Number.isNaN(parent.startTimeMs) ||
+        child.startTimeMs < parent.startTimeMs
+      ) {
+        continue; // stale-ppid guard: a child cannot predate its parent
+      }
+      visited.add(child.pid);
       result.push(child);
-      queue.push(child.pid);
+      queue.push(child);
     }
   }
   return result;
@@ -245,36 +326,71 @@ function killBottomUp(tree: ProcessSnapshot[]): number[] {
   return killed;
 }
 
+export interface KillTreeResult {
+  killed: number[];
+  // true only when we got a FRESH live listing, found the root in it
+  // (verifying its identity when `expectedStartKey` is given), and walked
+  // ITS descendants from that same listing — i.e. there is nothing else
+  // discoverable that we didn't account for. false whenever the listing
+  // itself failed (no `pwsh`/`powershell.exe`, or it timed out): we still
+  // make a best-effort kill of the recorded root PID directly (never
+  // "nothing killed" just because we lost visibility), but descendants
+  // may be alive and unaccounted for — a caller that needs to be SURE
+  // the whole tree is dead (the dedup path in index.ts, guarding against
+  // hac#545's exact "a second tree gets launched while the first is still
+  // alive" symptom) must treat `confident: false` as "not yet confirmed",
+  // not as success.
+  confident: boolean;
+}
+
 /**
  * Kill `rootPid` and every CURRENT descendant of it, verified against the
  * live process table — never `taskkill /T`, never by image name.
  *
- * - If `rootPid` isn't found in the current snapshot at all (the listing
- *   mechanism found nothing, or the process already exited), falls back to
- *   a single best-effort `process.kill(rootPid, 'SIGKILL')` — a safe no-op
- *   if it's already gone, and no worse than the single-PID kill this
- *   replaces for a case the tree walk genuinely cannot see.
+ * - If the process-table LISTING ITSELF fails (no `pwsh`/`powershell.exe`
+ *   on PATH, or it times out), there is no tree to walk at all — still
+ *   makes a best-effort `process.kill(rootPid, 'SIGKILL')` on the
+ *   recorded PID directly and reports `confident: false`.
+ * - If `rootPid` isn't found in a listing that DID succeed (already
+ *   exited, or our tracking is stale), also falls back to that same
+ *   best-effort single-PID kill — a safe no-op if it's already gone —
+ *   but reports `confident: true`: a full, successful listing that
+ *   simply doesn't contain this pid is real information, not a gap.
  * - If `expectedStartKey` is given and doesn't match the live process at
- *   `rootPid`, the PID has been reused by an unrelated process since it was
- *   recorded — this never touches it.
+ *   `rootPid`, the PID has been reused by an unrelated process since it
+ *   was recorded — this never touches it (`confident: true`: we got a
+ *   full listing and correctly determined this isn't our process).
  */
 export async function killProcessTreeVerified(
   rootPid: number,
   expectedStartKey?: string,
-): Promise<number[]> {
-  const all = await listAllProcesses();
+): Promise<KillTreeResult> {
+  let all: ProcessSnapshot[];
+  try {
+    all = await listAllProcesses();
+  } catch {
+    const killed: number[] = [];
+    try {
+      process.kill(rootPid, 'SIGKILL');
+      killed.push(rootPid);
+    } catch {
+      // Already gone, or no permission — nothing more we can do without
+      // a listing to walk descendants from.
+    }
+    return { killed, confident: false };
+  }
   const root = all.find((p) => p.pid === rootPid);
   if (!root) {
     try {
       process.kill(rootPid, 'SIGKILL');
-      return [rootPid];
+      return { killed: [rootPid], confident: true };
     } catch {
-      return [];
+      return { killed: [], confident: true };
     }
   }
   if (expectedStartKey !== undefined && root.startKey !== expectedStartKey) {
-    return [];
+    return { killed: [], confident: true };
   }
   const tree = collectDescendants(all, rootPid);
-  return killBottomUp(tree);
+  return { killed: killBottomUp(tree), confident: true };
 }

@@ -15,7 +15,7 @@ import { registerInspectTools } from './tools/inspect.js';
 import { registerLifecycleTools } from './tools/lifecycle.js';
 import { registerLogsAndHttpTools } from './tools/logsAndHttp.js';
 import { registerPerformanceTools } from './tools/performance.js';
-import { killProcessTreeVerified } from './processTree.js';
+import { killProcessTreeVerified, PreviousTreeNotConfirmedDeadError } from './processTree.js';
 
 export const SERVER_NAME = 'flutter-ultra-runtime';
 export const SERVER_VERSION = '0.0.1';
@@ -72,7 +72,28 @@ export async function createRuntimeServer(options: CreateRuntimeServerOptions = 
         // would need), verifies each PID against its recorded start
         // identity before touching it, and kills bottom-up. Never
         // `taskkill /T`, never by image name.
-        await killProcessTreeVerified(session.pid, session.pidStartKey);
+        //
+        // `killProcessTreeVerified` itself always makes a best-effort
+        // kill of the root PID even when the process-table LISTING fails
+        // (no `pwsh`/`powershell.exe`, or a timeout) — but reports
+        // `confident: false` then, since descendants may be unaccounted
+        // for. This specific caller cannot tolerate that: `start()`'s
+        // dedup supersede must never spawn a SECOND tree while the first
+        // might still be alive (hac#545's exact symptom). A transient
+        // listing blip often clears on a second attempt; retry once, and
+        // if it's STILL not confident, refuse rather than pretend success
+        // — `start()` treats this specific error as a hard stop, not a
+        // warn-and-proceed.
+        let result = await killProcessTreeVerified(session.pid, session.pidStartKey);
+        if (!result.confident) {
+          result = await killProcessTreeVerified(session.pid, session.pidStartKey);
+        }
+        if (!result.confident) {
+          throw new PreviousTreeNotConfirmedDeadError(
+            session.pid,
+            'process-table listing failed twice in a row',
+          );
+        }
       }
       try {
         await sessions.detach(

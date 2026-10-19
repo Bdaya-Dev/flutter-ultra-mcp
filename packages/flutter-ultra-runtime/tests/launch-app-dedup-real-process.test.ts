@@ -127,6 +127,12 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
         'gc.unref();',
         // Machine-mode envelope launchApp.ts's extractMachineJson() parses.
         "console.log(JSON.stringify([{ event: 'app.started', params: { vmServiceUri: 'ws://127.0.0.1:1/fake=/ws', appId: 'app1' } }]));",
+        // Ignore SIGTERM (POSIX only — Windows has no real signals, so
+        // this line is simply never exercised there): makes stop()'s
+        // ladder test below need REAL escalation on every platform,
+        // instead of accidentally passing on POSIX because this
+        // synthetic root happens to die from the default SIGTERM handler.
+        "process.on('SIGTERM', () => {});",
         'setInterval(() => {}, 1_000_000_000);',
       ].join('\n'),
       'utf8',
@@ -177,7 +183,7 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
     srv: Awaited<ReturnType<typeof CreateRuntimeServer>>,
     projectDir: string,
     pidfilePath: string,
-  ): Promise<{ rootPid: number; grandchildPid: number }> {
+  ): Promise<{ jobId: string; rootPid: number; grandchildPid: number }> {
     process.env.FU_TEST_PIDFILE = pidfilePath;
     const job = await srv.launch.start({
       projectDir,
@@ -193,7 +199,7 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
     realPidsToCleanUp.push(grandchildPid);
     expect(isAlive(grandchildPid)).toBe(true);
 
-    return { rootPid, grandchildPid };
+    return { jobId: job.jobId, rootPid, grandchildPid };
   }
 
   it('a second launch for the SAME project+device kills the first tree down to the grandchild', async () => {
@@ -224,6 +230,50 @@ describe('launch_app dedup kills the REAL process tree (hac#545, no mocks)', () 
       // `first.grandchildPid`, which is the leak hac#545 reports.
       await waitFor(() => !isAlive(first.rootPid), 5_000);
       await waitFor(() => !isAlive(first.grandchildPid), 5_000);
+    } finally {
+      await srv.stop();
+    }
+  }, 30_000);
+
+  // hac#545 follow-up (PR #167 round-3 review) — stop()'s OWN graceful
+  // ladder (write 'q' -> [win32: escalate straight to the verified tree
+  // kill | POSIX: SIGTERM the root] at 2s -> verified tree kill at 5s)
+  // must free the WHOLE tree too, on every OS, not just launch_app's
+  // dedup path (already covered above). The bug this guards: on win32,
+  // `handle.child` is cmd.exe (shell: true) — Node maps SIGTERM to
+  // TerminateProcess there, so the OLD code's bare
+  // `handle.child.kill('SIGTERM')` at the 2s mark killed only the shell,
+  // fired its 'exit' event, and resolved stop() on that false signal
+  // BEFORE the 5s tree-kill escalation ever ran — leaving the grandchild
+  // alive forever. The root script here ignores 'q' (never reads stdin
+  // for it) AND SIGTERM (see beforeEach), so every platform is forced
+  // through the SAME full ladder to prove it actually finishes the job
+  // rather than stopping early on a partial signal.
+  it("stop()'s own ladder (q -> timeout -> tree kill) frees the whole tree, not just the shell", async () => {
+    const { createRuntimeServer } = await import('../src/index.js');
+    const srv = await createRuntimeServer({ keepAliveIntervalMs: 0 });
+    try {
+      const projectDir = join(scriptDir, 'proj');
+      mkdirSync(projectDir, { recursive: true });
+
+      const launched = await launchOneRealTree(srv, projectDir, join(scriptDir, 'ladder.pid'));
+      expect(isAlive(launched.rootPid)).toBe(true);
+      expect(isAlive(launched.grandchildPid)).toBe(true);
+
+      // Non-force: 'q' on stdin (ignored by this root), SIGTERM/win32
+      // tree-kill escalation at 2s (also ignored on POSIX; win32 has no
+      // real signals to ignore), final verified tree-kill escalation at
+      // 5s. This call's own worst case is ~5s; the outer `it(..., 30_000)`
+      // timeout is the backstop if a regression hangs the whole ladder.
+      await srv.launch.stop(launched.jobId);
+
+      // The point of the whole ladder: BOTH the shell/root AND its
+      // grandchild must be gone, not just the one PID it directly
+      // recorded. A short bounded wait (not an immediate assert) for the
+      // same reason the dedup test above uses one: a SIGKILL is
+      // near-instant but not synchronous with the OS actually reaping it.
+      await waitFor(() => !isAlive(launched.rootPid), 5_000);
+      await waitFor(() => !isAlive(launched.grandchildPid), 5_000);
     } finally {
       await srv.stop();
     }

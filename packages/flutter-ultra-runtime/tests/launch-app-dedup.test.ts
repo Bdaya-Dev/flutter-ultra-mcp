@@ -61,11 +61,12 @@ vi.mock('../src/processTree.js', () => ({
     try {
       process.kill(rootPid, 'SIGKILL');
     } catch {
-      return [];
+      return { killed: [], confident: true };
     }
     fakeKillRegistry.get(rootPid)?.();
-    return [rootPid];
+    return { killed: [rootPid], confident: true };
   }),
+  PreviousTreeNotConfirmedDeadError: class PreviousTreeNotConfirmedDeadError extends Error {},
 }));
 
 // The attach path (sessions.ts) opens a REAL WebSocket to the VM service to

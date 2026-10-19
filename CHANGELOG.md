@@ -1,3 +1,10 @@
+## [1.18.4](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.3...v1.18.4) (2026-10-19)
+
+
+### Bug Fixes
+
+* **security:** replace the removed --omit=dev with a precise, expiring exception for GHSA-vfj7-8cjw-p6xm ([#169](https://github.com/Bdaya-Dev/flutter-ultra-mcp/issues/169)) ([061e917](https://github.com/Bdaya-Dev/flutter-ultra-mcp/commit/061e917936a406dc43aa7a79c178f3fd7e1255aa))
+
 ## [1.18.3](https://github.com/Bdaya-Dev/flutter-ultra-mcp/compare/v1.18.2...v1.18.3) (2026-10-19)
 
 
